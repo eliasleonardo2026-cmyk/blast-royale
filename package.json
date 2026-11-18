@@ -1,0 +1,13 @@
+{
+  "name": "blast-royale",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blast Royale - jogo web + servidor de sinalização WebRTC",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

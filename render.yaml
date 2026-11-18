@@ -1,0 +1,23 @@
+# Deploy no Render (https://render.com) — plano free
+# 1. Suba esta pasta para um repositório no GitHub
+# 2. No Render: New + > Blueprint > escolha o repositório
+# 3. O Render lê este arquivo e cria o serviço sozinho
+services:
+  - type: web
+    name: blast-royale
+    runtime: node
+    plan: free
+    buildCommand: npm install --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Descomente e preencha para melhorar a conexão P2P pela internet:
+      # - key: TURN_URL
+      #   value: turn:seu-servidor:3478
+      # - key: TURN_USERNAME
+      #   value: usuario
+      # - key: TURN_CREDENTIAL
+      #   value: senha

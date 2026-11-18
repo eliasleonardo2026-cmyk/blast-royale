@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Blast Royale — Tactical Bomb Arena</title>
+<link rel="stylesheet" href="tailwind.css" />
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="ui-extra.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="description" content="Blast Royale: arena tática de bombas com battle royale solo, modos em equipe, multiplayer local e online. Jogue no navegador, celular, PC ou instale como app." />
+<meta name="theme-color" content="#0b0f19" />
+<meta name="color-scheme" content="dark" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Blast Royale" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Blast Royale — Tactical Bomb Arena" />
+<meta property="og:description" content="Sobreviva à arena, chute bombas com ondas de choque e seja o último de pé. 16 lutadores, bombas táticas, portais e airdrops." />
+<meta property="og:image" content="icons/icon-512.png" />
+<meta name="twitter:card" content="summary" />
+</head>
+<body class="relative w-full h-full text-slate-100">
+
+<!-- ================= CANVAS PRINCIPAL ================= -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- ================= JOYSTICK VIRTUAL ================= -->
+<div id="floatingJoystickContainer" class="hidden pointer-events-none fixed inset-0 z-20">
+  <div id="joystickBase" class="absolute w-28 h-28 rounded-full bg-slate-900/40 backdrop-blur-sm border-2 border-cyan-400/35 flex items-center justify-center" style="left: 76px; top: 60%;">
+    <div class="w-12 h-12 rounded-full border border-white/15"></div>
+    <div id="joystickKnob" class="absolute w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-emerald-500 border-2 border-white shadow-lg" style="transform: translate(0px, 0px);"></div>
+  </div>
+</div>
+
+<div id="fpsCounter" class="hidden fixed left-1 bottom-1 z-30 text-[10px] font-bold text-emerald-300/80 pointer-events-none">60 FPS</div>
+
+<!-- ================= HUD IN-GAME ================= -->
+<div id="hudLayer" class="hidden fixed inset-0 pointer-events-none z-20 flex flex-col justify-between px-2.5 sm:px-4 safe-top safe-bottom">
+  <div class="flex items-start justify-between gap-1.5 w-full">
+    <div class="flex flex-col gap-1 pointer-events-auto max-w-[62%]">
+
+      <!-- Linha 1: HP + Vivos + Zona -->
+      <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-slate-700/70 px-2.5 py-1 rounded-2xl shadow-lg">
+        <div id="hudHearts" class="flex items-center gap-0.5 text-sm sm:text-base pr-1.5 border-r border-slate-800" title="Health">❤️❤️</div>
+        <div class="flex items-center gap-1 pr-1.5 border-r border-slate-800">
+          <span class="text-xs sm:text-sm">👥</span>
+          <span id="hudAlive" class="font-display font-bold text-xs sm:text-sm text-emerald-400">12/12</span>
+        </div>
+        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
+          <span class="text-xs">⏱️</span>
+          <span id="hudTime" class="font-display font-bold text-xs text-cyan-300 tabular-nums" title="Tempo vivo">00:00</span>
+        </div>
+        <div id="hudStormChip" class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/35">
+          <span class="text-xs">☢️</span>
+          <span id="hudStormTimer" class="font-display font-bold text-xs text-rose-400">25s</span>
+        </div>
+      </div>
+
+      <!-- Placar compacto do Duelo 1v1 (MD3/MD5) -->
+      <div id="hudDuel" class="hidden items-center gap-1.5 bg-slate-950/90 backdrop-blur-md border border-amber-500/50 px-2 py-1 rounded-xl shadow-lg self-start" aria-live="off">
+        <div class="duel-hud-side duel-hud-p1">
+          <span id="duelName1" class="duel-hud-name">JOGADOR</span>
+          <span id="duelHearts1" class="duel-hud-hearts">❤️❤️</span>
+          <span id="duelPts1" class="duel-hud-pts">0</span>
+        </div>
+        <span class="duel-hud-x">×</span>
+        <div class="duel-hud-side duel-hud-p2">
+          <span id="duelPts2" class="duel-hud-pts">0</span>
+          <span id="duelHearts2" class="duel-hud-hearts">❤️❤️</span>
+          <span id="duelName2" class="duel-hud-name">Nova</span>
+        </div>
+        <span id="duelFormat" class="duel-hud-format">MD3</span>
+      </div>
+
+      <!-- Linha 2: HUD DE TIMES (só em 1v1 / 2v2 / 3v3) -->
+      <div id="hudTeams" class="hidden items-center gap-2 bg-slate-950/85 backdrop-blur-md border border-slate-700/70 px-2.5 py-1 rounded-xl shadow text-[11px] font-bold self-start">
+        <div class="flex items-center gap-1">
+          <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+          <span class="text-emerald-300">TIME 1: <span id="team1Alive">0</span></span>
+        </div>
+        <span class="text-slate-600">|</span>
+        <div class="flex items-center gap-1">
+          <span class="w-3 h-3 rounded-full bg-rose-400"></span>
+          <span class="text-rose-300">TIME 2: <span id="team2Alive">0</span></span>
+        </div>
+      </div>
+
+      <!-- Linha 3: Power-ups -->
+      <div class="flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 px-2.5 py-1 rounded-xl shadow text-[11px] font-bold self-start">
+        <span class="text-amber-400">💀<span id="hudKills">0</span></span>
+        <span class="text-slate-700">|</span>
+        <span class="text-amber-400" title="Nível">⭐<span id="hudLevel">1</span></span>
+        <span class="text-slate-700">|</span>
+        <span class="text-sky-400">💣<span id="statBombs">1</span></span>
+        <span class="text-orange-400">🔥<span id="statRange">2</span></span>
+        <span class="text-lime-400">👟<span id="statSpeed">1</span></span>
+        <span id="statShieldPill" class="hidden px-1.5 py-0.5 bg-cyan-500/25 border border-cyan-400/60 text-cyan-300 rounded">🛡️</span>
+      </div>
+
+      <!-- Badge arbusto -->
+      <div id="stealthBadge" class="hidden self-start flex items-center gap-1 bg-emerald-950/90 border border-emerald-400/60 text-emerald-300 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow">
+        <span>🌿</span>
+        <span data-i18n="stealthActive">OCULTO NO ARBUSTO</span>
+      </div>
+
+      <!-- Regra de terreno do mapa (lava / gelo / água / baixa gravidade) -->
+      <div id="hudHazardChip" class="hidden self-start flex items-center gap-1 bg-slate-950/90 border border-orange-400/60 text-orange-300 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow">
+        <span id="hudHazardIcon">🌋</span>
+        <span id="hudHazardText">LAVA QUEIMA</span>
+      </div>
+    </div>
+
+    <!-- Direita: botões + radar -->
+    <div class="flex items-start gap-1.5 pointer-events-auto shrink-0">
+      <div class="flex flex-col gap-1">
+        <!-- Chat de voz opcional (1v1 / Online) — sempre desligado ao entrar -->
+        <div id="voicePanel" class="voice-panel hidden" role="group" data-i18n-title="voicePanel" aria-label="Chat de voz">
+          <span class="voice-panel-label">VOZ</span>
+          <button id="btnVoiceMic" type="button" class="voice-btn" title="Ativar microfone" aria-pressed="false">🎤</button>
+          <button id="btnVoiceMuteOpp" type="button" class="voice-btn" title="Mutar adversário" aria-pressed="false">🔊</button>
+          <button id="btnVoiceReport" type="button" class="voice-btn report" title="Denunciar adversário">⚠️</button>
+        </div>
+        <div id="netBadge" class="hidden text-[9px] font-display font-bold text-cyan-300 bg-slate-950/85 border border-cyan-500/40 px-2 py-0.5 rounded-lg text-center" style="display:none">🌐 HOST</div>
+        <div id="netPing" class="hidden text-[9px] font-display font-bold text-cyan-300 bg-slate-950/85 border border-cyan-500/40 px-2 py-0.5 rounded-lg text-center" title="Ping" aria-live="off">📶 -- ms</div>
+        <button id="btnMuteHud" type="button" aria-label="Som" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-slate-700/80 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Som">🔊</button>
+        <button id="btnShakeHud" type="button" aria-label="Tremor de tela" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-cyan-500/60 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Tremor de Tela">📳</button>
+        <button id="btnPauseHud" type="button" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-slate-700/80 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Pausar (Esc)">⏸️</button>
+        <button id="btnFullscreen" type="button" aria-label="Tela cheia" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-slate-700/80 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Tela cheia">⛶</button>
+      </div>
+      <div class="relative rounded-full p-0.5 bg-slate-950/90 border-2 border-cyan-500/60 shadow-2xl">
+        <canvas id="radarCanvas" width="88" height="88" class="rounded-full block w-[88px] h-[88px]"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas centrais + kill feed -->
+  <div class="fixed top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-none z-20 w-72">
+    <div id="stormBanner" class="hidden bg-rose-600/95 border border-rose-200 text-white font-display font-bold text-xs px-3 py-1 rounded-full shadow-lg tracking-wider uppercase animate-bounce">
+      ⚠️ <span data-i18n="zoneShrinking">ZONA FECHANDO!</span>
+    </div>
+    <div id="airdropBanner" class="hidden bg-amber-500/95 border border-amber-100 text-slate-950 font-display font-bold text-xs px-3 py-1 rounded-full shadow-lg tracking-wider uppercase">
+      📦 <span data-i18n="airdropIncoming">AIRDROP A CAMINHO!</span>
+    </div>
+    <div id="killFeed" class="flex flex-col items-center gap-1 w-full"></div>
+  </div>
+
+  <!-- Botões de ação -->
+  <div class="flex items-end justify-between w-full">
+    <div class="flex flex-col gap-1 pl-1 pb-1 max-w-[58%]">
+      <div id="hudP2" class="flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-sky-500/60 px-2 py-1 rounded-xl text-[11px] font-bold text-sky-100 shadow" style="display:none">
+        <span class="font-display font-extrabold text-sky-400">P2</span>
+        <span id="hudP2Hearts" class="text-xs leading-none">❤️❤️</span>
+        <span class="text-slate-700">|</span>
+        <span class="text-sky-400">💣<span id="hudP2Bombs">1</span></span>
+        <span class="text-orange-400">🔥<span id="hudP2Range">2</span></span>
+        <span id="hudP2Tactical">🌀3</span>
+      </div>
+      <div id="hintText" class="text-[10px] font-bold text-slate-400/75 tracking-wider uppercase">WASD • ESPAÇO • E • Q • SHIFT</div>
+    </div>
+    <div class="pointer-events-auto flex items-end gap-2.5 sm:gap-3 pr-1 pb-1">
+      <button id="btnDash" type="button" class="relative overflow-hidden w-[58px] h-[58px] rounded-full bg-slate-900/90 border-2 border-cyan-400/80 flex flex-col items-center justify-center shadow-xl active:scale-90 transition">
+        <div id="dashCooldownFill" class="absolute bottom-0 left-0 right-0 bg-cyan-500/35 transition-all duration-75" style="height: 100%"></div>
+        <span class="text-lg leading-none relative z-10">⚡</span>
+        <span class="text-[8px] font-display font-extrabold text-cyan-300 relative z-10 tracking-wider mt-0.5">DASH</span>
+      </button>
+      <div class="relative">
+        <button id="btnCycleTactical" type="button" class="absolute -top-2.5 -left-2 z-20 w-6 h-6 rounded-full bg-slate-800 border border-amber-400 text-[10px] flex items-center justify-center shadow active:scale-90" title="Trocar bomba tática (Q)">🔄</button>
+        <button id="btnTactical" type="button" class="relative w-[58px] h-[58px] rounded-full bg-gradient-to-br from-amber-500/30 to-purple-600/40 backdrop-blur-md border-2 border-amber-400 flex flex-col items-center justify-center shadow-xl active:scale-90 transition">
+          <span id="tacticalIcon" class="text-xl leading-none">🌀</span>
+          <span id="tacticalLabel" class="text-[8px] font-display font-extrabold text-amber-200 uppercase tracking-tight mt-0.5">SHOCK</span>
+          <span id="tacticalAmmoBadge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-slate-950 font-display font-extrabold text-[10px] min-w-[18px] h-[18px] px-1 rounded-full border border-slate-950 flex items-center justify-center shadow">3</span>
+        </button>
+      </div>
+      <button id="btnBomb" type="button" class="w-[76px] h-[76px] rounded-full bg-gradient-to-br from-rose-500 to-orange-600 border-[3px] border-rose-200 flex flex-col items-center justify-center shadow-2xl active:scale-90 transition">
+        <span class="text-3xl leading-none drop-shadow">💣</span>
+        <span class="text-[9px] font-display font-extrabold text-white tracking-wider mt-0.5">BOMB</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PLACAR RÁPIDO DO DUELO ================= -->
+<div id="duelBanner" class="hidden duel-banner">
+  <div id="duelBannerTitle" class="duel-banner-title">ROUND 1</div>
+  <div id="duelBannerScore" class="duel-banner-score">0 × 0</div>
+  <div id="duelBannerSub" class="duel-banner-sub">MD3</div>
+</div>
+
+<!-- ================= ARQUIBANCADA AO VIVO ================= -->
+<div id="spectateLayer" class="hidden fixed inset-0 z-30 pointer-events-none">
+  <div class="spectate-top">
+    <span class="spectate-live-dot"></span>
+    <span data-i18n="spectateTitle">ARQUIBANCADA AO VIVO</span>
+    <span id="spectateMatchLabel" class="spectate-match-label"></span>
+  </div>
+  <div id="spectateBar" class="spectate-bar pointer-events-auto">
+    <div class="spectate-cams">
+      <button type="button" data-cam="total" class="spectate-cam active">🛰️ <span data-i18n="camTotal">VISÃO TOTAL</span></button>
+      <button type="button" data-cam="p1" class="spectate-cam">🟢 <span data-i18n="camP1">SEGUIR P1</span></button>
+      <button type="button" data-cam="p2" class="spectate-cam">🔵 <span data-i18n="camP2">SEGUIR P2</span></button>
+    </div>
+    <div class="cheer-bar">
+      <span class="cheer-label" data-i18n="cheerHint">TORCIDA</span>
+      <button type="button" class="cheer-btn" data-cheer="🔥">🔥</button>
+      <button type="button" class="cheer-btn" data-cheer="💣">💣</button>
+      <button type="button" class="cheer-btn" data-cheer="👏">👏</button>
+      <button type="button" class="cheer-btn" data-cheer="😱">😱</button>
+      <span id="cheerCooldown" class="cheer-cooldown"></span>
+      <button id="btnExitSpectate" type="button" class="spectate-exit">
+        <span data-i18n="spectateExit">SAIR</span>
+      </button>
+    </div>
+  </div>
+  <div id="cheerFloatLayer" class="cheer-float-layer"></div>
+</div>
+
+<div id="tutorialLayer" class="tut-layer hidden">
+  <div id="tutorialPointer" class="tut-pointer">
+    <span id="tutorialPointerLabel" class="tut-pointer-label">💣</span>
+    <span class="tut-pointer-arrow">▼</span>
+    <span class="tut-pointer-ring"></span>
+  </div>
+  <div id="tutorialCard" class="tut-card pointer-events-auto">
+    <div class="tut-head">
+      <span class="tut-badge">🎓 <span data-i18n="tutorialBadge">TUTORIAL</span></span>
+      <span id="tutorialStepCounter" class="tut-counter">1/7</span>
+      <button id="btnTutorialSkip" type="button" class="tut-skip">
+        <span data-i18n="tutorialSkip">PULAR TUTORIAL</span>
+      </button>
+    </div>
+    <div id="tutorialTitle" class="tut-title">1. MOVIMENTO</div>
+    <p id="tutorialText" class="tut-text">Use WASD (ou arraste o joystick) para se mover pela arena.</p>
+    <div id="tutorialKeys" class="tut-keys"></div>
+  </div>
+</div>
+
+<!-- ================= SELETOR DE MODOS ================= -->
+<div id="modeSheet" class="mode-sheet hidden" role="dialog" aria-modal="true" aria-labelledby="modeSheetTitle">
+  <div class="mode-sheet-backdrop" data-mode-close="1"></div>
+  <div class="mode-sheet-panel">
+    <div class="mode-sheet-head">
+      <div class="flex flex-col">
+        <span id="modeSheetTitle" data-i18n="modePickerTitle" class="mode-sheet-title">MODO E MAPA</span>
+        <span data-i18n="modePickerSub" class="mode-sheet-sub">Escolha como e onde jogar</span>
+      </div>
+      <button type="button" id="modeSheetClose" class="mode-sheet-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="mode-sheet-list">
+      <button type="button" data-mode="SOLO" class="mode-choice mode-row bg-emerald-500/15 border-2 border-emerald-400 shadow-lg">
+        <span class="mode-row-icon">👤</span>
+        <span class="mode-row-body"><span class="mode-row-name">SOLO</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
+      <button type="button" data-mode="DUEL" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
+        <span class="mode-row-icon">🥊</span>
+        <span class="mode-row-body"><span class="mode-row-name">1v1</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
+      <button type="button" data-mode="TEAM2v2" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
+        <span class="mode-row-icon">⚔️</span>
+        <span class="mode-row-body"><span class="mode-row-name">2v2</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
+      <button type="button" data-mode="TEAM3v3" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
+        <span class="mode-row-icon">🛡️</span>
+        <span class="mode-row-body"><span class="mode-row-name">3v3</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
+      <button type="button" data-mode="LOCAL" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
+        <span class="mode-row-icon">👥</span>
+        <span class="mode-row-body"><span class="mode-row-name">LOCAL 2P</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
+      <button type="button" data-mode="ONLINE" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
+        <span class="mode-row-icon">🌐</span>
+        <span class="mode-row-body"><span class="mode-row-name">ONLINE</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
+
+      <div class="mode-sheet-label" data-i18n="mapLabel">MAPA</div>
+      <div class="map-chip-grid">
+        <button type="button" data-map="NEON" class="map-choice map-chip border-emerald-400 ring-2 ring-emerald-400/40">
+          <span class="map-chip-icon">🌐</span>
+          <span class="map-chip-name">Neon</span>
+        </button>
+        <button type="button" data-map="DUNES" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">🏜️</span>
+          <span class="map-chip-name">Dunas</span>
+        </button>
+        <button type="button" data-map="FROST" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">❄️</span>
+          <span class="map-chip-name">Gelo</span>
+        </button>
+        <button type="button" data-map="EMBER" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">🌋</span>
+          <span class="map-chip-name">Vulcão</span>
+        </button>
+        <button type="button" data-map="JUNGLE" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">🌿</span>
+          <span class="map-chip-name">Selva</span>
+        </button>
+        <button type="button" data-map="SAKURA" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">🌸</span>
+          <span class="map-chip-name">Sakura</span>
+        </button>
+        <button type="button" data-map="METRO" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">🏙️</span>
+          <span class="map-chip-name">Metrópole</span>
+        </button>
+        <button type="button" data-map="PORTO" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">⚓</span>
+          <span class="map-chip-name">Porto</span>
+        </button>
+        <button type="button" data-map="ORBIT" class="map-choice map-chip opacity-60">
+          <span class="map-chip-icon">🛰️</span>
+          <span class="map-chip-name">Estação</span>
+        </button>
+      </div>
+    </div>
+    <button type="button" id="modeSheetDone" class="mode-sheet-done">
+      <span data-i18n="modeSheetDone">PRONTO</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= MENU / LOBBY ================= -->
+<div id="startScreen" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-3 overflow-y-auto">
+  <div class="hero-glow w-full max-w-2xl my-auto bg-gradient-to-b from-slate-900/97 to-slate-950/98 border border-slate-700/80 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col gap-3.5">
+
+    <!-- Barra fixa: identidade, moedas e idioma -->
+    <div id="lobbyTopBar" class="lobby-topbar">
+      <button id="lobbyTopProfile" type="button" class="lobby-top-id" title="Perfil">
+        <span id="lobbyTopAvatar" class="lobby-top-avatar">🐍</span>
+        <span class="lobby-top-meta">
+          <span id="lobbyTopNick" class="lobby-top-nick no-nick">Jogador (Sem Nick)</span>
+          <span id="lobbyTopCoins" class="lobby-top-coins">💰 <b>0</b></span>
+        </span>
+      </button>
+      <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 shrink-0">
+        <button id="langPT" type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-slate-950 transition">PT 🇧🇷</button>
+        <button id="langEN" type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition">EN 🇺🇸</button>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-2">
+      <span id="modeBadge" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-display font-bold text-[10px] tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">BATTLE ROYALE • 16 LUTADORES</span>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="btnAchievements" type="button" title="Conquistas" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">🏆</button>
+        <button id="btnOpenSettings" type="button" title="Ajustes" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">⚙️</button>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 text-3xl shadow-lg mb-1.5 border border-amber-200/50">💥</div>
+      <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-wider bg-gradient-to-r from-white via-amber-200 to-rose-400 bg-clip-text text-transparent">BLAST ROYALE</h1>
+      <p data-i18n="subtitle" class="text-[11px] sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">Sobreviva à arena, chute bombas com ondas de choque e seja o último de pé!</p>
+      <p id="padStatus" class="hidden mt-1.5"></p>
+      <p id="careerStats" class="text-[10px] font-bold text-amber-300/90 mt-1" style="display:none"></p>
+    </div>
+
+    <!-- Partida ao vivo no chaveamento -->
+    <button id="lobbyLiveBanner" type="button" class="lobby-live-banner hidden">
+      <span class="lobby-live-dot">🔴</span>
+      <span class="lobby-live-text">
+        <b data-i18n="lobbyLiveTitle">PARTIDA AO VIVO</b>
+        <span id="lobbyLiveMatch">—</span>
+      </span>
+      <span class="lobby-live-cta" data-i18n="lobbyLiveCta">ASSISTIR</span>
+    </button>
+
+    <!-- Seções recolhíveis -->
+    <section class="lobby-section" data-lobby-section="play">
+      <button type="button" class="lobby-section-head" data-lobby-tab="play" aria-expanded="false">
+        <span class="lobby-section-emoji">🎮</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabPlay">JOGAR</span>
+          <span class="lobby-section-sub" data-i18n="tabPlaySub">Modos, mapa e loadout</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="play">
+    <div class="grid sm:grid-cols-2 gap-3">
+      <!-- Coluna esquerda -->
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <label for="playerNameInput" data-i18n="nicknameLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Seu Codinome</label>
+          <input id="playerNameInput" type="text" maxlength="15" value="" placeholder="Digite seu nick..." class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3.5 py-2 text-sm font-bold text-white outline-none transition" />
+        </div>
+        <div id="p2NameRow" class="flex-col gap-1" style="display:none">
+          <label for="player2NameInput" data-i18n="p2NameLabel" class="text-[11px] font-bold text-sky-300 uppercase tracking-wider">Codinome do Jogador 2</label>
+          <input id="player2NameInput" type="text" maxlength="14" value="Viper-02" class="w-full bg-slate-950 border border-sky-700 focus:border-sky-400 rounded-xl px-3.5 py-2 text-sm font-bold text-white outline-none transition" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label data-i18n="loadoutLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Bomba Tática Inicial</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" data-tactical="SHOCK" class="tactical-choice active flex flex-col items-center p-2 rounded-2xl bg-amber-500/20 border-2 border-amber-400 text-center transition active:scale-95">
+              <span class="text-xl mb-0.5">🌀</span>
+              <span data-i18n="tactShockName" class="font-display font-bold text-xs text-amber-300">Choque</span>
+              <span data-i18n="tactShockDesc" class="text-[9px] text-slate-300 leading-tight mt-0.5">Empurra rivais e bombas</span>
+            </button>
+            <button type="button" data-tactical="CRYO" class="tactical-choice flex flex-col items-center p-2 rounded-2xl bg-slate-800/70 border-2 border-slate-700 text-center transition active:scale-95">
+              <span class="text-xl mb-0.5">❄️</span>
+              <span data-i18n="tactCryoName" class="font-display font-bold text-xs text-cyan-300">Criogênica</span>
+              <span data-i18n="tactCryoDesc" class="text-[9px] text-slate-400 leading-tight mt-0.5">Congela o chão e lentidão</span>
+            </button>
+            <button type="button" data-tactical="C4" class="tactical-choice flex flex-col items-center p-2 rounded-2xl bg-slate-800/70 border-2 border-slate-700 text-center transition active:scale-95">
+              <span class="text-xl mb-0.5">📡</span>
+              <span data-i18n="tactC4Name" class="font-display font-bold text-xs text-rose-300">C4 Remoto</span>
+              <span data-i18n="tactC4Desc" class="text-[9px] text-slate-400 leading-tight mt-0.5">Detone quando quiser</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna direita -->
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1.5">
+          <label data-i18n="modeLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Modo de Jogo</label>
+          <button id="modeSelectBtn" type="button" class="mode-select-btn" aria-haspopup="dialog" aria-controls="modeSheet">
+            <span id="modeSelectIcon" class="mode-select-icon">👤</span>
+            <span class="mode-select-text">
+              <span id="modeSelectName" class="mode-select-name">SOLO</span>
+            </span>
+            <span class="mode-select-change">
+              <span data-i18n="modeChange">TROCAR</span>
+              <span class="mode-select-chevron">▾</span>
+            </span>
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label data-i18n="mapLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Mapa</label>
+          <button id="mapSelectBtn" type="button" class="mode-select-btn map-select-btn" aria-haspopup="dialog" aria-controls="modeSheet">
+            <span class="mode-select-icon map-select-thumb">
+              <canvas id="mapPreview" width="64" height="64"></canvas>
+            </span>
+            <span class="mode-select-text">
+              <span id="mapPreviewName" class="mode-select-name">Neon Grid</span>
+              <span class="mode-select-sub" data-i18n="mapPickSub">7 mapas disponíveis</span>
+            </span>
+            <span class="mode-select-change">
+              <span data-i18n="modeChange">TROCAR</span>
+              <span class="mode-select-chevron">▾</span>
+            </span>
+          </button>
+        </div>
+
+        <div id="duelBestRow" class="hidden flex-col gap-1.5">
+          <label data-i18n="duelFormatLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Formato da Série</label>
+          <div class="settings-seg" id="duelBestSeg">
+            <button type="button" data-duel-best="3" class="active">MD3</button>
+            <button type="button" data-duel-best="5">MD5</button>
+          </div>
+          <p class="text-[9px] text-slate-500 leading-snug" data-i18n="duelFormatHint">MD5 é usada nas finais do mata-mata.</p>
+        </div>
+      </div>
+    </div>
+
+      <p id="onlineTabHint" data-i18n="onlineModeHint" class="hidden text-[10px] font-bold text-center text-cyan-300 bg-cyan-500/10 border border-cyan-500/40 rounded-xl px-2 py-1.5">
+        🌐 Modo online selecionado — conecte-se na seção ONLINE.
+      </p>
+
+      <!-- Features -->
+      <div id="featureStrip" class="grid grid-cols-3 gap-2 bg-slate-950/70 p-2 rounded-2xl border border-slate-800 text-[10px] text-slate-300">
+        <div class="flex flex-col items-center text-center">
+          <span class="text-sm">🌿</span>
+          <span class="font-semibold mt-0.5"><span data-i18n="featBush">Arbustos Furtivos</span></span>
+        </div>
+        <div class="flex flex-col items-center text-center border-x border-slate-800">
+          <span class="text-sm">🌀</span>
+          <span class="font-semibold mt-0.5"><span data-i18n="featPortal">Portais Quânticos</span></span>
+        </div>
+        <div class="flex flex-col items-center text-center">
+          <span class="text-sm">⚡</span>
+          <span class="font-semibold mt-0.5"><span data-i18n="featDash">Esquiva Dash</span></span>
+        </div>
+      </div>
+
+      <button id="btnTutorial" type="button" class="tut-launch w-full py-2.5 rounded-2xl bg-cyan-500/15 border-2 border-cyan-400/70 text-cyan-200 font-display font-extrabold text-xs sm:text-sm tracking-wider uppercase active:scale-95 transition">
+        🎓 <span data-i18n="tutorialBtn">TUTORIAL DE PRIMEIRA PARTIDA</span>
+      </button>
+      <button id="btnLeaguePlay" type="button" class="league-cta w-full">
+        <span data-i18n="leaguePlayBtn">🏅 JOGAR LIGA ONLINE (+3 PTS)</span>
+      </button>
+      <button id="btnStartMatch" type="button" class="btn-play-glow w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-display font-extrabold text-base sm:text-lg tracking-wider uppercase active:scale-95 transition shadow-xl">
+        <span data-i18n="playBtn">ENTRAR NA ARENA</span>
+      </button>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="profile">
+      <button type="button" class="lobby-section-head" data-lobby-tab="profile" aria-expanded="false">
+        <span class="lobby-section-emoji">🪪</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabProfile">PERFIL</span>
+          <span class="lobby-section-sub" data-i18n="tabProfileSub">Nick, avatar e resumo</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="profile">
+        <div class="profile-panel">
+          <div class="profile-head">
+            <div id="profileAvatarPreview" class="profile-avatar">🐍</div>
+            <div class="profile-head-main">
+              <label for="profileNickInput" data-i18n="profileNick" class="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Nick do Jogador</label>
+              <div class="profile-nick-row">
+                <input id="profileNickInput" type="text" maxlength="15" value="" placeholder="Digite seu nick..." class="profile-nick-input" />
+                <button id="btnSaveProfile" type="button" class="profile-save" data-i18n="profileSave">SALVAR</button>
+              </div>
+            </div>
+          </div>
+          <div class="profile-avatars" id="profileAvatars"></div>
+          <div id="profileStats" class="profile-stat-groups"></div>
+          <div id="profileRank" class="profile-rank"></div>
+          <p id="profileSync" class="profile-sync">📴 Modo local — entre na internet para sincronizar</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="league">
+      <button type="button" class="lobby-section-head" data-lobby-tab="league" aria-expanded="false">
+        <span class="lobby-section-emoji">📊</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabLeague">TABELA DA LIGA</span>
+          <span class="lobby-section-sub" data-i18n="tabLeagueSub">Liga ONLINE • +3 PTS por vitória</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="league">
+        <div class="league-panel">
+          <div class="league-legend"><span class="league-g8-dot"></span><span data-i18n="leagueG8">G8 — classificados ao mata-mata</span></div>
+          <p class="league-note" data-i18n="leagueNote">Só partidas ONLINE PvP pontuam. Treinos contra bots não alteram esta tabela.</p>
+          <div id="leagueTable" class="league-table"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="bracket">
+      <button type="button" class="lobby-section-head" data-lobby-tab="bracket" aria-expanded="false">
+        <span class="lobby-section-emoji">🏟️</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabBracket">TORNEIOS</span>
+          <span class="lobby-section-sub" data-i18n="tabBracketSub">Semanal + Copa de domingo</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="bracket">
+        <div class="champ-switch" id="champSwitch">
+          <button type="button" class="champ-tab active" data-champ="weekly">
+            🏆 <span data-i18n="champWeekly">CAMPEONATO SEMANAL</span>
+          </button>
+          <button type="button" class="champ-tab" data-champ="copa">
+            ⚡ <span data-i18n="champCopa">COPA RELÂMPAGO</span>
+          </button>
+        </div>
+        <div id="champWeekly">
+          <div id="weeklyPhase" class="champ-phase"></div>
+          <p id="weeklyPhaseHint" class="champ-hint"></p>
+          <div class="bracket-panel">
+            <p class="bracket-hint" data-i18n="bracketHint">Fase 1 (seg–qui): Liga ONLINE vale G8. Fase 2 (sex–sáb): mata-mata MD3 só para o Top 8.</p>
+            <div id="bracketBoard" class="bracket-board"></div>
+          </div>
+        </div>
+        <div id="champCopa" class="hidden">
+          <div id="copaPhase" class="champ-phase copa"></div>
+          <p id="copaHint" class="champ-hint"></p>
+          <div class="bracket-panel">
+            <div id="copaBoard" class="bracket-board"></div>
+            <p id="copaRewards" class="copa-reward"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="shop">
+      <button type="button" class="lobby-section-head" data-lobby-tab="shop" aria-expanded="false">
+        <span class="lobby-section-emoji">🛒</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabShop">LOJA VISUAL</span>
+          <span class="lobby-section-sub" data-i18n="tabShopSub">Skins de personagens, bombas e efeitos</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="shop">
+        <div class="shop-panel">
+          <div class="shop-wallet">
+            <div class="shop-coins">💰 <b id="shopCoins">0</b> <span data-i18n="shopCoins">moedas</span></div>
+            <div class="shop-wallet-actions">
+              <button id="btnDailyReward" type="button" class="shop-daily" data-i18n="shopDaily">🎁 DIÁRIA</button>
+              <button id="btnTestCoins" type="button" class="shop-test" data-i18n="shopTest">+200 MOEDAS</button>
+            </div>
+          </div>
+          <p class="shop-note" data-i18n="shopZeroP2W">Só visual: nenhuma skin altera dano, vida ou alcance.</p>
+          <div class="shop-section-label" data-i18n="shopChars">PERSONAGENS</div>
+          <div id="charaShop" class="shop-grid"></div>
+          <div class="shop-section-label" data-i18n="shopBombs">BOMBAS</div>
+          <div id="bombShop" class="shop-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="online">
+      <button type="button" class="lobby-section-head" data-lobby-tab="online" aria-expanded="false">
+        <span class="lobby-section-emoji">🌐</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabOnline">ONLINE</span>
+          <span class="lobby-section-sub" data-i18n="tabOnlineSub">Jogar pela internet</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="online">
+        <div id="onlinePanel" class="flex flex-col gap-2.5 bg-slate-950/70 border border-slate-800 rounded-2xl p-3">
+      <div class="flex items-center justify-between">
+        <span data-i18n="onlineLabel" class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">Multiplayer a Distância</span>
+        <span class="text-[9px] font-bold text-slate-500 tracking-wider">WebRTC P2P</span>
+      </div>
+      <p data-i18n="onlineHint" class="text-[10px] text-slate-400 leading-snug">Sem servidor: troque os códigos abaixo com seu amigo.</p>
+      <div id="netServerBox" class="net-server hidden">
+        <div class="net-server-head">
+          <span class="net-server-title" data-i18n="serverTitle">🌐 Servidor online</span>
+          <span id="netServerState" class="net-server-state" data-i18n="serverChecking">verificando…</span>
+        </div>
+        <div id="netServerLobby" class="net-server-lobby">
+          <button id="btnServerCreate" type="button" class="net-server-btn primary" data-i18n="serverCreate">➕ Criar sala</button>
+          <div class="net-server-join">
+            <input id="netServerCode" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="CÓDIGO" aria-label="Código da sala" />
+            <button id="btnServerJoin" type="button" class="net-server-btn" data-i18n="serverJoin">Entrar</button>
+          </div>
+        </div>
+        <div id="netServerRoom" class="net-server-room hidden">
+          <div class="net-server-code-row">
+            <span data-i18n="serverRoomCode">Código da sala</span>
+            <b id="netServerCodeOut">----</b>
+          </div>
+          <div class="net-server-actions">
+            <button id="btnServerCopy" type="button" class="net-server-btn" data-i18n="serverCopyLink">Copiar link</button>
+            <button id="btnServerLeave" type="button" class="net-server-btn danger" data-i18n="serverLeave">Sair</button>
+          </div>
+          <p id="netServerHint" class="net-server-hint"></p>
+        </div>
+      </div>
+      <button id="netManualToggle" type="button" class="net-manual-toggle hidden" data-i18n="serverManual">Usar códigos manuais</button>
+      <div id="netManualArea" class="flex flex-col gap-2.5">
+      <div class="flex gap-2">
+        <button id="btnHostRole" type="button" class="flex-1 py-2 rounded-xl bg-slate-800/70 border-2 border-slate-700 font-display font-bold text-xs text-slate-300 transition active:scale-95">
+          🏠 <span data-i18n="hostRole">Criar sala</span>
+        </button>
+        <button id="btnGuestRole" type="button" class="flex-1 py-2 rounded-xl bg-slate-800/70 border-2 border-slate-700 font-display font-bold text-xs text-slate-300 transition active:scale-95">
+          🔗 <span data-i18n="guestRole">Entrar na sala</span>
+        </button>
+      </div>
+      <div id="netHostBox" class="flex-col gap-1.5" style="display:none">
+        <label for="netOfferOut" data-i18n="inviteLabel" class="text-[10px] font-bold text-slate-300">Envie este convite para o outro jogador</label>
+        <div class="flex gap-1.5">
+          <button id="btnCreateInvite" type="button" class="flex-1 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/60 text-emerald-300 font-display font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="createInvite">1. Gerar convite</span>
+          </button>
+          <button id="btnCopyOffer" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="copyCode">Copiar</span>
+          </button>
+          <button id="btnShareOffer" type="button" class="px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="shareBtn">Enviar</span>
+          </button>
+        </div>
+        <textarea id="netOfferOut" readonly rows="2" class="net-code" placeholder="..."></textarea>
+        <label for="netAnswerIn" data-i18n="answerLabel" class="text-[10px] font-bold text-slate-300 mt-0.5">Cole aqui a resposta que ele enviou</label>
+        <textarea id="netAnswerIn" rows="2" class="net-code" placeholder="Cole o código de resposta..."></textarea>
+        <div class="flex gap-1.5">
+          <button id="btnPasteAnswer" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="pasteBtn">Colar</span>
+          </button>
+          <button id="btnConnectAnswer" type="button" class="flex-1 py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/60 text-cyan-300 font-display font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="connectAnswer">2. Conectar</span>
+          </button>
+        </div>
+      </div>
+      <div id="netGuestBox" class="flex-col gap-1.5" style="display:none">
+        <label for="netOfferIn" data-i18n="offerInLabel" class="text-[10px] font-bold text-slate-300">Cole aqui o convite recebido</label>
+        <textarea id="netOfferIn" rows="2" class="net-code" placeholder="Cole o convite..."></textarea>
+        <div class="flex gap-1.5">
+          <button id="btnPasteOffer" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="pasteBtn">Colar</span>
+          </button>
+          <button id="btnGenAnswer" type="button" class="flex-1 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/60 text-emerald-300 font-display font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="genAnswer">Gerar resposta</span>
+          </button>
+        </div>
+        <label for="netAnswerOut" data-i18n="responseLabel" class="text-[10px] font-bold text-slate-300 mt-0.5">Envie esta resposta de volta para o host</label>
+        <textarea id="netAnswerOut" readonly rows="2" class="net-code" placeholder="..."></textarea>
+        <div class="flex gap-1.5">
+          <button id="btnCopyAnswer" type="button" class="flex-1 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="copyCode">Copiar</span>
+          </button>
+          <button id="btnShareAnswer" type="button" class="flex-1 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="shareBtn">Enviar</span>
+          </button>
+        </div>
+      </div>
+      </div>
+      <div id="netStatus" class="text-[10px] font-bold text-center rounded-xl px-2 py-1 border bg-slate-800/70 border-slate-700 text-slate-400">
+        Escolha criar ou entrar em uma sala.
+      </div>
+        </div>
+        <button id="btnLeaguePlayOnline" type="button" class="league-cta w-full mt-2">
+          <span data-i18n="leaguePlayBtn">🏅 JOGAR LIGA ONLINE (+3 PTS)</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="chroma">
+      <button type="button" class="lobby-section-head" data-lobby-tab="chroma" aria-expanded="false">
+        <span class="lobby-section-emoji">🎨</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="chromaTitle">CHROMA DROP</span>
+          <span class="lobby-section-sub" data-i18n="tabChromaSub">Mini-jogo das cores</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="chroma">
+        <button id="btnChromaDrop" type="button" class="chroma-btn-glow w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-xl">
+          <span data-i18n="chromaPlay">🎨 CHROMA DROP</span>
+          <span class="block text-[10px] font-bold opacity-80 mt-0.5" data-i18n="tabChromaSub">Mini-jogo das cores</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="progress">
+      <button type="button" class="lobby-section-head" data-lobby-tab="progress" aria-expanded="false">
+        <span class="lobby-section-emoji">📈</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="progTitle">PROGRESSO</span>
+          <span class="lobby-section-sub" data-i18n="progSub">Nível, missões, passe e ranking</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="progress">
+        <div id="progressPanel" class="prog-wrap">
+          <div class="prog-level">
+            <div id="levelBadge" class="prog-level-badge">1</div>
+            <div class="prog-level-main">
+              <div class="prog-level-title"><span data-i18n="progLevelLabel">NÍVEL</span> <span id="levelNum">1</span></div>
+              <div id="levelXpText" class="prog-level-sub">0 / 90 XP</div>
+              <div class="prog-bar"><div id="levelXpBar" class="prog-bar-fill" style="width:0%"></div></div>
+            </div>
+            <div class="prog-level-side">
+              <div id="seasonName">Temporada 1</div>
+              <div id="eventLine"></div>
+            </div>
+          </div>
+          <div class="prog-event">
+            <span id="eventIcon">✨</span>
+            <div><b id="eventName">Evento do dia</b><span id="eventDesc"></span></div>
+          </div>
+          <div class="prog-tabs">
+            <button type="button" data-progress-tab="missions" class="prog-tab active" data-i18n="progMissions">🎯 Missões</button>
+            <button type="button" data-progress-tab="season" class="prog-tab" data-i18n="progSeason">🎫 Passe</button>
+            <button type="button" data-progress-tab="ranking" class="prog-tab" data-i18n="progRanking">🏆 Ranking</button>
+          </div>
+          <div data-progress-body="missions" class="prog-list"></div>
+          <div data-progress-body="season" class="prog-list hidden"></div>
+          <div data-progress-body="ranking" class="prog-list hidden"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="hero">
+      <button type="button" class="lobby-section-head" data-lobby-tab="hero" aria-expanded="false">
+        <span class="lobby-section-emoji">🧑‍🚀</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="heroTitle">PERSONAGEM</span>
+          <span class="lobby-section-sub" data-i18n="heroSub">Visual, skins e estilo</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="hero">
+        <div class="hero-panel">
+          <div id="skinsGrid" class="skins-grid"></div>
+          <p class="skin-hint" data-i18n="heroHint">Ganhe XP para liberar skins por nível. Skins exclusivas vêm do Passe de Temporada (coluna Plus).</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="gameToast" class="hidden toast" role="status" aria-live="polite"></div>
+
+<!-- ================= POPUP DE CONQUISTA ================= -->
+<div id="achievementPopup" class="fixed top-20 right-4 z-50 hidden pointer-events-none" role="status" aria-live="polite">
+  <div class="achievement-popup bg-gradient-to-r from-amber-500/95 to-orange-600/95 border-2 border-amber-300 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 max-w-xs">
+    <div class="text-3xl" id="achieveIcon">🏆</div>
+    <div class="flex-1">
+      <div id="achieveLabel" class="text-[10px] font-bold text-amber-100 uppercase tracking-wider" data-i18n="achieveUnlocked">Conquista Desbloqueada!</div>
+      <div id="achieveTitle" class="font-display font-extrabold text-white text-sm">Título</div>
+      <div id="achieveDesc" class="text-[11px] text-amber-50 mt-0.5">Descrição</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL DE CONQUISTAS ================= -->
+<div id="achievementsModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 shadow-2xl">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-2xl font-extrabold text-white">🏆 Conquistas</h2>
+      <button id="btnCloseAchievements" type="button" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 font-bold text-lg active:scale-90 transition">✕</button>
+    </div>
+    <div id="achievementsList" class="grid gap-3"></div>
+  </div>
+</div>
+
+<!-- ================= CHROMA DROP - JOGO ================= -->
+<div id="chromaModal" class="hidden fixed inset-0 z-40 bg-gradient-to-b from-slate-950 via-purple-950/30 to-slate-950">
+  <canvas id="chromaCanvas" class="block w-full h-full"></canvas>
+
+  <!-- HUD do Chroma -->
+  <div class="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10 pointer-events-none" id="chromaTopHud">
+    <div id="chromaRoundBadge" class="bg-slate-950/80 backdrop-blur-md border-2 border-purple-400/60 rounded-full px-4 py-1 text-purple-200 font-display font-bold text-sm">
+      RODADA <span id="chromaRoundNum">1</span>
+    </div>
+    <div id="chromaColorDisplay" class="flex items-center gap-3 bg-slate-950/90 backdrop-blur-md border-2 border-white/20 rounded-2xl px-6 py-3 shadow-2xl">
+      <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Vá para:</span>
+      <div id="chromaCurrentColor" class="chroma-color-pulse w-16 h-16 rounded-2xl border-4 border-white shadow-lg" style="background:#ef4444"></div>
+      <span id="chromaColorName" class="font-display font-extrabold text-2xl text-white">VERMELHO</span>
+    </div>
+    <div id="chromaTimerBar" class="w-64 h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div id="chromaTimerFill" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all" style="width:100%"></div>
+    </div>
+  </div>
+
+  <!-- Botões -->
+  <div class="absolute bottom-4 right-4 flex gap-2 z-10">
+    <button id="btnChromaMute" type="button" class="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-700 flex items-center justify-center text-lg hover:bg-slate-800 active:scale-90 transition">🔊</button>
+    <button id="btnChromaQuit" type="button" class="px-4 py-2 rounded-xl bg-rose-600/80 border border-rose-400 text-white font-display font-bold text-sm uppercase active:scale-90 transition">✕ Sair</button>
+  </div>
+</div>
+
+<!-- ================= CHROMA DROP - GAME OVER ================= -->
+<div id="chromaGameOver" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="chroma-gameover-anim w-full max-w-sm bg-gradient-to-b from-purple-900/90 to-slate-900/90 border-2 border-purple-400/50 rounded-3xl p-6 text-center shadow-2xl">
+    <div class="text-7xl mb-4">💥</div>
+    <h2 class="font-display text-3xl font-extrabold text-white uppercase tracking-wide mb-2">VOCÊ CAIU!</h2>
+    <p class="text-slate-300 text-sm mb-6">Não estava na cor certa...</p>
+
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-slate-950/60 border border-slate-700 rounded-2xl p-3">
+        <div class="text-[10px] text-slate-400 uppercase font-bold">Rodadas</div>
+        <div id="chromaFinalRounds" class="font-display text-3xl font-extrabold text-purple-300">0</div>
+      </div>
+      <div class="bg-slate-950/60 border border-slate-700 rounded-2xl p-3">
+        <div class="text-[10px] text-slate-400 uppercase font-bold">Recorde</div>
+        <div id="chromaHighScore" class="font-display text-3xl font-extrabold text-amber-300">0</div>
+      </div>
+    </div>
+
+    <div id="chromaNewRecord" class="hidden mb-4 bg-amber-500/20 border-2 border-amber-400 rounded-xl py-2 px-4">
+      <span class="font-display font-extrabold text-amber-300">🏆 NOVO RECORDE!</span>
+    </div>
+
+    <button id="btnChromaPlayAgain" type="button" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-lg mb-2">
+      🔄 JOGAR NOVAMENTE
+    </button>
+    <button id="btnChromaBackMenu" type="button" class="w-full py-2 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
+      Voltar ao menu
+    </button>
+  </div>
+</div>
+
+<!-- ================= AJUSTES ================= -->
+<div id="settingsModal" class="hidden fixed inset-0 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-md max-h-[92vh] overflow-y-auto bg-slate-900 border-2 border-slate-700 rounded-3xl p-5 shadow-2xl" style="touch-action:pan-y;-webkit-overflow-scrolling:touch">
+    <div class="flex items-center justify-between gap-2 mb-2">
+      <h2 class="font-display text-xl font-extrabold text-white uppercase tracking-wide">⚙️ <span data-i18n="settingsTitle">AJUSTES</span></h2>
+      <button id="btnCloseSettings" type="button" class="w-9 h-9 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 font-bold active:scale-90 transition">✕</button>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title" data-i18n="settingsAudio">ÁUDIO</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setVolume">Volume geral</div>
+          <div class="settings-desc" data-i18n="setVolumeDesc">Efeitos sonoros do jogo</div>
+        </div>
+        <span id="setVolumeVal" class="settings-value">80%</span>
+      </div>
+      <input id="setVolume" type="range" min="0" max="100" step="5" value="80" class="settings-range" aria-label="Volume" />
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setMusic">Volume da música</div>
+          <div class="settings-desc" data-i18n="setMusicDesc">Trilha sonora do menu e das partidas</div>
+        </div>
+        <span id="setMusicVal" class="settings-value">45%</span>
+      </div>
+      <input id="setMusic" type="range" min="0" max="100" step="5" value="45" class="settings-range" aria-label="Música" />
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title" data-i18n="settingsControls">CONTROLES</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setVibration">Vibração</div>
+          <div class="settings-desc" data-i18n="setVibrationDesc">Vibrar ao levar dano (celular/controle)</div>
+        </div>
+        <button id="setVibration" type="button" class="settings-switch" data-on="1" role="switch" aria-checked="true" aria-label="Vibração"></button>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label" data-i18n="setJoySize">Tamanho do joystick</div>
+        <div class="settings-seg" id="setJoySize">
+          <button type="button" data-size="92" data-i18n="joySmall">P</button>
+          <button type="button" data-size="112" class="active" data-i18n="joyMedium">M</button>
+          <button type="button" data-size="132" data-i18n="joyLarge">G</button>
+        </div>
+      </div>
+      <div class="settings-row">
+        <div class="settings-label" data-i18n="setJoyOpacity">Opacidade do joystick</div>
+        <span id="setJoyOpacityVal" class="settings-value">80%</span>
+      </div>
+      <input id="setJoyOpacity" type="range" min="30" max="100" step="5" value="80" class="settings-range" aria-label="Opacidade do joystick" />
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setDeadzone">Zona morta do analógico</div>
+          <div class="settings-desc" data-i18n="setDeadzoneDesc">Aumente se o personagem se mover sozinho</div>
+        </div>
+        <span id="setDeadzoneVal" class="settings-value">22%</span>
+      </div>
+      <input id="setDeadzone" type="range" min="5" max="45" step="1" value="22" class="settings-range" aria-label="Zona morta do analógico" />
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title" data-i18n="settingsScreen">TELA</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setShake">Tremor de tela</div>
+          <div class="settings-desc" data-i18n="setShakeDesc">Sacudir a câmera nas explosões</div>
+        </div>
+        <button id="setShake" type="button" class="settings-switch" data-on="1" role="switch" aria-checked="true" aria-label="Tremor de tela"></button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setReduceMotion">Reduzir movimento</div>
+          <div class="settings-desc" data-i18n="setReduceMotionDesc">Desliga tremor, flashes e animações extras</div>
+        </div>
+        <button id="setReduceMotion" type="button" class="settings-switch" data-on="0" role="switch" aria-checked="false" aria-label="Reduzir movimento"></button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setFps">Mostrar FPS</div>
+          <div class="settings-desc" data-i18n="setFpsDesc">Exibe a taxa de quadros durante o jogo</div>
+        </div>
+        <button id="setFps" type="button" class="settings-switch" data-on="0" role="switch" aria-checked="false" aria-label="Mostrar FPS"></button>
+      </div>
+    </div>
+
+    <button id="btnResetSettings" type="button" class="w-full mt-2 py-2.5 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition" data-i18n="setReset">RESTAURAR PADRÕES</button>
+  </div>
+</div>
+
+<!-- ================= AGENDAR PARTIDA ================= -->
+<div id="scheduleModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="schedule-card">
+    <div class="schedule-head">
+      <h2 class="font-display font-extrabold text-white text-lg uppercase tracking-wide" data-i18n="bracketScheduleTitle">AGENDAR PARTIDA</h2>
+      <button id="btnScheduleClose" type="button" class="schedule-close" aria-label="Fechar">✕</button>
+    </div>
+    <div id="scheduleMatchLabel" class="schedule-match">1º × 8º</div>
+    <div class="schedule-fields">
+      <label class="schedule-field">
+        <span data-i18n="bracketDay">Dia</span>
+        <select id="schedDay"></select>
+      </label>
+      <label class="schedule-field">
+        <span data-i18n="bracketTime">Horário</span>
+        <select id="schedTime"></select>
+      </label>
+    </div>
+    <div class="schedule-actions">
+      <button id="btnSchedulePropose" type="button" class="schedule-propose" data-i18n="bracketPropose">PROPOR HORÁRIO</button>
+      <button id="btnScheduleAccept" type="button" class="schedule-accept" data-i18n="bracketAccept">ACEITAR PROPOSTA</button>
+    </div>
+    <p id="scheduleStatus" class="schedule-status"></p>
+  </div>
+</div>
+
+<!-- ================= PAUSA ================= -->
+<div id="pauseModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="pause-card w-full max-w-sm bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 text-center shadow-2xl">
+    <div class="text-5xl mb-3">⏸️</div>
+    <h2 class="font-display text-2xl font-extrabold text-white uppercase tracking-wide mb-1">PAUSADO</h2>
+    <p id="pauseSubtitle" class="text-xs text-slate-400 mb-5">Respire. A arena espera por você.</p>
+    <button id="btnResume" type="button" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-400 text-slate-950 font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-lg mb-2">
+      ▶ CONTINUAR
+    </button>
+    <button id="btnPauseSettings" type="button" data-i18n="pauseSettings" class="w-full py-2.5 mb-2 rounded-2xl bg-slate-800 border border-cyan-600/60 text-cyan-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
+      ⚙️ AJUSTES
+    </button>
+    <button id="btnPauseLobby" type="button" class="w-full py-2.5 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
+      SAIR PARA O LOBBY
+    </button>
+  </div>
+</div>
+
+<!-- ================= FIM DE PARTIDA ================= -->
+<div id="endModal" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 text-center shadow-2xl flex flex-col items-center gap-4">
+    <div id="endTrophy" class="text-5xl">🏆</div>
+    <div>
+      <div id="endRankBadge" class="inline-block px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-display font-extrabold text-sm mb-1">#1 / 16</div>
+      <h2 id="endTitle" class="font-display text-2xl sm:text-3xl font-extrabold text-white uppercase tracking-wide">VITÓRIA ROYALE!</h2>
+      <p id="endSubtitle" class="text-xs sm:text-sm text-slate-400 mt-1">Você dominou a arena e eliminou todos os rivais!</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3 w-full bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+      <div class="flex flex-col items-center">
+        <span data-i18n="statKillsLabel" class="text-[10px] leading-tight text-slate-400 uppercase font-bold text-center">Eliminações</span>
+        <span id="endKillsVal" class="font-display text-2xl font-extrabold text-rose-400">0</span>
+      </div>
+      <div class="flex flex-col items-center border-l border-slate-800">
+        <span data-i18n="statTimeLabel" class="text-[10px] leading-tight text-slate-400 uppercase font-bold text-center">Sobrevivência</span>
+        <span id="endTimeVal" class="font-display text-2xl font-extrabold text-cyan-400">00:00</span>
+      </div>
+    </div>
+    <div id="endXpLine" class="end-xp">⭐ +0 XP</div>
+    <div id="endLeagueLine" class="end-league hidden"></div>
+    <div id="endTrainingLine" class="end-training hidden"></div>
+    <button id="btnPlayAgain" type="button" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-400 text-slate-950 font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-lg">
+      <span data-i18n="playAgainBtn">JOGAR NOVAMENTE</span>
+    </button>
+    <button id="btnBackToMenu" type="button" class="w-full py-2 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
+      <span data-i18n="backToMenu">Voltar ao lobby</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= PERFIL DO JOGADOR ================= -->
+<div id="statsModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="stats-card">
+    <button id="btnStatsClose" type="button" class="stats-close" aria-label="Fechar">✕</button>
+    <div class="flex items-center gap-2.5 pr-8">
+      <div id="statsAvatar" class="w-14 h-14 rounded-2xl bg-slate-950/80 border-2 border-amber-400/45 flex items-center justify-center text-3xl shrink-0">🐍</div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <h2 id="statsName" class="font-display font-extrabold text-white text-lg leading-tight truncate">Jogador</h2>
+          <span id="statsYouBadge" class="hidden px-1.5 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[9px] font-extrabold tracking-wider" data-i18n="statsYou">VOCÊ</span>
+        </div>
+        <div id="statsRank" class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-400/40 text-amber-300 text-[10px] font-bold">🏆 0 · Bronze</div>
+      </div>
+    </div>
+    <div id="statsGrid" class="stats-grid"></div>
+    <p class="mt-2.5 text-center text-[9px] font-bold text-slate-500 uppercase tracking-wider" data-i18n="statsFoot">Estatísticas ranqueadas • Atualizadas a cada partida</p>
+  </div>
+</div>
+
+<!-- ================= ESCOLHER NICK (COMPETITIVO) ================= -->
+<div id="nickModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="report-card nick-card" role="dialog" aria-modal="true" aria-labelledby="nickModalTitle">
+    <button id="btnNickModalClose" type="button" class="stats-close" aria-label="Fechar">✕</button>
+    <div class="text-4xl">🪪</div>
+    <h2 id="nickModalTitle" class="font-display text-lg font-extrabold text-white uppercase tracking-wide" data-i18n="nickModalTitle">Escolha seu Nick para competir</h2>
+    <p class="text-xs text-slate-400" data-i18n="nickModalSub">Seu nick aparece na Liga e no Mata-Mata. Entre 3 e 15 caracteres.</p>
+    <input id="nickModalInput" type="text" maxlength="15" value="" placeholder="Digite seu nick..." class="profile-nick-input nick-modal-input" autocomplete="nickname" />
+    <p id="nickModalError" class="nick-modal-error" role="alert"></p>
+    <div class="report-actions">
+      <button id="btnNickModalCancel" type="button" class="report-btn ghost" data-i18n="voiceReportCancel">CANCELAR</button>
+      <button id="btnNickModalSave" type="button" class="report-btn save" data-i18n="nickModalSave">SALVAR E CONTINUAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DENÚNCIA DE VOZ ================= -->
+<div id="voiceReportModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="report-card">
+    <div class="text-4xl">⚠️</div>
+    <h2 class="font-display text-lg font-extrabold text-white uppercase tracking-wide" data-i18n="voiceReportTitle">DENUNCIAR JOGADOR</h2>
+    <p id="voiceReportSub" class="text-xs text-slate-400">Denunciar o adversário por voz imprópria ou comportamento abusivo?</p>
+    <div class="report-actions">
+      <button id="btnVoiceReportCancel" type="button" class="report-btn ghost" data-i18n="voiceReportCancel">CANCELAR</button>
+      <button id="btnVoiceReportConfirm" type="button" class="report-btn danger" data-i18n="voiceReportSend">ENVIAR DENÚNCIA</button>
+    </div>
+  </div>
+</div>
+
+<audio id="voiceRemoteAudio" autoplay playsinline class="hidden"></audio>
+
+<!-- ================= GIRAR CELULAR (PAISAGEM) ================= -->
+<div id="rotateGate" class="rotate-gate hidden" role="dialog" aria-modal="true">
+  <div class="rotate-gate-phone" aria-hidden="true">📱</div>
+  <h2 class="rotate-gate-title" data-i18n="rotateTitle">Gire o celular para jogar</h2>
+  <p class="rotate-gate-sub" data-i18n="rotateSub">A arena é jogada na horizontal, em tela cheia.</p>
+  <button id="btnRotateGateFullscreen" type="button" class="rotate-gate-btn" data-i18n="rotateBtn">ENTRAR EM TELA CHEIA</button>
+</div>
+
+<!-- ================= RECONEXÃO ONLINE ================= -->
+<div id="netReconnect" class="hidden net-reconnect">
+  <div class="net-reconnect-card">
+    <div class="net-reconnect-icon">📡</div>
+    <div id="netReconnectTitle" class="net-reconnect-title">RECONECTANDO...</div>
+    <div id="netReconnectCountdown" class="net-reconnect-countdown" aria-live="off">12s</div>
+    <div id="netReconnectSub" class="net-reconnect-sub">Aguardando a rede voltar. A partida está pausada.</div>
+    <button id="btnNetReconnectQuit" type="button" class="net-reconnect-quit" data-i18n="exitBtn">SAIR DA SALA</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script src="firebase-sync.js"></script>
+</body>
+</html>

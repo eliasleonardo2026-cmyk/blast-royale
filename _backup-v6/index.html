@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Blast Royale — Tactical Bomb Arena</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden;
+  touch-action: none; overscroll-behavior: none; position: fixed; inset: 0;
+  background: #0b0f19; font-family: 'Inter', sans-serif;
+}
+input { user-select: text; -webkit-user-select: text; touch-action: auto; }
+textarea { user-select: text; -webkit-user-select: text; touch-action: auto; }
+.font-display { font-family: 'Chakra Petch', sans-serif; }
+canvas#gameCanvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.safe-top { padding-top: max(10px, env(safe-area-inset-top)); }
+.safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.hero-glow {
+  background:
+    radial-gradient(60% 70% at 50% 0%, rgba(16,185,129,0.18), transparent 70%),
+    radial-gradient(50% 60% at 85% 30%, rgba(56,189,248,0.14), transparent 70%),
+    radial-gradient(50% 60% at 15% 30%, rgba(244,63,94,0.12), transparent 70%);
+}
+.net-code {
+  width: 100%; background: #020617; border: 1px solid #334155; border-radius: 0.75rem;
+  padding: 0.5rem; font-size: 10px; line-height: 1.35;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #94a3b8; resize: none;
+}
+.net-code:focus { border-color: #22d3ee; outline: none; }
+
+/* ============ ANIMAÇÕES ============ */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 18px rgba(16, 185, 129, 0.45); }
+  50% { box-shadow: 0 0 32px rgba(16, 185, 129, 0.85); }
+}
+.btn-play-glow { animation: pulseGlow 2s infinite ease-in-out; }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.kill-feed-item { animation: slideIn 0.2s ease-out; }
+
+@keyframes achievementPop {
+  0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+  10% { opacity: 1; transform: translateY(0) scale(1.05); }
+  20% { transform: translateY(0) scale(1); }
+  90% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.95); }
+}
+.achievement-popup { animation: achievementPop 4s ease-out forwards; }
+
+/* ============ CHROMA DROP ============ */
+@keyframes chromaBtnGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(168,85,247,0.5), 0 0 40px rgba(236,72,153,0.3); }
+  50% { box-shadow: 0 0 30px rgba(168,85,247,0.8), 0 0 60px rgba(236,72,153,0.5); }
+}
+.chroma-btn-glow { animation: chromaBtnGlow 2s infinite ease-in-out; }
+
+@keyframes chromaColorPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.chroma-color-pulse { animation: chromaColorPulse 0.8s infinite ease-in-out; }
+
+@keyframes chromaGameoverAnim {
+  0% { opacity: 0; transform: scale(0.7) rotate(-5deg); }
+  50% { transform: scale(1.05) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.chroma-gameover-anim { animation: chromaGameoverAnim 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* ============ RESPONSIVO ============ */
+@media (max-width: 640px) {
+  #hintText { display: none; }
+  #hudLayer { padding-left: 6px; padding-right: 6px; }
+  #startScreen { padding: 8px; }
+  #startScreen > div { border-radius: 1.25rem; padding: 12px; gap: 10px; }
+  #onlinePanel { padding: 10px; }
+  #padStatus { font-size: 9px; }
+  #featureStrip { display: none; }
+  .tactical-choice [data-i18n="tactShockDesc"],
+  .tactical-choice [data-i18n="tactCryoDesc"],
+  .tactical-choice [data-i18n="tactC4Desc"] { display: none; }
+  #startScreen h1 { font-size: 1.65rem; }
+  #startScreen .hero-glow > .text-center .inline-flex { width: 44px; height: 44px; font-size: 1.5rem; }
+  #btnStartMatch { position: sticky; bottom: 4px; z-index: 5; }
+  #chromaColorName { font-size: 1.1rem; }
+  #chromaCurrentColor { width: 44px; height: 44px; }
+  #chromaColorDisplay { padding: 8px 14px; gap: 8px; }
+}
+@media (max-width: 640px) and (max-height: 720px) {
+  #startScreen [data-i18n="subtitle"] { display: none; }
+}
+@media (max-width: 430px) {
+  #btnBomb { width: 66px; height: 66px; }
+  #btnDash, #btnTactical { width: 52px; height: 52px; }
+  #btnMuteHud, #btnShakeHud, #btnFullscreen { width: 30px; height: 30px; font-size: 12px; }
+  #btnCycleTactical { width: 22px; height: 22px; font-size: 9px; }
+  #hudP2 { font-size: 10px; padding: 3px 6px; gap: 4px; }
+  #hudTeams { font-size: 9px; padding: 3px 6px; }
+  .kill-feed-item { font-size: 9px; }
+}
+@media (max-height: 520px) {
+  #startScreen { align-items: flex-start; }
+  #startScreen > div { gap: 8px; padding: 10px 12px; }
+  #startScreen h1 { font-size: 1.5rem; }
+  #startScreen .hero-glow { max-width: 42rem; }
+  #btnStartMatch { position: sticky; bottom: 4px; z-index: 5; }
+  #startScreen .hero-glow > .text-center .inline-flex { width: 40px; height: 40px; font-size: 1.35rem; }
+}
+@media (hover: none) and (pointer: coarse) {
+  #startScreen input, #startScreen button, #startScreen textarea { touch-action: manipulation; }
+}
+</style>
+</head>
+<body class="relative w-full h-full text-slate-100">
+
+<!-- ================= CANVAS PRINCIPAL ================= -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- ================= JOYSTICK VIRTUAL ================= -->
+<div id="floatingJoystickContainer" class="hidden pointer-events-none fixed inset-0 z-20">
+  <div id="joystickBase" class="absolute w-28 h-28 rounded-full bg-slate-900/40 backdrop-blur-sm border-2 border-cyan-400/35 flex items-center justify-center" style="left: 76px; top: 60%;">
+    <div class="w-12 h-12 rounded-full border border-white/15"></div>
+    <div id="joystickKnob" class="absolute w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-emerald-500 border-2 border-white shadow-lg" style="transform: translate(0px, 0px);"></div>
+  </div>
+</div>
+
+<!-- ================= HUD IN-GAME ================= -->
+<div id="hudLayer" class="hidden fixed inset-0 pointer-events-none z-20 flex flex-col justify-between px-2.5 sm:px-4 safe-top safe-bottom">
+  <div class="flex items-start justify-between gap-1.5 w-full">
+    <div class="flex flex-col gap-1 pointer-events-auto max-w-[62%]">
+
+      <!-- Linha 1: HP + Vivos + Zona -->
+      <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-slate-700/70 px-2.5 py-1 rounded-2xl shadow-lg">
+        <div id="hudHearts" class="flex items-center gap-0.5 text-sm sm:text-base pr-1.5 border-r border-slate-800" title="Health">❤️❤️</div>
+        <div class="flex items-center gap-1 pr-1.5 border-r border-slate-800">
+          <span class="text-xs sm:text-sm">👥</span>
+          <span id="hudAlive" class="font-display font-bold text-xs sm:text-sm text-emerald-400">12/12</span>
+        </div>
+        <div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-rose-500/15 border border-rose-500/35">
+          <span class="text-xs">☢️</span>
+          <span id="hudStormTimer" class="font-display font-bold text-xs text-rose-400">25s</span>
+        </div>
+      </div>
+
+      <!-- Linha 2: HUD DE TIMES (só em 1v1 / 2v2 / 3v3) -->
+      <div id="hudTeams" class="hidden items-center gap-2 bg-slate-950/85 backdrop-blur-md border border-slate-700/70 px-2.5 py-1 rounded-xl shadow text-[11px] font-bold self-start">
+        <div class="flex items-center gap-1">
+          <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+          <span class="text-emerald-300">TIME 1: <span id="team1Alive">0</span></span>
+        </div>
+        <span class="text-slate-600">|</span>
+        <div class="flex items-center gap-1">
+          <span class="w-3 h-3 rounded-full bg-rose-400"></span>
+          <span class="text-rose-300">TIME 2: <span id="team2Alive">0</span></span>
+        </div>
+      </div>
+
+      <!-- Linha 3: Power-ups -->
+      <div class="flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 px-2.5 py-1 rounded-xl shadow text-[11px] font-bold self-start">
+        <span class="text-amber-400">💀<span id="hudKills">0</span></span>
+        <span class="text-slate-700">|</span>
+        <span class="text-sky-400">💣<span id="statBombs">1</span></span>
+        <span class="text-orange-400">🔥<span id="statRange">2</span></span>
+        <span class="text-lime-400">👟<span id="statSpeed">1</span></span>
+        <span id="statShieldPill" class="hidden px-1.5 py-0.5 bg-cyan-500/25 border border-cyan-400/60 text-cyan-300 rounded">🛡️</span>
+      </div>
+
+      <!-- Badge arbusto -->
+      <div id="stealthBadge" class="hidden self-start flex items-center gap-1 bg-emerald-950/90 border border-emerald-400/60 text-emerald-300 px-2 py-0.5 rounded-lg text-[10px] font-bold shadow">
+        <span>🌿</span>
+        <span data-i18n="stealthActive">OCULTO NO ARBUSTO</span>
+      </div>
+    </div>
+
+    <!-- Direita: botões + radar -->
+    <div class="flex items-start gap-1.5 pointer-events-auto shrink-0">
+      <div class="flex flex-col gap-1">
+        <div id="netBadge" class="hidden text-[9px] font-display font-bold text-cyan-300 bg-slate-950/85 border border-cyan-500/40 px-2 py-0.5 rounded-lg text-center" style="display:none">🌐 HOST</div>
+        <button id="btnMuteHud" type="button" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-slate-700/80 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Som">🔊</button>
+        <button id="btnShakeHud" type="button" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-cyan-500/60 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Tremor de Tela">📳</button>
+        <button id="btnFullscreen" type="button" class="w-9 h-9 rounded-xl bg-slate-950/85 border border-slate-700/80 flex items-center justify-center text-sm hover:bg-slate-800 active:scale-90 transition shadow-lg" title="Tela cheia">⛶</button>
+      </div>
+      <div class="relative rounded-full p-0.5 bg-slate-950/90 border-2 border-cyan-500/60 shadow-2xl">
+        <canvas id="radarCanvas" width="88" height="88" class="rounded-full block w-[88px] h-[88px]"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alertas centrais + kill feed -->
+  <div class="fixed top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 pointer-events-none z-20 w-72">
+    <div id="stormBanner" class="hidden bg-rose-600/95 border border-rose-200 text-white font-display font-bold text-xs px-3 py-1 rounded-full shadow-lg tracking-wider uppercase animate-bounce">
+      ⚠️ <span data-i18n="zoneShrinking">ZONA FECHANDO!</span>
+    </div>
+    <div id="airdropBanner" class="hidden bg-amber-500/95 border border-amber-100 text-slate-950 font-display font-bold text-xs px-3 py-1 rounded-full shadow-lg tracking-wider uppercase">
+      📦 <span data-i18n="airdropIncoming">AIRDROP A CAMINHO!</span>
+    </div>
+    <div id="killFeed" class="flex flex-col items-center gap-1 w-full"></div>
+  </div>
+
+  <!-- Botões de ação -->
+  <div class="flex items-end justify-between w-full">
+    <div class="flex flex-col gap-1 pl-1 pb-1 max-w-[58%]">
+      <div id="hudP2" class="flex items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-sky-500/60 px-2 py-1 rounded-xl text-[11px] font-bold text-sky-100 shadow" style="display:none">
+        <span class="font-display font-extrabold text-sky-400">P2</span>
+        <span id="hudP2Hearts" class="text-xs leading-none">❤️❤️</span>
+        <span class="text-slate-700">|</span>
+        <span class="text-sky-400">💣<span id="hudP2Bombs">1</span></span>
+        <span class="text-orange-400">🔥<span id="hudP2Range">2</span></span>
+        <span id="hudP2Tactical">🌀3</span>
+      </div>
+      <div id="hintText" class="text-[10px] font-bold text-slate-400/75 tracking-wider uppercase">WASD • ESPAÇO • E • Q • SHIFT</div>
+    </div>
+    <div class="pointer-events-auto flex items-end gap-2.5 sm:gap-3 pr-1 pb-1">
+      <button id="btnDash" type="button" class="relative overflow-hidden w-[58px] h-[58px] rounded-full bg-slate-900/90 border-2 border-cyan-400/80 flex flex-col items-center justify-center shadow-xl active:scale-90 transition">
+        <div id="dashCooldownFill" class="absolute bottom-0 left-0 right-0 bg-cyan-500/35 transition-all duration-75" style="height: 100%"></div>
+        <span class="text-lg leading-none relative z-10">⚡</span>
+        <span class="text-[8px] font-display font-extrabold text-cyan-300 relative z-10 tracking-wider mt-0.5">DASH</span>
+      </button>
+      <div class="relative">
+        <button id="btnCycleTactical" type="button" class="absolute -top-2.5 -left-2 z-20 w-6 h-6 rounded-full bg-slate-800 border border-amber-400 text-[10px] flex items-center justify-center shadow active:scale-90" title="Trocar bomba tática (Q)">🔄</button>
+        <button id="btnTactical" type="button" class="relative w-[58px] h-[58px] rounded-full bg-gradient-to-br from-amber-500/30 to-purple-600/40 backdrop-blur-md border-2 border-amber-400 flex flex-col items-center justify-center shadow-xl active:scale-90 transition">
+          <span id="tacticalIcon" class="text-xl leading-none">🌀</span>
+          <span id="tacticalLabel" class="text-[8px] font-display font-extrabold text-amber-200 uppercase tracking-tight mt-0.5">SHOCK</span>
+          <span id="tacticalAmmoBadge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-slate-950 font-display font-extrabold text-[10px] min-w-[18px] h-[18px] px-1 rounded-full border border-slate-950 flex items-center justify-center shadow">3</span>
+        </button>
+      </div>
+      <button id="btnBomb" type="button" class="w-[76px] h-[76px] rounded-full bg-gradient-to-br from-rose-500 to-orange-600 border-[3px] border-rose-200 flex flex-col items-center justify-center shadow-2xl active:scale-90 transition">
+        <span class="text-3xl leading-none drop-shadow">💣</span>
+        <span class="text-[9px] font-display font-extrabold text-white tracking-wider mt-0.5">BOMB</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MENU / LOBBY ================= -->
+<div id="startScreen" class="fixed inset-0 z-30 bg-slate-950/85 backdrop-blur-md flex items-start sm:items-center justify-center p-3 overflow-y-auto">
+  <div class="hero-glow w-full max-w-2xl my-auto bg-gradient-to-b from-slate-900/97 to-slate-950/98 border border-slate-700/80 rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col gap-3.5">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-2">
+      <span id="modeBadge" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-display font-bold text-[10px] tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">BATTLE ROYALE • 12 LUTADORES</span>
+      <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700 shrink-0">
+        <button id="langPT" type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-500 text-slate-950 transition">PT 🇧🇷</button>
+        <button id="langEN" type="button" class="px-2.5 py-1 rounded-lg text-xs font-bold text-slate-300 hover:text-white transition">EN 🇺🇸</button>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="text-center">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 text-3xl shadow-lg mb-1.5 border border-amber-200/50">💥</div>
+      <h1 class="font-display text-3xl sm:text-4xl font-extrabold tracking-wider bg-gradient-to-r from-white via-amber-200 to-rose-400 bg-clip-text text-transparent">BLAST ROYALE</h1>
+      <p data-i18n="subtitle" class="text-[11px] sm:text-sm text-slate-400 mt-1 max-w-md mx-auto">Sobreviva à arena, chute bombas com ondas de choque e seja o último de pé!</p>
+      <p id="padStatus" class="hidden mt-1.5"></p>
+      <p id="careerStats" class="text-[10px] font-bold text-amber-300/90 mt-1" style="display:none"></p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-3">
+      <!-- Coluna esquerda -->
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <label data-i18n="nicknameLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Seu Codinome</label>
+          <input id="playerNameInput" type="text" maxlength="14" value="Viper-01" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3.5 py-2 text-sm font-bold text-white outline-none transition" />
+        </div>
+        <div id="p2NameRow" class="flex-col gap-1" style="display:none">
+          <label data-i18n="p2NameLabel" class="text-[11px] font-bold text-sky-300 uppercase tracking-wider">Codinome do Jogador 2</label>
+          <input id="player2NameInput" type="text" maxlength="14" value="Viper-02" class="w-full bg-slate-950 border border-sky-700 focus:border-sky-400 rounded-xl px-3.5 py-2 text-sm font-bold text-white outline-none transition" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label data-i18n="loadoutLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Bomba Tática Inicial</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" data-tactical="SHOCK" class="tactical-choice active flex flex-col items-center p-2 rounded-2xl bg-amber-500/20 border-2 border-amber-400 text-center transition active:scale-95">
+              <span class="text-xl mb-0.5">🌀</span>
+              <span data-i18n="tactShockName" class="font-display font-bold text-xs text-amber-300">Choque</span>
+              <span data-i18n="tactShockDesc" class="text-[9px] text-slate-300 leading-tight mt-0.5">Empurra rivais e bombas</span>
+            </button>
+            <button type="button" data-tactical="CRYO" class="tactical-choice flex flex-col items-center p-2 rounded-2xl bg-slate-800/70 border-2 border-slate-700 text-center transition active:scale-95">
+              <span class="text-xl mb-0.5">❄️</span>
+              <span data-i18n="tactCryoName" class="font-display font-bold text-xs text-cyan-300">Criogênica</span>
+              <span data-i18n="tactCryoDesc" class="text-[9px] text-slate-400 leading-tight mt-0.5">Congela o chão e lentidão</span>
+            </button>
+            <button type="button" data-tactical="C4" class="tactical-choice flex flex-col items-center p-2 rounded-2xl bg-slate-800/70 border-2 border-slate-700 text-center transition active:scale-95">
+              <span class="text-xl mb-0.5">📡</span>
+              <span data-i18n="tactC4Name" class="font-display font-bold text-xs text-rose-300">C4 Remoto</span>
+              <span data-i18n="tactC4Desc" class="text-[9px] text-slate-400 leading-tight mt-0.5">Detone quando quiser</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Coluna direita -->
+      <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-1">
+          <label data-i18n="modeLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Modo de Jogo</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" data-mode="SOLO" class="mode-choice flex flex-col items-start gap-0.5 p-2 rounded-2xl bg-emerald-500/15 border-2 border-emerald-400 shadow-lg text-left transition active:scale-95">
+              <span class="text-base leading-none">👤</span>
+              <span class="font-display font-extrabold text-[11px] text-white">SOLO</span>
+              <span data-i18n="modeSoloDesc" class="text-[9px] text-slate-300 leading-tight">1 jogador + 11 bots</span>
+            </button>
+            <button type="button" data-mode="TEAM1v1" class="mode-choice flex flex-col items-start gap-0.5 p-2 rounded-2xl bg-slate-800/60 border-2 border-slate-700 text-left transition active:scale-95">
+              <span class="text-base leading-none">🥊</span>
+              <span class="font-display font-extrabold text-[11px] text-white">1 v 1</span>
+              <span class="text-[9px] text-slate-400 leading-tight">Duelo puro</span>
+            </button>
+            <button type="button" data-mode="TEAM2v2" class="mode-choice flex flex-col items-start gap-0.5 p-2 rounded-2xl bg-slate-800/60 border-2 border-slate-700 text-left transition active:scale-95">
+              <span class="text-base leading-none">⚔️</span>
+              <span class="font-display font-extrabold text-[11px] text-white">2 v 2</span>
+              <span class="text-[9px] text-slate-400 leading-tight">Você + aliado vs 2</span>
+            </button>
+            <button type="button" data-mode="TEAM3v3" class="mode-choice flex flex-col items-start gap-0.5 p-2 rounded-2xl bg-slate-800/60 border-2 border-slate-700 text-left transition active:scale-95">
+              <span class="text-base leading-none">🛡️</span>
+              <span class="font-display font-extrabold text-[11px] text-white">3 v 3</span>
+              <span class="text-[9px] text-slate-400 leading-tight">Você + 2 aliados vs 3</span>
+            </button>
+            <button type="button" data-mode="LOCAL" class="mode-choice flex flex-col items-start gap-0.5 p-2 rounded-2xl bg-slate-800/60 border-2 border-slate-700 text-left transition active:scale-95">
+              <span class="text-base leading-none">👥</span>
+              <span class="font-display font-extrabold text-[11px] text-white">LOCAL 2P</span>
+              <span data-i18n="modeLocalDesc" class="text-[9px] text-slate-400 leading-tight">2 jogadores no mesmo PC</span>
+            </button>
+            <button type="button" data-mode="ONLINE" class="mode-choice flex flex-col items-start gap-0.5 p-2 rounded-2xl bg-slate-800/60 border-2 border-slate-700 text-left transition active:scale-95">
+              <span class="text-base leading-none">🌐</span>
+              <span class="font-display font-extrabold text-[11px] text-white">ONLINE</span>
+              <span data-i18n="modeOnlineDesc" class="text-[9px] text-slate-400 leading-tight">2 jogadores pela internet</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <label data-i18n="mapLabel" class="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Mapa</label>
+            <span id="mapPreviewName" class="text-[9px] font-bold text-slate-400">Neon Grid</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="grid grid-cols-4 gap-1.5 flex-1">
+              <button type="button" data-map="NEON" class="map-choice flex flex-col items-center gap-0.5 p-1.5 rounded-xl border-2 border-emerald-400 ring-2 ring-emerald-400/40 transition active:scale-95">
+                <span class="text-base leading-none">🌐</span>
+                <span class="text-[9px] font-bold text-slate-200">Neon</span>
+              </button>
+              <button type="button" data-map="DUNES" class="map-choice flex flex-col items-center gap-0.5 p-1.5 rounded-xl border-2 border-slate-700 opacity-60 transition active:scale-95">
+                <span class="text-base leading-none">🏜️</span>
+                <span class="text-[9px] font-bold text-slate-200">Dunas</span>
+              </button>
+              <button type="button" data-map="FROST" class="map-choice flex flex-col items-center gap-0.5 p-1.5 rounded-xl border-2 border-slate-700 opacity-60 transition active:scale-95">
+                <span class="text-base leading-none">❄️</span>
+                <span class="text-[9px] font-bold text-slate-200">Gelo</span>
+              </button>
+              <button type="button" data-map="EMBER" class="map-choice flex flex-col items-center gap-0.5 p-1.5 rounded-xl border-2 border-slate-700 opacity-60 transition active:scale-95">
+                <span class="text-base leading-none">🌋</span>
+                <span class="text-[9px] font-bold text-slate-200">Vulcão</span>
+              </button>
+            </div>
+            <div class="shrink-0 rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-inner">
+              <canvas id="mapPreview" width="64" height="64" style="width:64px;height:64px;display:block"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel Online -->
+    <div id="onlinePanel" class="flex-col gap-2.5 bg-slate-950/70 border border-slate-800 rounded-2xl p-3" style="display:none">
+      <div class="flex items-center justify-between">
+        <span data-i18n="onlineLabel" class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">Multiplayer a Distância</span>
+        <span class="text-[9px] font-bold text-slate-500 tracking-wider">WebRTC P2P</span>
+      </div>
+      <p data-i18n="onlineHint" class="text-[10px] text-slate-400 leading-snug">Sem servidor: troque os códigos abaixo com seu amigo.</p>
+      <div class="flex gap-2">
+        <button id="btnHostRole" type="button" class="flex-1 py-2 rounded-xl bg-slate-800/70 border-2 border-slate-700 font-display font-bold text-xs text-slate-300 transition active:scale-95">
+          🏠 <span data-i18n="hostRole">Criar sala</span>
+        </button>
+        <button id="btnGuestRole" type="button" class="flex-1 py-2 rounded-xl bg-slate-800/70 border-2 border-slate-700 font-display font-bold text-xs text-slate-300 transition active:scale-95">
+          🔗 <span data-i18n="guestRole">Entrar na sala</span>
+        </button>
+      </div>
+      <div id="netHostBox" class="flex-col gap-1.5" style="display:none">
+        <label data-i18n="inviteLabel" class="text-[10px] font-bold text-slate-300">Envie este convite para o outro jogador</label>
+        <div class="flex gap-1.5">
+          <button id="btnCreateInvite" type="button" class="flex-1 py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/60 text-emerald-300 font-display font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="createInvite">1. Gerar convite</span>
+          </button>
+          <button id="btnCopyOffer" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+            <span data-i18n="copyCode">Copiar</span>
+          </button>
+        </div>
+        <textarea id="netOfferOut" readonly rows="2" class="net-code" placeholder="..."></textarea>
+        <label data-i18n="answerLabel" class="text-[10px] font-bold text-slate-300 mt-0.5">Cole aqui a resposta que ele enviou</label>
+        <textarea id="netAnswerIn" rows="2" class="net-code" placeholder="Cole o código de resposta..."></textarea>
+        <button id="btnConnectAnswer" type="button" class="py-1.5 rounded-lg bg-cyan-500/20 border border-cyan-500/60 text-cyan-300 font-display font-bold text-[11px] active:scale-95 transition">
+          <span data-i18n="connectAnswer">2. Conectar</span>
+        </button>
+      </div>
+      <div id="netGuestBox" class="flex-col gap-1.5" style="display:none">
+        <label data-i18n="offerInLabel" class="text-[10px] font-bold text-slate-300">Cole aqui o convite recebido</label>
+        <textarea id="netOfferIn" rows="2" class="net-code" placeholder="Cole o convite..."></textarea>
+        <button id="btnGenAnswer" type="button" class="py-1.5 rounded-lg bg-emerald-500/20 border border-emerald-500/60 text-emerald-300 font-display font-bold text-[11px] active:scale-95 transition">
+          <span data-i18n="genAnswer">Gerar resposta</span>
+        </button>
+        <label data-i18n="responseLabel" class="text-[10px] font-bold text-slate-300 mt-0.5">Envie esta resposta de volta para o host</label>
+        <textarea id="netAnswerOut" readonly rows="2" class="net-code" placeholder="..."></textarea>
+        <button id="btnCopyAnswer" type="button" class="py-1.5 rounded-lg bg-slate-800 border border-slate-600 text-slate-200 font-bold text-[11px] active:scale-95 transition">
+          <span data-i18n="copyCode">Copiar</span>
+        </button>
+      </div>
+      <div id="netStatus" class="text-[10px] font-bold text-center rounded-xl px-2 py-1 border bg-slate-800/70 border-slate-700 text-slate-400">
+        Escolha criar ou entrar em uma sala.
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div id="featureStrip" class="grid grid-cols-3 gap-2 bg-slate-950/70 p-2 rounded-2xl border border-slate-800 text-[10px] text-slate-300">
+      <div class="flex flex-col items-center text-center">
+        <span class="text-sm">🌿</span>
+        <span class="font-semibold mt-0.5"><span data-i18n="featBush">Arbustos Furtivos</span></span>
+      </div>
+      <div class="flex flex-col items-center text-center border-x border-slate-800">
+        <span class="text-sm">🌀</span>
+        <span class="font-semibold mt-0.5"><span data-i18n="featPortal">Portais Quânticos</span></span>
+      </div>
+      <div class="flex flex-col items-center text-center">
+        <span class="text-sm">⚡</span>
+        <span class="font-semibold mt-0.5"><span data-i18n="featDash">Esquiva Dash</span></span>
+      </div>
+    </div>
+
+    <!-- Botões principais -->
+    <button id="btnStartMatch" type="button" class="btn-play-glow w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-display font-extrabold text-base sm:text-lg tracking-wider uppercase active:scale-95 transition shadow-xl">
+      <span data-i18n="playBtn">ENTRAR NA ARENA</span>
+    </button>
+
+    <button id="btnChromaDrop" type="button" class="chroma-btn-glow w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-xl">
+      🎨 CHROMA DROP
+      <span class="block text-[10px] font-bold opacity-80 mt-0.5">Mini-jogo das cores</span>
+    </button>
+
+    <button id="btnAchievements" type="button" class="w-full py-2.5 rounded-2xl bg-slate-800 border border-slate-600 text-slate-200 font-display font-bold text-sm uppercase tracking-wider active:scale-95 transition">
+      🏆 <span>CONQUISTAS</span>
+    </button>
+  </div>
+</div>
+
+<!-- ================= POPUP DE CONQUISTA ================= -->
+<div id="achievementPopup" class="fixed top-20 right-4 z-50 hidden pointer-events-none">
+  <div class="achievement-popup bg-gradient-to-r from-amber-500/95 to-orange-600/95 border-2 border-amber-300 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 max-w-xs">
+    <div class="text-3xl" id="achieveIcon">🏆</div>
+    <div class="flex-1">
+      <div class="text-[10px] font-bold text-amber-100 uppercase tracking-wider">Conquista Desbloqueada!</div>
+      <div id="achieveTitle" class="font-display font-extrabold text-white text-sm">Título</div>
+      <div id="achieveDesc" class="text-[11px] text-amber-50 mt-0.5">Descrição</div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL DE CONQUISTAS ================= -->
+<div id="achievementsModal" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 shadow-2xl">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-display text-2xl font-extrabold text-white">🏆 Conquistas</h2>
+      <button id="btnCloseAchievements" type="button" class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-600 text-slate-200 font-bold text-lg active:scale-90 transition">✕</button>
+    </div>
+    <div id="achievementsList" class="grid gap-3"></div>
+  </div>
+</div>
+
+<!-- ================= CHROMA DROP - JOGO ================= -->
+<div id="chromaModal" class="hidden fixed inset-0 z-40 bg-gradient-to-b from-slate-950 via-purple-950/30 to-slate-950">
+  <canvas id="chromaCanvas" class="block w-full h-full"></canvas>
+
+  <!-- HUD do Chroma -->
+  <div class="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10 pointer-events-none">
+    <div id="chromaRoundBadge" class="bg-slate-950/80 backdrop-blur-md border-2 border-purple-400/60 rounded-full px-4 py-1 text-purple-200 font-display font-bold text-sm">
+      RODADA <span id="chromaRoundNum">1</span>
+    </div>
+    <div id="chromaColorDisplay" class="flex items-center gap-3 bg-slate-950/90 backdrop-blur-md border-2 border-white/20 rounded-2xl px-6 py-3 shadow-2xl">
+      <span class="text-slate-300 text-xs font-bold uppercase tracking-wider">Vá para:</span>
+      <div id="chromaCurrentColor" class="chroma-color-pulse w-16 h-16 rounded-2xl border-4 border-white shadow-lg" style="background:#ef4444"></div>
+      <span id="chromaColorName" class="font-display font-extrabold text-2xl text-white">VERMELHO</span>
+    </div>
+    <div id="chromaTimerBar" class="w-64 h-2 bg-slate-800 rounded-full overflow-hidden">
+      <div id="chromaTimerFill" class="h-full bg-gradient-to-r from-emerald-400 to-cyan-400 transition-all" style="width:100%"></div>
+    </div>
+  </div>
+
+  <!-- Botões -->
+  <div class="absolute bottom-4 right-4 flex gap-2 z-10">
+    <button id="btnChromaMute" type="button" class="w-10 h-10 rounded-xl bg-slate-950/80 border border-slate-700 flex items-center justify-center text-lg hover:bg-slate-800 active:scale-90 transition">🔊</button>
+    <button id="btnChromaQuit" type="button" class="px-4 py-2 rounded-xl bg-rose-600/80 border border-rose-400 text-white font-display font-bold text-sm uppercase active:scale-90 transition">✕ Sair</button>
+  </div>
+</div>
+
+<!-- ================= CHROMA DROP - GAME OVER ================= -->
+<div id="chromaGameOver" class="hidden fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="chroma-gameover-anim w-full max-w-sm bg-gradient-to-b from-purple-900/90 to-slate-900/90 border-2 border-purple-400/50 rounded-3xl p-6 text-center shadow-2xl">
+    <div class="text-7xl mb-4">💥</div>
+    <h2 class="font-display text-3xl font-extrabold text-white uppercase tracking-wide mb-2">VOCÊ CAIU!</h2>
+    <p class="text-slate-300 text-sm mb-6">Não estava na cor certa...</p>
+
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      <div class="bg-slate-950/60 border border-slate-700 rounded-2xl p-3">
+        <div class="text-[10px] text-slate-400 uppercase font-bold">Rodadas</div>
+        <div id="chromaFinalRounds" class="font-display text-3xl font-extrabold text-purple-300">0</div>
+      </div>
+      <div class="bg-slate-950/60 border border-slate-700 rounded-2xl p-3">
+        <div class="text-[10px] text-slate-400 uppercase font-bold">Recorde</div>
+        <div id="chromaHighScore" class="font-display text-3xl font-extrabold text-amber-300">0</div>
+      </div>
+    </div>
+
+    <div id="chromaNewRecord" class="hidden mb-4 bg-amber-500/20 border-2 border-amber-400 rounded-xl py-2 px-4">
+      <span class="font-display font-extrabold text-amber-300">🏆 NOVO RECORDE!</span>
+    </div>
+
+    <button id="btnChromaPlayAgain" type="button" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-lg mb-2">
+      🔄 JOGAR NOVAMENTE
+    </button>
+    <button id="btnChromaBackMenu" type="button" class="w-full py-2 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
+      Voltar ao menu
+    </button>
+  </div>
+</div>
+
+<!-- ================= FIM DE PARTIDA ================= -->
+<div id="endModal" class="hidden fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="w-full max-w-sm bg-slate-900 border-2 border-slate-700 rounded-3xl p-6 text-center shadow-2xl flex flex-col items-center gap-4">
+    <div id="endTrophy" class="text-5xl">🏆</div>
+    <div>
+      <div id="endRankBadge" class="inline-block px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 font-display font-extrabold text-sm mb-1">#1 / 12</div>
+      <h2 id="endTitle" class="font-display text-2xl sm:text-3xl font-extrabold text-white uppercase tracking-wide">VITÓRIA ROYALE!</h2>
+      <p id="endSubtitle" class="text-xs sm:text-sm text-slate-400 mt-1">Você dominou a arena e eliminou todos os rivais!</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3 w-full bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+      <div class="flex flex-col items-center">
+        <span data-i18n="statKillsLabel" class="text-[10px] leading-tight text-slate-400 uppercase font-bold text-center">Eliminações</span>
+        <span id="endKillsVal" class="font-display text-2xl font-extrabold text-rose-400">0</span>
+      </div>
+      <div class="flex flex-col items-center border-l border-slate-800">
+        <span data-i18n="statTimeLabel" class="text-[10px] leading-tight text-slate-400 uppercase font-bold text-center">Sobrevivência</span>
+        <span id="endTimeVal" class="font-display text-2xl font-extrabold text-cyan-400">00:00</span>
+      </div>
+    </div>
+    <button id="btnPlayAgain" type="button" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-400 text-slate-950 font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-lg">
+      <span data-i18n="playAgainBtn">JOGAR NOVAMENTE</span>
+    </button>
+    <button id="btnBackToMenu" type="button" class="w-full py-2 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
+      <span data-i18n="backToMenu">Voltar ao lobby</span>
+    </button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
