@@ -596,15 +596,71 @@
           <div class="shop-wallet">
             <div class="shop-coins">💰 <b id="shopCoins">0</b> <span data-i18n="shopCoins">moedas</span></div>
             <div class="shop-wallet-actions">
+              <button id="btnAdChest" type="button" class="shop-chest" data-i18n="shopAdChest">📺 BAÚ +40 💰</button>
               <button id="btnDailyReward" type="button" class="shop-daily" data-i18n="shopDaily">🎁 DIÁRIA</button>
               <button id="btnTestCoins" type="button" class="shop-test" data-i18n="shopTest">+200 MOEDAS</button>
             </div>
           </div>
-          <p class="shop-note" data-i18n="shopZeroP2W">Só visual: nenhuma skin altera dano, vida ou alcance.</p>
-          <div class="shop-section-label" data-i18n="shopChars">PERSONAGENS</div>
+          <p class="shop-note" data-i18n="shopZeroP2W">Só visual: nenhum cosmético altera dano, vida ou alcance.</p>
+          <div id="shopTabs" class="shop-tabs">
+            <button type="button" data-shop-tab="skins" class="shop-tab active">👤 <span data-i18n="shopTabSkins">SKINS</span></button>
+            <button type="button" data-shop-tab="bombs" class="shop-tab">💣 <span data-i18n="shopTabBombs">BOMBAS</span></button>
+            <button type="button" data-shop-tab="explosions" class="shop-tab">💥 <span data-i18n="shopTabExplosions">EXPLOSÕES</span></button>
+            <button type="button" data-shop-tab="trails" class="shop-tab">✨ <span data-i18n="shopTabTrails">RASTROS</span></button>
+            <button type="button" data-shop-tab="avatars" class="shop-tab">🪪 <span data-i18n="shopTabAvatars">AVATARES</span></button>
+          </div>
           <div id="charaShop" class="shop-grid"></div>
-          <div class="shop-section-label" data-i18n="shopBombs">BOMBAS</div>
-          <div id="bombShop" class="shop-grid"></div>
+          <div id="bombShop" class="shop-grid hidden"></div>
+          <div id="explosionShop" class="shop-grid hidden"></div>
+          <div id="trailShop" class="shop-grid hidden"></div>
+          <div id="avatarShop" class="shop-grid hidden"></div>
+          <button id="btnShopDefault" type="button" class="shop-default hidden" data-i18n="shopDefault">↩ USAR PADRÃO</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="lobby-section" data-lobby-section="event">
+      <button type="button" class="lobby-section-head" data-lobby-tab="event" aria-expanded="false">
+        <span class="lobby-section-emoji">🎪</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabEvent">EVENTO</span>
+          <span class="lobby-section-sub" data-i18n="tabEventSub">Rotativo a cada 3 horas • fora da Liga</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="event">
+        <div class="event-card">
+          <div class="event-card-top">
+            <span id="eventIcon" class="event-icon">🎁</span>
+            <div class="event-card-info">
+              <span id="eventName" class="event-name">—</span>
+              <span id="eventDesc" class="event-desc">—</span>
+            </div>
+            <span class="event-tag">3H</span>
+          </div>
+          <div class="event-countdown">⏳ <span data-i18n="eventNextLabel">Próximo evento em</span> <b id="eventCountdown">--:--:--</b></div>
+          <div class="event-progress-wrap">
+            <div class="event-progress-label">
+              <span data-i18n="eventGoal">Vença 2 partidas neste evento</span>
+              <b id="eventProgressCount">0/2</b>
+            </div>
+            <div class="event-progress-bar"><span id="eventProgressFill"></span></div>
+          </div>
+          <div id="eventReward" class="event-reward hidden">🎁 <span data-i18n="eventRewardReady">Recompensa de +35 moedas e +25 XP resgatada!</span></div>
+          <button id="btnPlayEvent" type="button" class="league-cta w-full">
+            ⚡ <span data-i18n="eventPlayBtn">JOGAR EVENTO</span>
+          </button>
+          <p class="event-note" data-i18n="eventNoLeague">O evento não vale pontos na Liga nem troféus.</p>
+        </div>
+        <div class="event-spin">
+          <div class="event-spin-info">
+            <span class="event-spin-icon">🎰</span>
+            <div class="event-spin-text">
+              <b data-i18n="spinTitle">ROLETA DA SORTE</b>
+              <span data-i18n="spinSub">Gire 1x por dia: +50, +100 ou +200 moedas</span>
+            </div>
+          </div>
+          <button id="btnSpin" type="button" class="shop-daily">🎬 <span data-i18n="spinBtn">GIRAR</span></button>
         </div>
       </div>
     </section>
@@ -1029,12 +1085,30 @@
     <div id="endXpLine" class="end-xp">⭐ +0 XP</div>
     <div id="endLeagueLine" class="end-league hidden"></div>
     <div id="endTrainingLine" class="end-training hidden"></div>
+    <div id="endEventLine" class="end-event hidden"></div>
+    <button id="btnDoubleReward" type="button" class="end-double hidden">
+      🎬 <span data-i18n="doubleRewardBtn">DOBRAR +40 MOEDAS</span>
+    </button>
     <button id="btnPlayAgain" type="button" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-400 text-slate-950 font-display font-extrabold text-base uppercase tracking-wider active:scale-95 transition shadow-lg">
       <span data-i18n="playAgainBtn">JOGAR NOVAMENTE</span>
     </button>
     <button id="btnBackToMenu" type="button" class="w-full py-2 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition">
       <span data-i18n="backToMenu">Voltar ao lobby</span>
     </button>
+  </div>
+</div>
+
+<!-- ================= ANÚNCIO PREMIADO (SIMULADO / ADMOB) ================= -->
+<div id="adOverlay" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="ad-card">
+    <div class="ad-badge" data-i18n="adBadge">ANÚNCIO PREMIADO</div>
+    <div class="ad-screen">
+      <span class="ad-play">▶</span>
+      <span id="adOverlayTimer" class="ad-timer">3s</span>
+    </div>
+    <p id="adOverlayLabel" class="ad-label" data-i18n="adSimulating">Simulando Anúncio Premiado...</p>
+    <div class="ad-progress"><span id="adOverlayBar"></span></div>
+    <p class="ad-note" data-i18n="adNote">Teste local: o vídeo real só aparece no app Android com AdMob configurado.</p>
   </div>
 </div>
 

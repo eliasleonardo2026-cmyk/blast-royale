@@ -6,6 +6,10 @@
    - Multiplayer WebRTC
    ======================================================================== */
 
+/* Anúncios premiados — no navegador/desktop o "TEST_MODE" simula o vídeo.
+   No Android (Capacitor) troque pelo ID real do bloco premiado do AdMob. */
+const ADMOB_REWARDED_ID = "TEST_MODE";
+
 /* ========================================================================
    1. LOCALIZATION
    ======================================================================== */
@@ -139,7 +143,7 @@ const I18N = {
     profileGeneral: "PROGRESSO GERAL", profileCompetitive: "ESTATÍSTICAS COMPETITIVAS",
     profileLevel: "NÍVEL", profileLeaguePts: "PTS LIGA", profileRankedWins: "V RANQ.",
     profileRankedLosses: "D RANQ.", profileTrophies: "TROFÉUS",
-    endTraining: "💰 +{n} MOEDAS · Modo Treino Offline • Não vale pontos na Liga",
+    endTraining: "💰 +{c} MOEDAS · ⭐ +{x} XP · Treino Offline • Não vale pontos na Liga",
     tabLeague: "TABELA DA LIGA", tabLeagueSub: "Liga ONLINE • +3 PTS por vitória",
     leagueG8: "G8 — classificados ao mata-mata", leaguePos: "Pos", leaguePlayer: "Jogador",
     leaguePts: "Pts", leagueW: "V", leagueL: "D", leagueYou: "VOCÊ",
@@ -190,6 +194,22 @@ const I18N = {
     shopEquipped: "✓ EQUIPADA", shopOwned: "COMPRADA", shopNotEnough: "Moedas insuficientes. Jogue partidas para ganhar mais!",
     shopBought: "{name} desbloqueado!", shopEquippedMsg: "{name} equipado!", shopDailyDone: "Diária já resgatada hoje.",
     shopDailyGain: "🎁 +100 moedas da diária!", shopTestGain: "🧪 +200 moedas de teste!",
+    shopTabSkins: "SKINS", shopTabBombs: "BOMBAS", shopTabExplosions: "EXPLOSÕES", shopTabTrails: "RASTROS", shopTabAvatars: "AVATARES",
+    shopAdChest: "📺 BAÚ +40 💰", shopChestGain: "📺 +40 moedas do baú patrocinado!", shopDefault: "↩ USAR PADRÃO",
+    endTrainingCap: "🚫 Limite de 5 vitórias contra bots por dia — jogue ONLINE para mais recompensas.",
+    endMatchCoins: "💰 +{c}",
+    doubleRewardBtn: "DOBRAR +40 MOEDAS", doubleGain: "📺 +40 moedas extras!",
+    adBadge: "ANÚNCIO PREMIADO", adNote: "Teste local: o vídeo real só aparece no app Android com AdMob configurado.",
+    adSimulating: "Simulando Anúncio Premiado...", adDailyCap: "Limite diário de anúncios atingido (5/dia).",
+    adTypeCap: "Você já usou este anúncio hoje.", adUnavailable: "Anúncio indisponível agora. Tente de novo mais tarde.",
+    tabEvent: "EVENTO", tabEventSub: "Rotativo a cada 3 horas • fora da Liga",
+    eventNextLabel: "Próximo evento em", eventGoal: "Vença 2 partidas neste evento",
+    eventRewardReady: "Recompensa de +35 moedas e +25 XP resgatada!",
+    eventPlayBtn: "JOGAR EVENTO", eventNoLeague: "O evento não vale pontos na Liga nem troféus.",
+    eventRewardGranted: "🎪 Evento: +35 moedas e +{x} XP pela 2ª vitória!",
+    eventProgressLine: "🎪 Evento: vitória {n}/2 — mais {m} para a recompensa.",
+    eventLossLine: "🎪 Evento: {n}/2 vitórias neste ciclo.",
+    spinTitle: "ROLETA DA SORTE", spinSub: "Gire 1x por dia: +50, +100 ou +200 moedas", spinBtn: "GIRAR", spinUsed: "USADO HOJE", spinGain: "🎰 +{n} moedas!",
     spectateTitle: "ARQUIBANCADA AO VIVO", camTotal: "VISÃO TOTAL", camP1: "SEGUIR P1", camP2: "SEGUIR P2",
     spectateExit: "SAIR", cheerHint: "TORCIDA", spectateVs: "{a} × {b}",
     voicePanel: "Chat de voz", voiceMicOn: "Ativar microfone", voiceMicOff: "Desligar microfone",
@@ -353,7 +373,7 @@ const I18N = {
     profileGeneral: "OVERALL PROGRESS", profileCompetitive: "COMPETITIVE STATS",
     profileLevel: "LEVEL", profileLeaguePts: "LEAGUE PTS", profileRankedWins: "RANKED W",
     profileRankedLosses: "RANKED L", profileTrophies: "TROPHIES",
-    endTraining: "💰 +{n} COINS · Offline Training Mode • Does not count for the League",
+    endTraining: "💰 +{c} COINS · ⭐ +{x} XP · Offline Training Mode • Does not count for the League",
     tabLeague: "LEAGUE TABLE", tabLeagueSub: "ONLINE league • +3 PTS per win",
     leagueG8: "G8 — qualified for the knockout", leaguePos: "Pos", leaguePlayer: "Player",
     leaguePts: "Pts", leagueW: "W", leagueL: "L", leagueYou: "YOU",
@@ -404,6 +424,22 @@ const I18N = {
     shopEquipped: "✓ EQUIPPED", shopOwned: "OWNED", shopNotEnough: "Not enough coins. Play matches to earn more!",
     shopBought: "{name} unlocked!", shopEquippedMsg: "{name} equipped!", shopDailyDone: "Daily reward already claimed today.",
     shopDailyGain: "🎁 +100 daily coins!", shopTestGain: "🧪 +200 test coins!",
+    shopTabSkins: "SKINS", shopTabBombs: "BOMBS", shopTabExplosions: "BLASTS", shopTabTrails: "TRAILS", shopTabAvatars: "AVATARS",
+    shopAdChest: "📺 CHEST +40 💰", shopChestGain: "📺 +40 coins from the sponsored chest!", shopDefault: "↩ USE DEFAULT",
+    endTrainingCap: "🚫 Limit of 5 bot wins per day — play ONLINE for more rewards.",
+    endMatchCoins: "💰 +{c}",
+    doubleRewardBtn: "DOUBLE +40 COINS", doubleGain: "📺 +40 extra coins!",
+    adBadge: "REWARDED AD", adNote: "Local test: the real video only appears in the Android app with AdMob configured.",
+    adSimulating: "Simulating Rewarded Ad...", adDailyCap: "Daily ad limit reached (5/day).",
+    adTypeCap: "You already used this ad today.", adUnavailable: "Ad unavailable right now. Try again later.",
+    tabEvent: "EVENT", tabEventSub: "Rotates every 3 hours • outside the League",
+    eventNextLabel: "Next event in", eventGoal: "Win 2 matches in this event",
+    eventRewardReady: "Reward of +35 coins and +25 XP claimed!",
+    eventPlayBtn: "PLAY EVENT", eventNoLeague: "The event grants no League points or trophies.",
+    eventRewardGranted: "🎪 Event: +35 coins and +{x} XP for the 2nd win!",
+    eventProgressLine: "🎪 Event: win {n}/2 — {m} more for the reward.",
+    eventLossLine: "🎪 Event: {n}/2 wins this cycle.",
+    spinTitle: "LUCKY SPIN", spinSub: "Spin once a day: +50, +100 or +200 coins", spinBtn: "SPIN", spinUsed: "USED TODAY", spinGain: "🎰 +{n} coins!",
     spectateTitle: "LIVE GRANDSTAND", camTotal: "FULL VIEW", camP1: "FOLLOW P1", camP2: "FOLLOW P2",
     spectateExit: "EXIT", cheerHint: "CHEER", spectateVs: "{a} × {b}",
     voicePanel: "Voice chat", voiceMicOn: "Turn mic on", voiceMicOff: "Turn mic off",
@@ -855,7 +891,8 @@ const POWERUP_TYPES = {
   SHIELD: { icon: '🛡️', color: '#22d3ee', label: 'SHIELD' },
   SHOCK: { icon: '🌀', color: '#fbbf24', label: '+2 SHOCK' },
   CRYO: { icon: '❄️', color: '#67e8f9', label: '+2 CRYO' },
-  C4: { icon: '📡', color: '#f43f5e', label: '+2 C4' }
+  C4: { icon: '📡', color: '#f43f5e', label: '+2 C4' },
+  GOLD: { icon: '🪙', color: '#facc15', label: '+2 MOEDAS' }
 };
 
 const TACTICAL_META = {
@@ -957,18 +994,83 @@ function savePrefs(patch) {
    métodos, para que Firestore/Realtime Database possam ser plugados depois
    sem refatorar as telas.
    ======================================================================== */
+/* Raridades da loja expandida. Preço define a faixa; o tier alimenta os
+   efeitos de canvas (aura, anéis, ondas) e o brilho da Liga. */
+const RARITY_META = {
+  starter: { label: 'Inicial', labelEn: 'Starter', color: '#94a3b8', tier: 0 },
+  common: { label: 'Comum', labelEn: 'Common', color: '#94a3b8', tier: 1 },
+  rare: { label: 'Raro', labelEn: 'Rare', color: '#38bdf8', tier: 2 },
+  epic: { label: 'Épico', labelEn: 'Epic', color: '#c084fc', tier: 3 },
+  legendary: { label: 'Lendário', labelEn: 'Legendary', color: '#fbbf24', tier: 4 },
+  mythic: { label: 'Mítico', labelEn: 'Mythic', color: '#f43f5e', tier: 5 }
+};
+const RARITY_PRICE = { common: 500, rare: 1500, epic: 3500, legendary: 8000, mythic: 15000 };
+function rarityMeta(rarity) { return RARITY_META[rarity] || RARITY_META.common; }
+function rarityTier(rarity) { return rarityMeta(rarity).tier; }
+
 const CHARACTER_SKINS = [
-  { id: 'viper', name: 'Viper', body: '#34d399', visor: '#ecfdf5', accent: '#10b981', style: 'viper', price: 0, desc: { pt: 'Verde tático. O clássico da arena.', en: 'Tactical green. The arena classic.' } },
-  { id: 'pyro', name: 'Pyro', body: '#f97316', visor: '#fed7aa', accent: '#dc2626', style: 'pyro', price: 400, desc: { pt: 'Vermelho vulcânico com brasas.', en: 'Volcanic red with embers.' } },
-  { id: 'cyber', name: 'Cyber', body: '#22d3ee', visor: '#cffafe', accent: '#0ea5e9', style: 'cyber', price: 450, desc: { pt: 'Ciano neon com circuitos vivos.', en: 'Neon cyan with live circuits.' } },
-  { id: 'guardian', name: 'Guardian', body: '#fbbf24', visor: '#fffbeb', accent: '#f59e0b', style: 'guardian', price: 650, desc: { pt: 'Dourado e branco com auréola.', en: 'Gold and white with a halo.' } }
+  { id: 'viper', name: 'Viper', body: '#34d399', visor: '#ecfdf5', accent: '#10b981', style: 'viper', rarity: 'starter', price: 0, emoji: '🐍', desc: { pt: 'Verde tático. O clássico da arena.', en: 'Tactical green. The arena classic.' } },
+  { id: 'pyro', name: 'Pyro', body: '#f97316', visor: '#fed7aa', accent: '#dc2626', style: 'pyro', rarity: 'common', price: 500, emoji: '🔥', desc: { pt: 'Vermelho vulcânico com brasas.', en: 'Volcanic red with embers.' } },
+  { id: 'cyber', name: 'Cyber', body: '#22d3ee', visor: '#cffafe', accent: '#0ea5e9', style: 'cyber', rarity: 'common', price: 500, emoji: '⚡', desc: { pt: 'Ciano neon com circuitos vivos.', en: 'Neon cyan with live circuits.' } },
+  { id: 'guardian', name: 'Guardian', body: '#fbbf24', visor: '#fffbeb', accent: '#f59e0b', style: 'guardian', rarity: 'rare', price: 1500, emoji: '👑', desc: { pt: 'Dourado e branco com auréola.', en: 'Gold and white with a halo.' } },
+  { id: 'arctic', name: 'Tempestade Ártica', body: '#7dd3fc', visor: '#f0f9ff', accent: '#0284c7', style: 'arctic', rarity: 'rare', price: 1500, emoji: '❄️', desc: { pt: 'Gelo eterno com névoa congelante.', en: 'Eternal ice with freezing mist.' } },
+  { id: 'fusion', name: 'Reator de Fusão', body: '#a3e635', visor: '#ecfccb', accent: '#65a30d', style: 'fusion', rarity: 'epic', price: 3500, emoji: '☢️', desc: { pt: 'Núcleo radioativo pulsando energia.', en: 'Radioactive core pulsing with energy.' } },
+  { id: 'dragonlord', name: 'Dragão Supremo', body: '#f59e0b', visor: '#fef3c7', accent: '#b45309', style: 'dragon', rarity: 'legendary', price: 8000, emoji: '🐉', desc: { pt: 'Escamas de ouro e aura de dragão.', en: 'Golden scales and a dragon aura.' } },
+  { id: 'phoenix', name: 'Fênix Solar', body: '#fb7185', visor: '#fff1f2', accent: '#e11d48', style: 'phoenix', rarity: 'legendary', price: 8000, emoji: '🔥', desc: { pt: 'Renasce das cinzas em chamas solares.', en: 'Reborn from ashes in solar flames.' } },
+  { id: 'cosmic', name: 'Imperador Cósmico', body: '#8b5cf6', visor: '#f5f3ff', accent: '#4c1d95', style: 'cosmic', rarity: 'mythic', price: 15000, emoji: '🌌', desc: { pt: 'Governa a arena com o poder das estrelas.', en: 'Rules the arena with the power of stars.' } }
 ];
 const BOMB_SKINS = [
-  { id: 'classic', name: 'Clássica', color: '#f97316', flame: '#fb923c', core: '#fef3c7', price: 0, desc: { pt: 'Esfera metálica com pavio.', en: 'Metallic sphere with a fuse.' } },
-  { id: 'dynamite', name: 'Dinamite', color: '#ef4444', flame: '#f87171', core: '#fde68a', price: 350, desc: { pt: 'Bastões vermelhos amarrados.', en: 'Bundled red sticks.' } },
-  { id: 'plasma', name: 'Plasma', color: '#22d3ee', flame: '#22d3ee', core: '#e0f2fe', price: 450, desc: { pt: 'Núcleo ciano brilhante.', en: 'Glowing cyan core.' } },
-  { id: 'crystal', name: 'Cristal', color: '#a78bfa', flame: '#c084fc', core: '#f5f3ff', price: 550, desc: { pt: 'Cristal roxo e azul.', en: 'Purple and blue crystal.' } }
+  { id: 'classic', name: 'Clássica', color: '#f97316', flame: '#fb923c', core: '#fef3c7', rarity: 'starter', price: 0, emoji: '💣', desc: { pt: 'Esfera metálica com pavio.', en: 'Metallic sphere with a fuse.' } },
+  { id: 'dynamite', name: 'Dinamite', color: '#ef4444', flame: '#f87171', core: '#fde68a', rarity: 'common', price: 500, emoji: '🧨', desc: { pt: 'Bastões vermelhos amarrados.', en: 'Bundled red sticks.' } },
+  { id: 'plasma', name: 'Plasma', color: '#22d3ee', flame: '#22d3ee', core: '#e0f2fe', rarity: 'common', price: 500, emoji: '🌀', desc: { pt: 'Núcleo ciano brilhante.', en: 'Glowing cyan core.' } },
+  { id: 'crystal', name: 'Cristal', color: '#a78bfa', flame: '#c084fc', core: '#f5f3ff', rarity: 'rare', price: 1500, emoji: '💎', desc: { pt: 'Cristal roxo e azul.', en: 'Purple and blue crystal.' } },
+  { id: 'blackhole', name: 'Buraco Negro', color: '#7c3aed', flame: '#a78bfa', core: '#ede9fe', rarity: 'rare', price: 1500, emoji: '🕳️', desc: { pt: 'Distorce a luz ao redor da explosão.', en: 'Bends light around the blast.' } },
+  { id: 'supernova', name: 'Supernova Cósmica', color: '#f472b6', flame: '#fb7185', core: '#fdf2f8', rarity: 'epic', price: 3500, emoji: '💥', desc: { pt: 'Colapso estelar em rosa e violeta.', en: 'Stellar collapse in pink and violet.' } },
+  { id: 'golddragon', name: 'Dragão de Ouro', color: '#fbbf24', flame: '#f59e0b', core: '#fffbeb', rarity: 'legendary', price: 8000, emoji: '🐲', desc: { pt: 'Fogo dourado com anéis girando.', en: 'Golden fire with spinning rings.' } },
+  { id: 'trophy', name: 'Troféu Campeão', color: '#facc15', flame: '#eab308', core: '#fefce8', rarity: 'legendary', price: 8000, emoji: '🏆', desc: { pt: 'Explode em confete de campeão.', en: 'Explodes in champion confetti.' } },
+  { id: 'deathstar', name: 'Estrela da Morte', color: '#94a3b8', flame: '#a3e635', core: '#ecfccb', rarity: 'mythic', price: 15000, emoji: '🌑', desc: { pt: 'Estação de batalha com laser verde.', en: 'Battle station with a green laser.' } }
 ];
+const EXPLOSION_SKINS = [
+  { id: 'classic', name: 'Padrão', color: '#f97316', flame: '#fdba74', core: '#fef3c7', rarity: 'starter', price: 0, emoji: '💥', desc: { pt: 'Explosão laranja da arena.', en: 'Orange arena blast.' } },
+  { id: 'spark', name: 'Faísca', color: '#fbbf24', flame: '#fde68a', core: '#fffbeb', rarity: 'common', price: 500, emoji: '✨', desc: { pt: 'Faíscas douradas rápidas.', en: 'Fast golden sparks.' } },
+  { id: 'boom', name: 'Onda de Choque', color: '#38bdf8', flame: '#bae6fd', core: '#e0f2fe', rarity: 'common', price: 500, emoji: '🌊', desc: { pt: 'Anel azul de pressão.', en: 'Blue pressure ring.' } },
+  { id: 'bluefire', name: 'Fogo Azul', color: '#3b82f6', flame: '#60a5fa', core: '#dbeafe', rarity: 'rare', price: 1500, emoji: '🔵', desc: { pt: 'Chamas azuis congelantes.', en: 'Freezing blue flames.' } },
+  { id: 'toxic', name: 'Explosão Tóxica', color: '#84cc16', flame: '#bef264', core: '#ecfccb', rarity: 'rare', price: 1500, emoji: '☣️', desc: { pt: 'Ácido verde corrosivo.', en: 'Corrosive green acid.' } },
+  { id: 'solar', name: 'Inferno Solar', color: '#f97316', flame: '#fb923c', core: '#fff7ed', rarity: 'epic', price: 3500, emoji: '☀️', desc: { pt: 'Explosão de plasma solar.', en: 'Solar plasma blast.' } },
+  { id: 'pulse', name: 'Pulso Elétrico', color: '#22d3ee', flame: '#a5f3fc', core: '#ecfeff', rarity: 'legendary', price: 8000, emoji: '⚡', desc: { pt: 'Arcos elétricos girando.', en: 'Spinning electric arcs.' } },
+  { id: 'supernova', name: 'Supernova', color: '#e879f9', flame: '#f0abfc', core: '#fdf4ff', rarity: 'legendary', price: 8000, emoji: '🌟', desc: { pt: 'Estrela em colapso violeta.', en: 'Violet collapsing star.' } },
+  { id: 'apocalypse', name: 'Apocalipse Dourado', color: '#facc15', flame: '#fde047', core: '#fffbeb', rarity: 'mythic', price: 15000, emoji: '🌋', desc: { pt: 'Juízo final em ouro e fogo.', en: 'Golden fire doomsday.' } }
+];
+const TRAIL_SKINS = [
+  { id: 'none', name: 'Nenhum', color: '#94a3b8', glow: '#cbd5e1', rarity: 'starter', price: 0, emoji: '🚫', desc: { pt: 'Sem rastro no chão.', en: 'No ground trail.' } },
+  { id: 'fire', name: 'Pegadas de Fogo', color: '#fb923c', glow: '#fdba74', rarity: 'common', price: 500, emoji: '👣', desc: { pt: 'Deixa brasas por onde passa.', en: 'Leaves embers behind.' } },
+  { id: 'electric', name: 'Rastro Elétrico', color: '#22d3ee', glow: '#a5f3fc', rarity: 'common', price: 500, emoji: '⚡', desc: { pt: 'Faíscas ciano no chão.', en: 'Cyan sparks on the ground.' } },
+  { id: 'ice', name: 'Rastro de Gelo', color: '#7dd3fc', glow: '#e0f2fe', rarity: 'rare', price: 1500, emoji: '❄️', desc: { pt: 'Cristais de gelo derretendo.', en: 'Melting ice crystals.' } },
+  { id: 'leaf', name: 'Folhas de Primavera', color: '#4ade80', glow: '#bbf7d0', rarity: 'rare', price: 1500, emoji: '🍃', desc: { pt: 'Pétalas e folhas ao vento.', en: 'Petals and leaves in the wind.' } },
+  { id: 'comet', name: 'Cometa', color: '#fbbf24', glow: '#fef3c7', rarity: 'epic', price: 3500, emoji: '☄️', desc: { pt: 'Cauda de cometa dourada.', en: 'Golden comet tail.' } },
+  { id: 'sonic', name: 'Rastro Sônico', color: '#38bdf8', glow: '#bae6fd', rarity: 'legendary', price: 8000, emoji: '💨', desc: { pt: 'Ondas de velocidade azuis.', en: 'Blue speed waves.' } },
+  { id: 'phoenix', name: 'Asas de Fênix', color: '#fb7185', glow: '#fecdd3', rarity: 'legendary', price: 8000, emoji: '🪶', desc: { pt: 'Penas de fogo sagrado.', en: 'Sacred fire feathers.' } },
+  { id: 'galaxy', name: 'Rastro Galáctico', color: '#a78bfa', glow: '#ddd6fe', rarity: 'mythic', price: 15000, emoji: '🌌', desc: { pt: 'Poeira estelar girando em órbita.', en: 'Orbiting stardust.' } }
+];
+const AVATAR_SKINS = [
+  { id: 'default', name: 'Viper', emoji: '🐍', rarity: 'starter', price: 0, desc: { pt: 'Avatar padrão da arena.', en: 'Default arena avatar.' } },
+  { id: 'frog', name: 'Sapo', emoji: '🐸', rarity: 'common', price: 500, desc: { pt: 'Salta longe e ri mais alto.', en: 'Jumps far and laughs louder.' } },
+  { id: 'robot', name: 'Robô', emoji: '🤖', rarity: 'common', price: 500, desc: { pt: 'Calcula cada explosão.', en: 'Calculates every blast.' } },
+  { id: 'wolf', name: 'Lobo', emoji: '🐺', rarity: 'rare', price: 1500, desc: { pt: 'Caça em matilha.', en: 'Hunts with the pack.' } },
+  { id: 'fox', name: 'Raposa', emoji: '🦊', rarity: 'rare', price: 1500, desc: { pt: 'Esperta e impossível de pegar.', en: 'Sly and impossible to catch.' } },
+  { id: 'unicorn', name: 'Unicórnio', emoji: '🦄', rarity: 'epic', price: 3500, desc: { pt: 'Magia pura na arena.', en: 'Pure magic in the arena.' } },
+  { id: 'dragon', name: 'Dragão Ancestral', emoji: '🐉', rarity: 'legendary', price: 8000, desc: { pt: 'Sábio e devastador.', en: 'Wise and devastating.' } },
+  { id: 'radiant', name: 'Fênix Radiante', emoji: '🦅', rarity: 'legendary', price: 8000, desc: { pt: 'Voa acima de todas as bombas.', en: 'Soars above every bomb.' } },
+  { id: 'crown', name: 'Coroa Mítica Animada', emoji: '👑', rarity: 'mythic', price: 15000, desc: { pt: 'Brilho real animado na Liga.', en: 'Animated royal glow in the League.' } }
+];
+const COSMETIC_CATALOGS = { skins: CHARACTER_SKINS, bombs: BOMB_SKINS, explosions: EXPLOSION_SKINS, trails: TRAIL_SKINS, avatars: AVATAR_SKINS };
+const COSMETIC_KINDS = ['skins', 'bombs', 'explosions', 'trails', 'avatars'];
+function cosmeticCatalog(kind) { return COSMETIC_CATALOGS[kind] || CHARACTER_SKINS; }
+function getCosmetic(kind, id) {
+  const list = cosmeticCatalog(kind);
+  return list.find(item => item.id === id) || list[0];
+}
+function cosmeticRarity(kind, id) { return getCosmetic(kind, id).rarity; }
 function getCharacterSkin(id) { return CHARACTER_SKINS.find(s => s.id === id) || CHARACTER_SKINS[0]; }
 function getBombSkin(id) { return BOMB_SKINS.find(s => s.id === id) || BOMB_SKINS[0]; }
 function resolvePlayerLook() {
@@ -1007,6 +1109,18 @@ const GameState = (() => {
     coins: 300,
     skins: { owned: ['viper'], equipped: 'viper' },
     bombs: { owned: ['classic'], equipped: 'classic' },
+    cosmetics: {
+      explosions: { owned: ['classic'], equipped: 'classic' },
+      trails: { owned: ['none'], equipped: 'none' },
+      avatars: { owned: ['default'], equipped: 'default' }
+    },
+    economy: {
+      botDay: '', botWins: 0,
+      adDay: '', ads: 0,
+      chestDay: '', chest: 0, doubleDay: '', double: 0, spinDay: '', spin: 0,
+      eventSlot: null, eventWins: 0, eventRewarded: false,
+      goldSlot: null, goldCoins: 0
+    },
     league: [],
     bracket: { schedules: {}, live: {}, results: {}, week: '' },
     copa: { week: '', field: [], round: 0, status: 'active', rewardClaimed: false },
@@ -1039,7 +1153,8 @@ const GameState = (() => {
       losses: n(b && b.losses),
       trophies: Number.isFinite(Number(b && b.trophies))
         ? n(b.trophies)
-        : Math.max(0, n(b && b.wins) * 30 - n(b && b.losses) * 10)
+        : Math.max(0, n(b && b.wins) * 30 - n(b && b.losses) * 10),
+      cosmeticRank: typeof (b && b.cosmeticRank) === 'string' ? b.cosmeticRank : ''
     };
   }
   function sanitize() {
@@ -1082,8 +1197,31 @@ const GameState = (() => {
       .slice(0, 50);
     if (!state.skins || !Array.isArray(state.skins.owned)) state.skins = { owned: ['viper'], equipped: 'viper' };
     if (!state.bombs || !Array.isArray(state.bombs.owned)) state.bombs = { owned: ['classic'], equipped: 'classic' };
+    if (!state.skins.owned.includes('viper')) state.skins.owned.unshift('viper');
+    if (!state.bombs.owned.includes('classic')) state.bombs.owned.unshift('classic');
     if (!CHARACTER_SKINS.some(s => s.id === state.skins.equipped)) state.skins.equipped = 'viper';
     if (!BOMB_SKINS.some(s => s.id === state.bombs.equipped)) state.bombs.equipped = 'classic';
+    if (!state.cosmetics || typeof state.cosmetics !== 'object') state.cosmetics = {};
+    ['explosions', 'trails', 'avatars'].forEach(kind => {
+      const defaults = { explosions: 'classic', trails: 'none', avatars: 'default' }[kind];
+      const bucket = state.cosmetics[kind];
+      if (!bucket || !Array.isArray(bucket.owned)) {
+        state.cosmetics[kind] = { owned: [defaults], equipped: defaults };
+      } else {
+        if (!bucket.owned.includes(defaults)) bucket.owned.unshift(defaults);
+        if (!cosmeticCatalog(kind).some(item => item.id === bucket.equipped)) bucket.equipped = defaults;
+      }
+    });
+    if (!state.economy || typeof state.economy !== 'object') state.economy = {};
+    const econ = state.economy;
+    ['botWins', 'ads', 'chest', 'double', 'spin', 'eventWins', 'goldCoins'].forEach(k => {
+      const n = Number(econ[k]);
+      econ[k] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+    });
+    econ.eventRewarded = !!econ.eventRewarded;
+    ['botDay', 'adDay', 'chestDay', 'doubleDay', 'spinDay'].forEach(k => { if (typeof econ[k] !== 'string') econ[k] = ''; });
+    if (!Number.isFinite(Number(econ.eventSlot))) econ.eventSlot = null;
+    if (!Number.isFinite(Number(econ.goldSlot))) econ.goldSlot = null;
     if (!state.bracket || typeof state.bracket !== 'object') state.bracket = { schedules: {}, live: {} };
     if (!state.bracket.schedules) state.bracket.schedules = {};
     if (!state.bracket.live) state.bracket.live = {};
@@ -1162,6 +1300,53 @@ const GameState = (() => {
         p.competitive[k] = Math.max(Number(p.competitive[k]) || 0, v);
       });
     }
+    // Economia: moedas/XP nunca diminuem ao adotar a nuvem, e cosméticos
+    // comprados em outro aparelho são incorporados sem perder os locais.
+    if (Number.isFinite(Number(remote.coins))) state.coins = Math.max(state.coins, Math.floor(Number(remote.coins)));
+    if (Number.isFinite(Number(remote.xp))) prefs.xp = Math.max(prefs.xp || 0, Math.floor(Number(remote.xp)));
+    const mergeBucket = (kind, remoteBucket) => {
+      if (!remoteBucket || !Array.isArray(remoteBucket.owned)) return;
+      const bucket = bucketFor(kind);
+      if (!bucket) return;
+      remoteBucket.owned.forEach(id => {
+        if (cosmeticCatalog(kind).some(item => item.id === id) && !bucket.owned.includes(id)) bucket.owned.push(id);
+      });
+      const currentDefault = defaultIdFor(kind);
+      if (bucket.equipped === currentDefault && remoteBucket.equipped && isOwned(kind, remoteBucket.equipped)) {
+        bucket.equipped = remoteBucket.equipped;
+        if (kind === 'avatars') p.avatar = getCosmetic('avatars', bucket.equipped).emoji || p.avatar;
+      }
+    };
+    mergeBucket('skins', remote.skins);
+    mergeBucket('bombs', remote.bombs);
+    if (remote.cosmetics && typeof remote.cosmetics === 'object') {
+      ['explosions', 'trails', 'avatars'].forEach(kind => mergeBucket(kind, remote.cosmetics[kind]));
+    }
+    // Contadores diários do evento/anúncios: mescla só quando o ciclo é o
+    // mesmo, sempre pelo maior valor (outro aparelho não "reseta" limites).
+    const re = remote.economy;
+    if (re && typeof re === 'object') {
+      const e = state.economy;
+      rollEconomyDay();
+      const maxSame = (dayKey, valueKey) => {
+        if (re[dayKey] && re[dayKey] === e[dayKey]) e[valueKey] = Math.max(Number(e[valueKey]) || 0, Number(re[valueKey]) || 0);
+      };
+      maxSame('botDay', 'botWins');
+      maxSame('adDay', 'ads');
+      maxSame('chestDay', 'chest');
+      maxSame('doubleDay', 'double');
+      maxSame('spinDay', 'spin');
+      const slot = currentSlotId();
+      if (Number(re.eventSlot) === slot) {
+        if (e.eventSlot !== slot) { e.eventSlot = slot; e.eventWins = 0; e.eventRewarded = false; }
+        e.eventWins = Math.max(e.eventWins, Math.min(2, Number(re.eventWins) || 0));
+        e.eventRewarded = e.eventRewarded || !!re.eventRewarded;
+      }
+      if (Number(re.goldSlot) === slot) {
+        if (e.goldSlot !== slot) { e.goldSlot = slot; e.goldCoins = 0; }
+        e.goldCoins = Math.max(e.goldCoins, Math.min(15, Number(re.goldCoins) || 0));
+      }
+    }
     save();
     return p;
   }
@@ -1169,14 +1354,54 @@ const GameState = (() => {
     const v = Math.max(0, Number(value == null ? state.profile.competitive.trophies : value) || 0);
     return TROPHY_TIERS.find(t => v >= t.min && v <= t.max) || TROPHY_TIERS[TROPHY_TIERS.length - 1];
   }
+  // Contadores diários (vitórias contra bots, anúncios) zera na virada do dia.
+  function rollEconomyDay() {
+    const day = today();
+    const e = state.economy;
+    if (e.botDay !== day) { e.botDay = day; e.botWins = 0; }
+    if (e.adDay !== day) { e.adDay = day; e.ads = 0; }
+    if (e.chestDay !== day) { e.chestDay = day; e.chest = 0; }
+    if (e.doubleDay !== day) { e.doubleDay = day; e.double = 0; }
+    if (e.spinDay !== day) { e.spinDay = day; e.spin = 0; }
+  }
+  const BOT_DAILY_WIN_CAP = 5;
+  const AD_DAILY_CAP = 5;
+  const AD_TYPE_LIMITS = { chest: 2, double: 2, spin: 1 };
+
+  function bucketFor(kind) {
+    if (kind === 'bombs') return state.bombs;
+    if (kind === 'skins') return state.skins;
+    return (state.cosmetics && state.cosmetics[kind]) || null;
+  }
+  function defaultIdFor(kind) {
+    return { skins: 'viper', bombs: 'classic', explosions: 'classic', trails: 'none', avatars: 'default' }[kind] || '';
+  }
+
   function addResult(result) {
     if (!result) return null;
+    rollEconomyDay();
     const comp = state.profile.competitive;
+    const econ = state.economy;
     const summary = {
       competitive: !!result.competitive, win: !!result.win, league: !!result.league,
-      points: 0, coins: 0, delta: 0, bonus: 0, base: 0, trophies: comp.trophies, rank: trophyRank()
+      points: 0, coins: 0, xp: 0, delta: 0, bonus: 0, base: 0, botCapped: false,
+      trophies: comp.trophies, rank: trophyRank()
     };
-    summary.coins = result.win ? 60 : 20;
+    // Economia rebalanceada: ONLINE 1v1 vale mais que treino contra bots.
+    // Bots pagam +3 moedas/+2 XP por vitória, no máximo 5 vezes ao dia;
+    // derrota contra bots não rende nada.
+    if (result.mode === 'ONLINE') {
+      summary.coins = result.win ? 25 : 8;
+      summary.xp = result.win ? 15 : 5;
+    } else if (result.win) {
+      if (econ.botWins < BOT_DAILY_WIN_CAP) {
+        econ.botWins++;
+        summary.coins = 3;
+        summary.xp = 2;
+      } else {
+        summary.botCapped = true;
+      }
+    }
     state.coins += summary.coins;
     // Estatísticas competitivas contam apenas ONLINE (PvP real) ou MATA-MATA/COPA.
     if (result.competitive) {
@@ -1224,7 +1449,7 @@ const GameState = (() => {
       rows.push({
         id: 'me', me: true, name: state.profile.nick || (I18N[currentLang] || {}).nickFallback || 'JOGADOR', avatar: state.profile.avatar,
         points: comp.leaguePoints, wins: comp.rankedWins, losses: comp.rankedLosses,
-        trophies: comp.trophies
+        trophies: comp.trophies, cosmeticRank: cosmeticRarity('skins', state.skins.equipped)
       });
     }
     return rows
@@ -1232,26 +1457,110 @@ const GameState = (() => {
       .map((row, i) => ({ ...row, pos: i + 1 }));
   }
   function isOwned(kind, id) {
-    const bucket = kind === 'bombs' ? state.bombs : state.skins;
-    return bucket.owned.includes(id) || id === (kind === 'bombs' ? 'classic' : 'viper');
+    const bucket = bucketFor(kind);
+    if (!bucket) return false;
+    return bucket.owned.includes(id) || id === defaultIdFor(kind);
   }
   function buy(kind, id) {
-    const list = kind === 'bombs' ? BOMB_SKINS : CHARACTER_SKINS;
-    const item = list.find(x => x.id === id);
-    if (!item) return { ok: false, reason: 'notfound' };
-    if (isOwned(kind, id)) return { ok: true, already: true };
+    const item = cosmeticCatalog(kind).find(x => x.id === id);
+    const bucket = bucketFor(kind);
+    if (!item || !bucket) return { ok: false, reason: 'notfound' };
+    if (item.rarity === 'starter' || isOwned(kind, id)) return { ok: true, already: true };
     if (state.coins < item.price) return { ok: false, reason: 'coins' };
     state.coins -= item.price;
-    (kind === 'bombs' ? state.bombs : state.skins).owned.push(id);
+    bucket.owned.push(id);
     save();
     return { ok: true, item, coins: state.coins };
   }
   function equip(kind, id) {
-    if (!isOwned(kind, id)) return false;
-    if (kind === 'bombs') state.bombs.equipped = id;
-    else state.skins.equipped = id;
+    const bucket = bucketFor(kind);
+    if (!bucket || !isOwned(kind, id)) return false;
+    bucket.equipped = id;
+    if (kind === 'avatars') state.profile.avatar = getCosmetic('avatars', id).emoji || '🐍';
     save();
     return true;
+  }
+  function equipped(kind) { return getCosmetic(kind, bucketFor(kind).equipped); }
+  // Payload para a nuvem: o que não é competitivo também precisa sobreviver
+  // à troca de aparelho (moedas, cosméticos e contadores diários).
+  function cloudPayload() {
+    rollEconomyDay();
+    return {
+      coins: state.coins,
+      xp: prefs.xp || 0,
+      level: levelInfo().level,
+      skins: { owned: state.skins.owned.slice(), equipped: state.skins.equipped },
+      bombs: { owned: state.bombs.owned.slice(), equipped: state.bombs.equipped },
+      cosmetics: {
+        explosions: { owned: state.cosmetics.explosions.owned.slice(), equipped: state.cosmetics.explosions.equipped },
+        trails: { owned: state.cosmetics.trails.owned.slice(), equipped: state.cosmetics.trails.equipped },
+        avatars: { owned: state.cosmetics.avatars.owned.slice(), equipped: state.cosmetics.avatars.equipped }
+      },
+      cosmeticRank: cosmeticRarity('skins', state.skins.equipped),
+      economy: {
+        botDay: state.economy.botDay, botWins: state.economy.botWins,
+        adDay: state.economy.adDay, ads: state.economy.ads,
+        chestDay: state.economy.chestDay, chest: state.economy.chest,
+        doubleDay: state.economy.doubleDay, double: state.economy.double,
+        spinDay: state.economy.spinDay, spin: state.economy.spin,
+        eventSlot: state.economy.eventSlot, eventWins: state.economy.eventWins, eventRewarded: state.economy.eventRewarded,
+        goldSlot: state.economy.goldSlot, goldCoins: state.economy.goldCoins
+      }
+    };
+  }
+  function canWatchAd(type) {
+    rollEconomyDay();
+    const e = state.economy;
+    if (e.ads >= AD_DAILY_CAP) return { ok: false, reason: 'daily', left: 0 };
+    const cap = AD_TYPE_LIMITS[type] || 0;
+    if (!cap) return { ok: false, reason: 'type', left: 0 };
+    const used = Number(e[type]) || 0;
+    return { ok: used < cap, reason: used < cap ? '' : 'limit', left: Math.max(0, cap - used) };
+  }
+  function registerAd(type) {
+    rollEconomyDay();
+    const e = state.economy;
+    e.ads++;
+    e[type] = (Number(e[type]) || 0) + 1;
+    save();
+    return { ads: e.ads, used: e[type], left: Math.max(0, (AD_TYPE_LIMITS[type] || 0) - e[type]) };
+  }
+  function adStatus(type) {
+    const check = canWatchAd(type);
+    return { ...check, dailyLeft: Math.max(0, AD_DAILY_CAP - state.economy.ads) };
+  }
+  function registerEventWin() {
+    const slot = currentSlotId();
+    const e = state.economy;
+    if (e.eventSlot !== slot) { e.eventSlot = slot; e.eventWins = 0; e.eventRewarded = false; }
+    e.eventWins = Math.min(2, e.eventWins + 1);
+    let reward = null;
+    if (e.eventWins >= 2 && !e.eventRewarded) {
+      e.eventRewarded = true;
+      state.coins += 35;
+      reward = { coins: 35, xp: rotatingEventIndexFor(slot) === 7 ? 50 : 25 };
+    }
+    save();
+    return reward;
+  }
+  function eventProgress() {
+    const slot = currentSlotId();
+    if (state.economy.eventSlot !== slot) return { wins: 0, rewarded: false };
+    return { wins: state.economy.eventWins, rewarded: state.economy.eventRewarded };
+  }
+  function goldCrateReward() {
+    const slot = currentSlotId();
+    const e = state.economy;
+    if (e.goldSlot !== slot) { e.goldSlot = slot; e.goldCoins = 0; }
+    if (e.goldCoins >= 15) return 0;
+    e.goldCoins += 2;
+    state.coins += 2;
+    save();
+    return 2;
+  }
+  function goldLeft() {
+    if (state.economy.goldSlot !== currentSlotId()) return 15;
+    return Math.max(0, 15 - state.economy.goldCoins);
   }
   function claimDaily() {
     const day = today();
@@ -1339,15 +1648,132 @@ const GameState = (() => {
     load, save, subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     // Gancho para Firestore/Realtime DB: substitui o snapshot inteiro.
     hydrate(data) { if (!data || typeof data !== 'object') return state; Object.assign(state, data); sanitize(); save(); return state; },
-    addCoins, setProfile, addResult, leagueTable, isOwned, buy, equip,
-    validateNick, setLeague, mergeRemoteProfile,
+    addCoins, setProfile, addResult, leagueTable, isOwned, buy, equip, equipped, defaultIdFor,
+    validateNick, setLeague, mergeRemoteProfile, cloudPayload,
     trophyRank, ensureCopa, claimCopaReward, weekKey,
     claimDaily, getSchedule, proposeSchedule, acceptSchedule, nextOccurrence,
     isLive, setLive, countdownText,
-    getBracketResult, setBracketResult
+    getBracketResult, setBracketResult,
+    canWatchAd, registerAd, adStatus, registerEventWin, eventProgress, goldCrateReward, goldLeft,
+    rollEconomyDay
   };
 })();
 window.GameState = GameState;
+
+/* ========================================================================
+   5.05 EVENTOS ROTATIVOS DE 3 HORAS
+   Relógio compartilhado: todos os jogadores calculam o mesmo slot a partir
+   do horário do sistema (Date.now), sem depender de servidor.
+   ======================================================================== */
+const EVENT_SLOT_MS = 3 * 60 * 60 * 1000;
+const ROTATING_EVENTS = [
+  { id: 'powerups', icon: '🎁', name: 'Chuva de Power-Ups', desc: 'Caixas soltam itens com o dobro de frequência.', nameEn: 'Power-Up Rain', descEn: 'Crates drop items twice as often.' },
+  { id: 'turbo', icon: '🚀', name: 'Velocidade Turbo', desc: 'Todo mundo começa na velocidade máxima.', nameEn: 'Turbo Speed', descEn: 'Everyone starts at max speed.' },
+  { id: 'gold', icon: '🪙', name: 'Caça ao Ouro', desc: '5 moedas douradas na arena: +2 moedas cada (até 15 por ciclo).', nameEn: 'Gold Hunt', descEn: '5 golden coins in the arena: +2 coins each (max 15 per cycle).' },
+  { id: 'shortfuse', icon: '💣', name: 'Pavio Curto', desc: 'As bombas explodem em 1,5s.', nameEn: 'Short Fuse', descEn: 'Bombs explode in 1.5s.' },
+  { id: 'maxfire', icon: '🔥', name: 'Fogo Máximo', desc: 'Começa com alcance máximo e 3 bombas.', nameEn: 'Max Firepower', descEn: 'Start with max range and 3 bombs.' },
+  { id: 'lightning', icon: '⚡', name: 'Arena Relâmpago', desc: 'A zona começa a fechar aos 30 segundos.', nameEn: 'Lightning Arena', descEn: 'The zone starts closing at 30 seconds.' },
+  { id: 'sudden', icon: '❤️', name: 'Morte Súbita 1 HP', desc: 'Apenas 1 coração por partida.', nameEn: 'Sudden Death 1 HP', descEn: 'Only 1 heart per match.' },
+  { id: 'pass', icon: '✨', name: 'Hora do Passe', desc: 'Todo XP ganho agora vale 2x.', nameEn: 'Pass Hour', descEn: 'All XP earned now counts 2x.' }
+];
+function currentSlotId() { return Math.floor(Date.now() / EVENT_SLOT_MS); }
+function rotatingEventIndexFor(slot) { return ((slot % ROTATING_EVENTS.length) + ROTATING_EVENTS.length) % ROTATING_EVENTS.length; }
+function currentRotatingEvent() {
+  const slot = currentSlotId();
+  const index = rotatingEventIndexFor(slot);
+  return {
+    slot, index,
+    event: ROTATING_EVENTS[index],
+    startAt: slot * EVENT_SLOT_MS,
+    endsAt: (slot + 1) * EVENT_SLOT_MS
+  };
+}
+function rotatingEvent() { return currentRotatingEvent().event; }
+function eventIs(index) { return currentRotatingEvent().index === index; }
+function eventCountdownText(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+/* ========================================================================
+   5.06 ANÚNCIOS PREMIADOS (AdManager)
+   No navegador o vídeo é simulado por 3s (TEST_MODE). No Android o mesmo
+   fluxo usa o plugin @capacitor-community/admob quando instalado.
+   ======================================================================== */
+window.AdManager = (() => {
+  let busy = false;
+  const TYPE_LABEL = {
+    chest: { pt: 'Baú patrocinado', en: 'Sponsored chest' },
+    double: { pt: 'Dobrar recompensa', en: 'Double reward' },
+    spin: { pt: 'Giro da sorte', en: 'Lucky spin' }
+  };
+  function textOf(key) {
+    const dict = I18N[currentLang] || {};
+    return dict[key] || '';
+  }
+  function showOverlay(type, seconds, done) {
+    const overlay = document.getElementById('adOverlay');
+    const label = document.getElementById('adOverlayLabel');
+    const timer = document.getElementById('adOverlayTimer');
+    const progress = document.getElementById('adOverlayBar');
+    if (label) label.textContent = `${(TYPE_LABEL[type] || TYPE_LABEL.chest)[currentLang] || TYPE_LABEL[type].pt} — ${textOf('adSimulating') || 'Simulando Anúncio Premiado...'}`;
+    if (overlay) overlay.classList.remove('hidden');
+    let left = seconds;
+    const paint = () => {
+      if (timer) timer.textContent = `${left}s`;
+      if (progress) progress.style.width = `${((seconds - left) / seconds) * 100}%`;
+    };
+    paint();
+    const iv = setInterval(() => {
+      left--;
+      paint();
+      if (left <= 0) {
+        clearInterval(iv);
+        if (overlay) overlay.classList.add('hidden');
+        done();
+      }
+    }, 1000);
+  }
+  async function showRewardedAd(type, onRewardSuccess) {
+    if (busy) return false;
+    const check = GameState.canWatchAd(type);
+    if (!check.ok) {
+      showToast(check.reason === 'daily'
+        ? (textOf('adDailyCap') || 'Limite diário de anúncios atingido (5/dia).')
+        : (textOf('adTypeCap') || 'Você já usou este anúncio hoje.'));
+      return false;
+    }
+    busy = true;
+    const finish = () => {
+      busy = false;
+      GameState.registerAd(type);
+      try { if (typeof onRewardSuccess === 'function') onRewardSuccess(); } catch (e) {}
+    };
+    // Android nativo: o plugin só é usado quando o ID real está configurado.
+    const admob = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob;
+    if (ADMOB_REWARDED_ID !== 'TEST_MODE' && admob && typeof admob.showRewardVideoAd === 'function') {
+      try {
+        await admob.showRewardVideoAd({ adId: ADMOB_REWARDED_ID });
+        finish();
+        return true;
+      } catch (err) {
+        busy = false;
+        showToast(textOf('adUnavailable') || 'Anúncio indisponível agora. Tente de novo mais tarde.');
+        return false;
+      }
+    }
+    showOverlay(type, 3, finish);
+    return true;
+  }
+  return {
+    showRewardedAd,
+    get busy() { return busy; },
+    status: (type) => GameState.adStatus(type)
+  };
+})();
 
 /* Aparência dos duelistas fictícios da liga (também usada nos bots do duelo). */
 const PROFILE_DEFS = {
@@ -1519,8 +1945,10 @@ function recordCareer(result) {
     maxKillsInMatch: Math.max(prefs.maxKillsInMatch || 0, result.kills || 0),
     maxSurvivalTime: Math.max(prefs.maxSurvivalTime || 0, result.time || 0)
   });
-  awardMatchProgress(result);
+  // A moeda/XP da partida agora vêm da economia rebalanceada, então o
+  // resumo é calculado antes para o XP respeitar o limite diário de bots.
   const summary = GameState.addResult(result);
+  awardMatchProgress(result, summary);
   checkAchievements();
   updateCareerUI();
   return summary;
@@ -1649,10 +2077,14 @@ function dailyEvent() {
 }
 
 /* ---------- XP ---------- */
-function addXp(raw, source = 'Partida') {
+function addXp(raw, source = 'Partida', opts = {}) {
   const ev = dailyEvent();
+  const rot = rotatingEvent();
   const mult = ev && ev.mods.xp ? ev.mods.xp : 1;
-  const amount = Math.max(1, Math.round(raw * mult));
+  // Hora do Passe dobra o XP; recompensas fixas do evento usam opts.raw
+  // para entregar exatamente o valor prometido.
+  const eventMult = rot && rot.id === 'pass' ? 2 : 1;
+  const amount = Math.max(1, Math.round(raw * (opts.raw ? 1 : mult * eventMult)));
   const before = levelInfo();
   prefs.xp = (prefs.xp || 0) + amount;
   savePrefs({});
@@ -1747,13 +2179,14 @@ function addRankingEntry(result) {
   savePrefs({ ranking: prefs.ranking });
 }
 
-function awardMatchProgress(result) {
-  const human = getHuman();
+function awardMatchProgress(result, summary) {
   const rank = result.win ? 1 : (match.humanRank || fighters.length);
   const time = result.time || 0;
-  let base = 30 + (result.kills || 0) * 22 + (result.win ? 130 : 0) + (rank <= 3 ? 40 : 0) + Math.min(50, Math.floor(time / 3));
-  if (match.mode === 'ONLINE' || match.mode === 'LOCAL') base += 10;
-  const gained = addXp(base, 'Partida');
+  // Base do XP segue a economia nova: +2 (vitória contra bots, até 5/dia),
+  // +15/+5 (ONLINE) ou o que o resumo da partida calcular. Missões e Passe
+  // continuam sendo as grandes fontes de XP.
+  const base = summary && Number.isFinite(summary.xp) ? summary.xp : 0;
+  const gained = base > 0 ? addXp(base, 'Partida') : 0;
   missionProgress('matches', 1);
   if (result.win) missionProgress('wins', 1);
   if ((result.kills || 0) > 0) missionProgress('kills', result.kills);
@@ -1806,8 +2239,12 @@ function updateEndLeagueLine(summary) {
   if (!summary.competitive) {
     if (el) { el.textContent = ''; el.classList.add('hidden'); }
     if (train) {
-      train.textContent = (dict.endTraining || '💰 +{n} MOEDAS · Modo Treino Offline • Não vale pontos na Liga')
-        .replace('{n}', summary.coins || 0);
+      const coins = summary.coins || 0;
+      const xp = summary.xp || 0;
+      train.textContent = summary.botCapped
+        ? (dict.endTrainingCap || '🚫 Limite de 5 vitórias contra bots por dia — jogue ONLINE para mais recompensas.')
+        : (dict.endTraining || '💰 +{c} MOEDAS · ⭐ +{x} XP · Treino Offline • Não vale pontos na Liga')
+          .replace('{c}', coins).replace('{x}', xp);
       train.classList.remove('hidden');
     }
     return;
@@ -1816,8 +2253,9 @@ function updateEndLeagueLine(summary) {
   if (!el) return;
   const pts = (dict.endLeaguePts || '{n} PTS NA LIGA').replace('{n}', summary.points);
   const delta = `${summary.delta > 0 ? '+' : ''}${summary.delta} 🏆`;
+  const coins = (dict.endMatchCoins || '💰 +{c}').replace('{c}', summary.coins || 0);
   // Só partidas ONLINE mostram pontos da Liga; mata-mata/Copa mostram troféus.
-  let text = summary.league ? `${pts} • ${delta}` : delta;
+  let text = summary.league ? `${pts} • ${delta} • ${coins}` : `${delta} • ${coins}`;
   if (summary.bonus > 0) text += ` (${dict.endTrophyBonus || 'Bônus de desempenho'}: +${summary.bonus} 🏆)`;
   el.textContent = text;
   el.classList.remove('hidden');
@@ -2072,6 +2510,10 @@ let bombs = [];
 let explosions = [];
 let powerups = [];
 let particles = [];
+/* Rastros de chão dos cosméticos (~1,2s de vida). Gerados a partir das
+   posições sincronizadas, então host e convidado veem o mesmo caminho. */
+let trails = [];
+const TRAIL_LIFE = 1.2;
 let floatingLabels = [];
 let portals = [];
 let safeSpawnSet = new Set();
@@ -2091,7 +2533,7 @@ const match = {
   elapsedTime: 0, safeRing: 1, stormInterval: 25, stormTimer: 25, stormTick: 0,
   stormWarning: false, warningDuration: 4.5, airdropTimer: 20,
   shake: 0, shakeEnabled: true, humanRank: 12, demoRestart: 0, hitFlash: 0, lastDeath: null,
-  humanSurvived: null
+  humanSurvived: null, eventMode: false, eventGoldSpawned: false
 };
 
 const cam = { x: WORLD_PX / 2, y: WORLD_PX / 2, zoom: 1 };
@@ -2392,6 +2834,22 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   else if (!cfg.grid && GRID_SIZE !== 35) applyGridSize(35);
   match.mode = cfg.id; match.mapId = mapDef.id; match.theme = mapDef;
   match.demoMode = isDemo; match.running = true; match.ended = false;
+  // Evento rotativo: só partidas iniciadas pelo card JOGAR EVENTO entram
+  // na contagem deste ciclo de 3 horas.
+  match.eventMode = !isDemo && pendingEventMatch;
+  pendingEventMatch = false;
+  match.eventGoldSpawned = false;
+  const rotEv = match.eventMode ? currentRotatingEvent() : null;
+  match.eventMods = rotEv ? {
+    speed: rotEv.index === 1 ? 3 : 0,
+    bombs: rotEv.index === 4 ? 3 : 0,
+    range: rotEv.index === 4 ? 7 : 0,
+    hp: rotEv.index === 6 ? 1 : 0,
+    gold: rotEv.index === 2,
+    doubleLoot: rotEv.index === 0,
+    shortFuse: rotEv.index === 3,
+    lightning: rotEv.index === 5
+  } : null;
   // Voz é por partida: reaparece desligada no 1v1/Online e some no resto.
   if (window.VoiceChat) window.VoiceChat.setVisible(!isDemo && !spectate.active && (cfg.id === 'DUEL' || cfg.id === 'ONLINE'));
   match.paused = false;
@@ -2402,6 +2860,11 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   const stormMod = dailyEvent().mods.storm || 1;
   match.stormInterval = cfg.stormInterval * stormMod;
   match.stormTimer = (cfg.stormDelay || cfg.stormInterval) * stormMod;
+  // Arena Relâmpago: queda de blocos começa aos 30s e acelera o fechamento.
+  if (match.eventMods && match.eventMods.lightning) {
+    match.stormTimer = 30;
+    match.stormInterval = Math.min(match.stormInterval, 10);
+  }
   match.stormTick = 0;
   match.stormWarning = false; match.airdropTimer = cfg.airdropTimer;
   match.shake = 0; match.hitFlash = 0; match.lastDeath = null;
@@ -2411,6 +2874,7 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   if (cfg.id !== 'ONLINE') match.netRole = null;
   
   bombs = []; explosions = []; powerups = []; particles = []; floatingLabels = [];
+  trails = [];
   cryoTiles = new Map(); activeAirdrop = null;
   bombSeq = 0; explosionSeq = 0;
   UI.killFeed.innerHTML = '';
@@ -2497,6 +2961,8 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   }
   
   match.humanRank = fighters.length;
+  // Caça ao Ouro: 5 moedas douradas espalhadas pela arena a cada partida.
+  if (match.eventMods && match.eventMods.gold) spawnGoldPickups(5);
   if (!isDemo) fighters.forEach(f => { f.invulnTimer = 2; });
   const localHuman = fighters.find(f => f.device === 'p1');
   if (localHuman) localHuman.avatar = GameState.state.profile.avatar;
@@ -2524,16 +2990,21 @@ function makeFighter(idx, sp, name, color, visor, device = 'bot', team = 0, prof
     bombSkinId = BOMB_SKINS[idx % BOMB_SKINS.length].id;
   }
   const tactical = isHuman ? selectedStarterTactical : TACTICAL_ORDER[idx % 3];
+  const evm = match.eventMods || null;
   const f = {
     id: `F_${idx}`, name, isHuman, device, team,
-    alive: true, hp: 2, maxHp: 2,
+    alive: true, hp: evm && evm.hp ? evm.hp : 2, maxHp: evm && evm.hp ? evm.hp : 2,
     x: (sp.c + 0.5) * TILE_SIZE, y: (sp.r + 0.5) * TILE_SIZE,
     netX: 0, netY: 0, vx: 0, vy: 0, kbX: 0, kbY: 0,
     slideX: 0, slideY: 0, lavaTime: 0, onHazard: null,
     netInX: 0, netInY: 0, netInTime: 0,
     facingAngle: Math.atan2(GRID_MID - sp.r, GRID_MID - sp.c),
     color, visor, kills: 0, skin: skin ? skin.id : null, bombSkinId,
-    maxBombs: (device === 'p1' && dailyEvent().mods.bombs) ? 2 : 1, activeBombs: 0, bombRange: 2, speedLevel: 1,
+    cosmeticSkin: device === 'p1' ? GameState.state.skins.equipped : null,
+    trailId: device === 'p1' ? GameState.state.cosmetics.trails.equipped : 'none',
+    explosionSkin: device === 'p1' ? GameState.state.cosmetics.explosions.equipped : 'classic',
+    maxBombs: evm && evm.bombs ? evm.bombs : ((device === 'p1' && dailyEvent().mods.bombs) ? 2 : 1), activeBombs: 0,
+    bombRange: evm && evm.range ? evm.range : 2, speedLevel: evm && evm.speed ? 3 : 1,
     canKick: false, shield: false,
     tacticalType: tactical, tacticalAmmo: { SHOCK: 0, CRYO: 0, C4: 0 },
     invulnTimer: 0, dashTimer: 0, dashCooldown: 0, dashDirX: 0, dashDirY: 1,
@@ -2775,6 +3246,16 @@ function applyPowerup(fighter, type) {
   else if (type === 'SPEED') fighter.speedLevel = Math.min(5, fighter.speedLevel + 1);
   else if (type === 'KICK') fighter.canKick = true;
   else if (type === 'SHIELD') fighter.shield = true;
+  else if (type === 'GOLD') {
+    if (isMyFighter(fighter)) {
+      const got = GameState.goldCrateReward();
+      addFloatingLabel(got ? '+2 🪙' : 'LIMITE 🪙', fighter.x, fighter.y - 26, POWERUP_TYPES.GOLD.color);
+      SFX.playPickup();
+      updateHUD();
+    }
+    spawnParticles(fighter.x, fighter.y, POWERUP_TYPES.GOLD.color, 12, 120, 0.4);
+    return;
+  }
   else if (type === 'SHOCK' || type === 'CRYO' || type === 'C4') {
     fighter.tacticalAmmo[type] = Math.min(9, fighter.tacticalAmmo[type] + 2);
   }
@@ -2896,7 +3377,8 @@ function destroyCrate(c, r, isAirdrop) {
     }
     return;
   }
-  if (Math.random() < 0.55 * (dailyEvent().mods.loot || 1)) {
+  const lootMult = (dailyEvent().mods.loot || 1) * ((match.eventMods && match.eventMods.doubleLoot) ? 2 : 1);
+  if (Math.random() < Math.min(0.95, 0.55 * lootMult)) {
     const roll = Math.random();
     let type = 'BOMB';
     if (roll < 0.22) type = 'BOMB';
@@ -2909,6 +3391,27 @@ function destroyCrate(c, r, isAirdrop) {
     else type = 'C4';
     powerups.push({ type, x: wx, y: wy, bobPhase: Math.random() * 6 });
   }
+}
+
+/* Caça ao Ouro: moedas douradas em piso livre, longe dos spawns. */
+function spawnGoldPickups(count) {
+  const spots = [];
+  for (let r = 1; r < GRID_SIZE - 1; r++) {
+    for (let c = 1; c < GRID_SIZE - 1; c++) {
+      if (grid[r][c] === CELL.FLOOR || grid[r][c] === CELL.BUSH) spots.push({ c, r });
+    }
+  }
+  shuffle(spots);
+  let placed = 0;
+  for (const s of spots) {
+    if (placed >= count) break;
+    const x = (s.c + 0.5) * TILE_SIZE, y = (s.r + 0.5) * TILE_SIZE;
+    if (fighters.some(f => Math.hypot(f.x - x, f.y - y) < TILE_SIZE * 1.5)) continue;
+    if (powerups.some(pu => Math.hypot(pu.x - x, pu.y - y) < TILE_SIZE * 0.6)) continue;
+    powerups.push({ type: 'GOLD', x, y, bobPhase: Math.random() * 6 });
+    placed++;
+  }
+  match.eventGoldSpawned = placed > 0;
 }
 
 /* ========================================================================
@@ -2951,6 +3454,7 @@ function placeBomb(f, type = 'NORMAL') {
     id: `B_${++bombSeq}`, type,
     x: (c + 0.5) * TILE_SIZE, y: (r + 0.5) * TILE_SIZE, c, r,
     ownerId: f.id, range: f.bombRange, skinId: f.bombSkinId || 'classic',
+    blastId: f.explosionSkin || 'classic',
     fuse: type === 'SHOCK' ? 1.35 : type === 'CRYO' ? 1.15 : type === 'C4' ? 30 : 2.35,
     bornAt: match.elapsedTime,
     vx: 0, vy: 0, passThroughPlayers: new Set(), exploded: false, seed: Math.random() * 10
@@ -3062,10 +3566,12 @@ function crossBlast(bomb, owner, bc, br) {
       cells.push({ c, r });
     }
   }
+  const blastSkin = bomb.type === 'C4' ? null : getCosmetic('explosions', bomb.blastId || 'classic');
   explosions.push({
     id: ++explosionSeq, type: 'cross', x: bomb.x, y: bomb.y, cells,
-    color: bomb.type === 'C4' ? '#fb7185' : getBombSkin(bomb.skinId).flame,
-    center: bomb.type === 'C4' ? '#fef3c7' : getBombSkin(bomb.skinId).core,
+    color: bomb.type === 'C4' ? '#fb7185' : blastSkin.color,
+    center: bomb.type === 'C4' ? '#fef3c7' : blastSkin.core,
+    tier: blastSkin ? rarityTier(blastSkin.rarity) : 0,
     timer: 0.45, maxTimer: 0.45
   });
   SFX.playExplosion(audibilityAt(bomb.x, bomb.y));
@@ -3337,6 +3843,7 @@ function simulatedBlastSet(extraBombs = null) {
 }
 
 function bombFuseFor(type) {
+  if (type === 'NORMAL' && match.eventMods && match.eventMods.shortFuse) return 1.5;
   return type === 'SHOCK' ? 1.35 : type === 'CRYO' ? 1.15 : type === 'C4' ? 30 : 2.35;
 }
 
@@ -4113,6 +4620,10 @@ function endMatch(win, isTeamMode = false, opts = {}) {
   if (!shouldRecord) match.lastXp = 0;
   match.ended = true; match.running = false; match.shake = 0;
   resetJoystick();
+  const endDoubleBtn = document.getElementById('btnDoubleReward');
+  if (endDoubleBtn) endDoubleBtn.classList.add('hidden');
+  const endEventEl = document.getElementById('endEventLine');
+  if (endEventEl) { endEventEl.textContent = ''; endEventEl.classList.add('hidden'); }
   const human = getHuman();
   const winner = fighters.find(f => f.alive) || null;
   const total = fighters.length;
@@ -4227,8 +4738,35 @@ function endMatch(win, isTeamMode = false, opts = {}) {
       duel.bracketId = null;
     }
   }
+  // Evento rotativo: 2 vitórias no mesmo ciclo de 3h pagam +35 moedas e
+  // +25 XP (+50 na Hora do Passe). XP é fixo, sem multiplicador de missão.
+  if (shouldRecord && match.eventMode) {
+    const evDict = I18N[currentLang] || {};
+    const prog = GameState.eventProgress();
+    if (ownerWon) {
+      const reward = GameState.registerEventWin();
+      if (reward) {
+        const gained = addXp(reward.xp, 'Evento', { raw: true });
+        match.lastXp = (match.lastXp || 0) + gained;
+        endEventEl.textContent = (evDict.eventRewardGranted || '🎪 Evento: +35 moedas e +{x} XP pela 2ª vitória!').replace('{x}', gained);
+      } else {
+        endEventEl.textContent = (evDict.eventProgressLine || '🎪 Evento: vitória {n}/2 — mais {m} para a recompensa.')
+          .replace('{n}', GameState.eventProgress().wins).replace('{m}', Math.max(0, 2 - GameState.eventProgress().wins));
+      }
+    } else {
+      endEventEl.textContent = (evDict.eventLossLine || '🎪 Evento: {n}/2 vitórias neste ciclo.').replace('{n}', prog.wins);
+    }
+    endEventEl.classList.remove('hidden');
+    updateEndXpLine();
+  }
   updateEndLeagueLine(leagueSummary);
   applyEndButtons(competitive, competitive && match.mode === 'ONLINE' && !!net.role);
+  // Dobrar a recompensa: só vitória ONLINE 1v1 válida, 2x por dia.
+  if (endDoubleBtn && shouldRecord && ownerWon && match.mode === 'ONLINE' && league) {
+    const st = GameState.adStatus('double');
+    endDoubleBtn.classList.toggle('hidden', !st.ok);
+    endDoubleBtn.disabled = !st.ok;
+  }
   updateEndXpLine();
   MUSIC.play('menu');
   updateRotateGate();
@@ -4751,6 +5289,7 @@ const keys = new Set();
 const joystick = { active: false, id: null, ox: 0, oy: 0, dx: 0, dy: 0 };
 let selectedMode = 'SOLO';
 let selectedMap = 'NEON';
+let pendingEventMatch = false;
 
 const KEYMAP = {
   p1: { up: ['KeyW'], down: ['KeyS'], left: ['KeyA'], right: ['KeyD'], bomb: ['Space'], dash: ['ShiftLeft'], tactical: ['KeyE'], cycle: ['KeyQ'] },
@@ -4924,6 +5463,7 @@ function setLobbySection(tab) {
   if (lobbyTab === 'league') renderLeague();
   if (lobbyTab === 'bracket') { renderBracket(); renderCopa(); }
   if (lobbyTab === 'shop') renderShop();
+  if (lobbyTab === 'event') renderEventLobby();
   if (lobbyTab === 'online') {
     if (!netServerLikely()) return;
     if (!netServer.checked) netServerCheck();
@@ -5122,14 +5662,17 @@ function renderLeague() {
     <span class="league-w">${dict.leagueW || 'V'}</span>
     <span class="league-l">${dict.leagueL || 'D'}</span>
   </div>`;
-  el.innerHTML = head + table.map(row => `
-    <div class="league-row${row.pos <= 8 ? ' g8' : ''}${row.me ? ' me' : ''}" data-player="${row.me ? 'me' : escapeHtml(row.name)}" tabindex="0" role="button" title="${escapeHtml((I18N[currentLang] || {}).tabProfile || 'Perfil')}">
+  el.innerHTML = head + table.map(row => {
+    const cos = row.cosmeticRank && rarityTier(row.cosmeticRank) >= 4 ? ` cos-${row.cosmeticRank}` : '';
+    return `
+    <div class="league-row${row.pos <= 8 ? ' g8' : ''}${row.me ? ' me' : ''}${cos}" data-player="${row.me ? 'me' : escapeHtml(row.name)}" tabindex="0" role="button" title="${escapeHtml((I18N[currentLang] || {}).tabProfile || 'Perfil')}">
       <span class="league-pos">${row.pos}</span>
       <span class="league-player">${escapeHtml(row.avatar || '🐍')} ${escapeHtml(row.name)}${row.me ? ` <span class="me-tag">${dict.leagueYou || 'VOCÊ'}</span>` : ''}</span>
       <span class="league-pts">${row.points}</span>
       <span class="league-w">${row.wins}</span>
       <span class="league-l">${row.losses}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 /* Perfil público do jogador (tabela, mata-mata, Copa e arquibancada).
@@ -5638,41 +6181,127 @@ function renderCopa() {
   if (rewards) rewards.textContent = dict.copaReward || '🏆 Campeão: +300 💰 e +40 🏆 • vice e semifinalistas levam troféus de partida';
 }
 
+let shopTab = 'skins';
+const SHOP_TABS = ['skins', 'bombs', 'explosions', 'trails', 'avatars'];
+const SHOP_GRID_IDS = { skins: 'charaShop', bombs: 'bombShop', explosions: 'explosionShop', trails: 'trailShop', avatars: 'avatarShop' };
+
 function shopItemHtml(kind, item, dict) {
-  const buckets = GameState.state;
-  const bucket = kind === 'bombs' ? buckets.bombs : buckets.skins;
+  const bucket = kind === 'bombs' ? GameState.state.bombs
+    : kind === 'skins' ? GameState.state.skins
+      : GameState.state.cosmetics[kind];
   const owned = GameState.isOwned(kind, item.id);
   const equipped = bucket.equipped === item.id;
-  const emoji = kind === 'bombs'
-    ? ({ classic: '💣', dynamite: '🧨', plasma: '🌀', crystal: '💎' }[item.id] || '💣')
-    : ({ viper: '🐍', pyro: '🔥', cyber: '⚡', guardian: '👑' }[item.id] || '🎨');
-  const previewBg = kind === 'bombs'
-    ? `radial-gradient(circle at 40% 35%, ${item.color}88, #0f172a)`
-    : `radial-gradient(circle at 35% 30%, ${item.body}88, #0f172a)`;
+  const meta = rarityMeta(item.rarity);
+  const emoji = item.emoji || (kind === 'skins' ? '🎨' : kind === 'bombs' ? '💣' : '✨');
+  const swatch = item.body || item.color || item.glow || meta.color;
+  const previewBg = `radial-gradient(circle at 40% 35%, ${swatch}88, #0f172a)`;
   let btn;
-  if (equipped) btn = `<button type="button" class="shop-buy equip" disabled>${dict.shopEquipped || '✓ EQUIPADA'}</button>`;
+  if (equipped) btn = `<button type="button" class="shop-buy equip" disabled>${dict.shopEquipped || '✓ EQUIPADO'}</button>`;
   else if (owned) btn = `<button type="button" class="shop-buy equip" data-shop-kind="${kind}" data-shop-id="${item.id}" data-shop-act="equip">${dict.shopEquip || 'EQUIPAR'}</button>`;
+  else if (item.rarity === 'starter') btn = `<button type="button" class="shop-buy equip" data-shop-kind="${kind}" data-shop-id="${item.id}" data-shop-act="equip">${dict.shopDefault || 'PADRÃO'}</button>`;
   else btn = `<button type="button" class="shop-buy buy" data-shop-kind="${kind}" data-shop-id="${item.id}" data-shop-act="buy">${(dict.shopBuy || 'COMPRAR {n} 💰').replace('{n}', item.price)}</button>`;
-  return `<div class="shop-item${equipped ? ' equipped' : ''}">
+  const rarityLabel = currentLang === 'en' ? meta.labelEn : meta.label;
+  return `<div class="shop-item${equipped ? ' equipped' : ''}${item.rarity === 'starter' ? ' starter' : ''}" style="--rarity:${meta.color}">
     <div class="shop-item-top">
-      <div class="shop-preview" style="background:${previewBg};border:1px solid ${kind === 'bombs' ? item.color : item.body}77">${emoji}</div>
+      <div class="shop-preview" style="background:${previewBg};border:1px solid ${swatch}77">${emoji}</div>
       <div style="min-width:0">
         <div class="shop-item-name">${item.name}</div>
         <div class="shop-item-sub">${(item.desc && (item.desc[currentLang] || item.desc.pt)) || ''}</div>
       </div>
     </div>
-    ${btn}
+    <div class="shop-item-foot">
+      <span class="shop-rarity">${rarityLabel}</span>
+      ${btn}
+    </div>
   </div>`;
 }
+
+function setShopTab(tab) {
+  shopTab = SHOP_TABS.includes(tab) ? tab : 'skins';
+  SHOP_TABS.forEach(kind => {
+    const grid = document.getElementById(SHOP_GRID_IDS[kind]);
+    if (grid) grid.classList.toggle('hidden', kind !== shopTab);
+  });
+  document.querySelectorAll('[data-shop-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.shopTab === shopTab);
+  });
+  const reset = document.getElementById('btnShopDefault');
+  const defaults = { skins: 'viper', bombs: 'classic', explosions: 'classic', trails: 'none', avatars: 'default' };
+  if (reset) {
+    const bucket = shopTab === 'bombs' ? GameState.state.bombs
+      : shopTab === 'skins' ? GameState.state.skins
+        : GameState.state.cosmetics[shopTab];
+    reset.classList.toggle('hidden', bucket.equipped === defaults[shopTab]);
+    reset.dataset.shopKind = shopTab;
+  }
+}
+
+let eventLobbySlot = 0;
+
+function renderEventLobby() {
+  const rot = currentRotatingEvent();
+  eventLobbySlot = rot.slot;
+  const ev = rot.event;
+  const en = currentLang === 'en';
+  const dict = I18N[currentLang] || {};
+  const setText = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  setText('eventIcon', ev.icon);
+  setText('eventName', en ? ev.nameEn : ev.name);
+  setText('eventDesc', en ? ev.descEn : ev.desc);
+  const prog = GameState.eventProgress();
+  setText('eventProgressCount', `${Math.min(2, prog.wins)}/2`);
+  const fill = document.getElementById('eventProgressFill');
+  if (fill) fill.style.width = `${Math.min(100, (prog.wins / 2) * 100)}%`;
+  const reward = document.getElementById('eventReward');
+  if (reward) reward.classList.toggle('hidden', !prog.rewarded);
+  const spin = document.getElementById('btnSpin');
+  if (spin) {
+    const st = GameState.adStatus('spin');
+    spin.disabled = !st.ok;
+    spin.innerHTML = `🎬 <span>${st.ok ? (dict.spinBtn || 'GIRAR') : (dict.spinUsed || 'USADO HOJE')}</span>`;
+  }
+  updateEventCountdown();
+}
+
+function updateEventCountdown() {
+  const el = document.getElementById('eventCountdown');
+  if (!el) return;
+  const rot = currentRotatingEvent();
+  el.textContent = eventCountdownText(rot.endsAt - Date.now());
+  // Virada de slot: o card se atualiza sozinho, sem recarregar o lobby.
+  if (eventLobbySlot !== rot.slot) {
+    eventLobbySlot = rot.slot;
+    if (lobbyTab === 'event') renderEventLobby();
+  }
+}
+setInterval(updateEventCountdown, 1000);
 
 function renderShop() {
   const dict = I18N[currentLang] || {};
   const coins = document.getElementById('shopCoins');
   if (coins) coins.textContent = GameState.state.coins;
-  const chars = document.getElementById('charaShop');
-  if (chars) chars.innerHTML = CHARACTER_SKINS.map(s => shopItemHtml('skins', s, dict)).join('');
-  const bombs = document.getElementById('bombShop');
-  if (bombs) bombs.innerHTML = BOMB_SKINS.map(b => shopItemHtml('bombs', b, dict)).join('');
+  SHOP_TABS.forEach(kind => {
+    const grid = document.getElementById(SHOP_GRID_IDS[kind]);
+    if (!grid) return;
+    // Os 8 itens compráveis da aba (o padrão continua disponível no botão
+    // "usar padrão" para quem já trocou de cosmético).
+    grid.innerHTML = cosmeticCatalog(kind)
+      .filter(item => item.rarity !== 'starter')
+      .map(item => shopItemHtml(kind, item, dict))
+      .join('');
+    grid.classList.toggle('hidden', kind !== shopTab);
+  });
+  document.querySelectorAll('[data-shop-tab]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.shopTab === shopTab);
+  });
+  // Baú patrocinado: mostra quantas vezes ainda pode ser aberto hoje.
+  const chestBtn = document.getElementById('btnAdChest');
+  if (chestBtn) {
+    const st = GameState.adStatus('chest');
+    chestBtn.textContent = (dict.shopAdChest || '📺 BAÚ +40 💰') + ` (${st.left}/2)`;
+    chestBtn.disabled = !st.ok;
+  }
+  setShopTab(shopTab);
 }
 
 function refreshLobbyScreens() {
@@ -5681,6 +6310,7 @@ function refreshLobbyScreens() {
   renderBracket();
   renderCopa();
   renderShop();
+  renderEventLobby();
   refreshLobbyHeader();
 }
 
@@ -5691,6 +6321,8 @@ function onGameStateChanged() {
   if (lobbyTab === 'league') renderLeague();
   if (lobbyTab === 'bracket') { renderBracket(); renderCopa(); }
   if (lobbyTab === 'profile') renderProfile();
+  if (lobbyTab === 'shop') renderShop();
+  if (lobbyTab === 'event') renderEventLobby();
 }
 
 function syncDuelBestUI() {
@@ -5932,6 +6564,28 @@ function bindUI() {
     if (selectedMode === 'DUEL') startDuelSeries(prefs.duelBest || 3);
     else initArena(false, selectedMode, selectedMap);
   });
+  const playEventBtn = document.getElementById('btnPlayEvent');
+  if (playEventBtn) playEventBtn.addEventListener('click', () => {
+    SFX.init();
+    UI.startScreen.classList.add('hidden');
+    setSelectedMode('SOLO');
+    // Depois do setSelectedMode: ele recria o demo do lobby, o que
+    // consumiria a flag antes da partida real começar.
+    pendingEventMatch = true;
+    UI.hud.classList.remove('hidden');
+    initArena(false, 'SOLO', selectedMap);
+  });
+  const spinBtn = document.getElementById('btnSpin');
+  if (spinBtn) spinBtn.addEventListener('click', () => {
+    const dict = I18N[currentLang] || {};
+    AdManager.showRewardedAd('spin', () => {
+      const prizes = [50, 100, 200];
+      const gain = prizes[Math.floor(Math.random() * prizes.length)];
+      GameState.addCoins(gain);
+      renderEventLobby();
+      showToast((dict.spinGain || '🎰 +{n} moedas!').replace('{n}', gain));
+    });
+  });
   const tutBtnEl = document.getElementById('btnTutorial');
   if (tutBtnEl) tutBtnEl.addEventListener('click', startTutorial);
   const tutSkipEl = document.getElementById('btnTutorialSkip');
@@ -5969,8 +6623,19 @@ function bindUI() {
     }
     SFX.init();
     UI.endModal.classList.add('hidden');
+    pendingEventMatch = !!match.eventMode;
     if (match.mode === 'DUEL') startDuelSeries(duel.best);
     else initArena(false, match.mode, match.mapId);
+  });
+  const doubleRewardBtn = document.getElementById('btnDoubleReward');
+  if (doubleRewardBtn) doubleRewardBtn.addEventListener('click', () => {
+    const dict = I18N[currentLang] || {};
+    AdManager.showRewardedAd('double', () => {
+      GameState.addCoins(40);
+      doubleRewardBtn.classList.add('hidden');
+      doubleRewardBtn.disabled = true;
+      showToast(dict.doubleGain || '📺 +40 moedas extras!');
+    });
   });
   const btnMenu = document.getElementById('btnBackToMenu');
   if (btnMenu) {
@@ -6116,10 +6781,9 @@ function bindUI() {
     const btn = e.target.closest('[data-shop-act]');
     if (!btn) return;
     const dict = I18N[currentLang] || {};
-    const kind = btn.dataset.shopKind === 'bombs' ? 'bombs' : 'skins';
+    const kind = SHOP_TABS.includes(btn.dataset.shopKind) ? btn.dataset.shopKind : 'skins';
     const id = btn.dataset.shopId;
-    const list = kind === 'bombs' ? BOMB_SKINS : CHARACTER_SKINS;
-    const item = list.find(x => x.id === id);
+    const item = cosmeticCatalog(kind).find(x => x.id === id);
     if (!item) return;
     if (btn.dataset.shopAct === 'buy') {
       const res = GameState.buy(kind, id);
@@ -6133,10 +6797,33 @@ function bindUI() {
     renderShop();
     if (UI.startScreen && !UI.startScreen.classList.contains('hidden')) refreshDemo();
   };
-  const charaShop = document.getElementById('charaShop');
-  if (charaShop) charaShop.addEventListener('click', shopClick);
-  const bombShop = document.getElementById('bombShop');
-  if (bombShop) bombShop.addEventListener('click', shopClick);
+  Object.values(SHOP_GRID_IDS).forEach(gid => {
+    const el = document.getElementById(gid);
+    if (el) el.addEventListener('click', shopClick);
+  });
+  document.querySelectorAll('[data-shop-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      setShopTab(btn.dataset.shopTab);
+      if (UI.startScreen && !UI.startScreen.classList.contains('hidden')) refreshDemo();
+    });
+  });
+  onEl('btnShopDefault', 'click', () => {
+    const kind = shopTab;
+    const def = GameState.defaultIdFor(kind);
+    GameState.equip(kind, def);
+    renderShop();
+    const item = getCosmetic(kind, def);
+    showToast((I18N[currentLang].shopEquippedMsg || '{name} equipado!').replace('{name}', item ? item.name : def));
+    if (UI.startScreen && !UI.startScreen.classList.contains('hidden')) refreshDemo();
+  });
+  onEl('btnAdChest', 'click', () => {
+    const dict = I18N[currentLang] || {};
+    AdManager.showRewardedAd('chest', () => {
+      GameState.addCoins(40);
+      renderShop();
+      showToast(dict.shopChestGain || '📺 +40 moedas do baú patrocinado!');
+    });
+  });
   onEl('btnDailyReward', 'click', () => {
     const dict = I18N[currentLang] || {};
     const gain = GameState.claimDaily();
@@ -6524,6 +7211,7 @@ function update(dt) {
   hudAccum += dt;
   if (hudAccum >= 0.1) { hudAccum = 0; updateHUD(); }
   updateCamera(dt);
+  updateTrails(dt);
   if (tutorial.active) updateTutorial(dt);
   checkMatchEnd(dt);
 }
@@ -6902,7 +7590,7 @@ function netWireChannel(dc) {
       netSetStatus('netWaitingHost', 'ok');
       const fallback = (I18N[currentLang] || {}).nickFallback || 'JOGADOR';
       const name = (GameState.state.profile.nick || UI.nameInput.value || fallback).trim().slice(0, 15) || fallback;
-      try { dc.send(JSON.stringify({ t: 'hi', n: name })); } catch (e) {}
+      try { dc.send(JSON.stringify({ t: 'hi', n: name, cs: GameState.state.skins.equipped, tr: GameState.state.cosmetics.trails.equipped, xs: GameState.state.cosmetics.explosions.equipped, av: GameState.state.profile.avatar })); } catch (e) {}
     }
   });
   dc.addEventListener('close', () => {
@@ -7264,7 +7952,7 @@ function netEnterRelay(opts = {}) {
     netSetStatus('netWaitingHost', 'ok');
     const fallback = (I18N[currentLang] || {}).nickFallback || 'JOGADOR';
     const name = (GameState.state.profile.nick || UI.nameInput.value || fallback).trim().slice(0, 15) || fallback;
-    netSend({ t: 'hi', n: name });
+    netSend({ t: 'hi', n: name, cs: GameState.state.skins.equipped, tr: GameState.state.cosmetics.trails.equipped, xs: GameState.state.cosmetics.explosions.equipped, av: GameState.state.profile.avatar });
   }
   return true;
 }
@@ -7960,7 +8648,14 @@ function netOnRemoteInput(msg) {
 function netOnHello(msg) {
   if (match.netRole !== 'host' || !msg.n) return;
   const f = fighters.find(x => x.device === 'p2');
-  if (f) f.name = String(msg.n).slice(0, 14);
+  if (!f) return;
+  f.name = String(msg.n).slice(0, 14);
+  // Cosméticos do convidado: a aura/rastro dele é desenhada no host e
+  // chega de volta pelo snapshot para os dois lados verem igual.
+  if (msg.cs && cosmeticCatalog('skins').some(s => s.id === msg.cs)) f.cosmeticSkin = msg.cs;
+  if (msg.tr && cosmeticCatalog('trails').some(t => t.id === msg.tr)) f.trailId = msg.tr;
+  if (msg.xs && cosmeticCatalog('explosions').some(x => x.id === msg.xs)) f.explosionSkin = msg.xs;
+  if (msg.av) f.avatar = String(msg.av).slice(0, 8);
 }
 
 function netFeedEvent(killer, victim, mode) {
@@ -7980,9 +8675,9 @@ function netBuildSnapshot() {
     sr: match.safeRing, st: Math.round(match.stormTimer * 10) / 10,
     sw: match.stormWarning ? 1 : 0,
     ad: activeAirdrop ? { c: activeAirdrop.c, r: activeAirdrop.r, timer: Math.round(activeAirdrop.timer * 10) / 10, landed: !!activeAirdrop.landed } : null,
-    f: fighters.map(f => ({ i: f.id, d: f.device, n: f.name, c: f.color, v: f.visor, tm: f.team, x: Math.round(f.x * 10) / 10, y: Math.round(f.y * 10) / 10, a: Math.round(f.facingAngle * 100) / 100, hp: f.hp, mhp: f.maxHp, sh: f.shield ? 1 : 0, ck: f.canKick ? 1 : 0, ib: f.inBush ? 1 : 0, al: f.alive ? 1 : 0, k: f.kills, tt: f.tacticalType, ta: [f.tacticalAmmo.SHOCK, f.tacticalAmmo.CRYO, f.tacticalAmmo.C4], mb: f.maxBombs, br: f.bombRange, sl: f.speedLevel, dc: Math.round(f.dashCooldown * 100) / 100, it: Math.round(f.invulnTimer * 100) / 100 })),
-    b: bombs.filter(b => !b.exploded).map(b => ({ i: b.id, t: b.type, x: Math.round(b.x * 10) / 10, y: Math.round(b.y * 10) / 10, c: b.c, r: b.r, s: Math.round(b.seed * 100) / 100, f: Math.round(b.fuse * 100) / 100 })),
-    x: explosions.map(ex => ({ i: ex.id, t: ex.type, x: Math.round(ex.x * 10) / 10, y: Math.round(ex.y * 10) / 10, cells: ex.cells, rad: ex.radius || 0, col: ex.color, tm: Math.round(ex.timer * 100) / 100, mt: ex.maxTimer })),
+    f: fighters.map(f => ({ i: f.id, d: f.device, n: f.name, c: f.color, v: f.visor, tm: f.team, x: Math.round(f.x * 10) / 10, y: Math.round(f.y * 10) / 10, a: Math.round(f.facingAngle * 100) / 100, hp: f.hp, mhp: f.maxHp, sh: f.shield ? 1 : 0, ck: f.canKick ? 1 : 0, ib: f.inBush ? 1 : 0, al: f.alive ? 1 : 0, k: f.kills, tt: f.tacticalType, ta: [f.tacticalAmmo.SHOCK, f.tacticalAmmo.CRYO, f.tacticalAmmo.C4], mb: f.maxBombs, br: f.bombRange, sl: f.speedLevel, dc: Math.round(f.dashCooldown * 100) / 100, it: Math.round(f.invulnTimer * 100) / 100, cs: f.cosmeticSkin || '', tr: f.trailId || 'none', xs: f.explosionSkin || 'classic', av: f.avatar || '', rk: f.cosmeticSkin ? rarityTier(cosmeticRarity('skins', f.cosmeticSkin)) : 0 })),
+    b: bombs.filter(b => !b.exploded).map(b => ({ i: b.id, t: b.type, x: Math.round(b.x * 10) / 10, y: Math.round(b.y * 10) / 10, c: b.c, r: b.r, s: Math.round(b.seed * 100) / 100, f: Math.round(b.fuse * 100) / 100, sk: b.skinId || 'classic' })),
+    x: explosions.map(ex => ({ i: ex.id, t: ex.type, x: Math.round(ex.x * 10) / 10, y: Math.round(ex.y * 10) / 10, cells: ex.cells, rad: ex.radius || 0, col: ex.color, ct: ex.center, rt: ex.tier || 0, tm: Math.round(ex.timer * 100) / 100, mt: ex.maxTimer })),
     p: powerups.map(pu => ({ t: pu.type, x: Math.round(pu.x * 10) / 10, y: Math.round(pu.y * 10) / 10, b: Math.round(pu.bobPhase * 100) / 100 })),
     // Efeito visual do gelo também precisa chegar ao convidado.
     cy: Array.from(cryoTiles.entries()).map(([k, v]) => [k, Math.round(v * 10) / 10])
@@ -8052,10 +8747,15 @@ function netApplySnapshot(s) {
     f.maxBombs = d.mb; f.bombRange = d.br; f.speedLevel = d.sl;
     f.dashCooldown = d.dc; f.invulnTimer = d.it;
     f.canKick = !!d.ck;
+    f.cosmeticSkin = d.cs || null;
+    f.trailId = d.tr || 'none';
+    f.explosionSkin = d.xs || 'classic';
+    if (d.av) f.avatar = String(d.av).slice(0, 8);
+    f.cosmeticRank = d.rk || 0;
     return f;
   });
   if (humanRef && prevHp != null && humanRef.alive && humanRef.hp < prevHp) match.hitFlash = 0.45;
-  bombs = (s.b || []).map(d => ({ id: d.i, type: d.t, x: d.x, y: d.y, c: d.c, r: d.r, ownerId: '', range: 1, fuse: d.f, vx: 0, vy: 0, passThroughPlayers: new Set(), exploded: false, seed: d.s }));
+  bombs = (s.b || []).map(d => ({ id: d.i, type: d.t, x: d.x, y: d.y, c: d.c, r: d.r, ownerId: '', range: 1, fuse: d.f, vx: 0, vy: 0, passThroughPlayers: new Set(), exploded: false, seed: d.s, skinId: d.sk || 'classic' }));
   explosions = (s.x || []).map(d => {
     if (!net.seenExplosions.has(d.i)) {
       net.seenExplosions.add(d.i);
@@ -8064,7 +8764,7 @@ function netApplySnapshot(s) {
       else if (d.t === 'cryo') SFX.playCryo();
       if (d.t === 'cross') triggerShake(5, d.x, d.y);
     }
-    return { id: d.i, type: d.t, x: d.x, y: d.y, cells: d.cells || [], radius: d.rad, color: d.col, timer: d.tm, maxTimer: d.mt };
+    return { id: d.i, type: d.t, x: d.x, y: d.y, cells: d.cells || [], radius: d.rad, color: d.col, center: d.ct, tier: d.rt || 0, timer: d.tm, maxTimer: d.mt };
   });
   if (net.seenExplosions.size > 300) net.seenExplosions.clear();
   powerups = (s.p || []).map(d => ({ type: d.t, x: d.x, y: d.y, bobPhase: d.b }));
@@ -8103,6 +8803,7 @@ function updateNetGuest(dt) {
   hudAccum += dt;
   if (hudAccum >= 0.1) { hudAccum = 0; updateHUD(); }
   updateCamera(dt);
+  updateTrails(dt);
 }
 
 function netSendInput(dt) {
@@ -8849,6 +9550,13 @@ function chromaRoundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
+function hexA(color, alpha) {
+  const h = String(color || '#ffffff').replace('#', '');
+  const full = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  if (!Number.isFinite(n)) return `rgba(255,255,255,${alpha})`;
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
 function shadeColor(color, percent) {
   const num = parseInt(color.replace('#', ''), 16);
   const amt = Math.round(2.55 * percent);
@@ -9119,6 +9827,7 @@ function render() {
   drawAirdropBeacon();
   drawPowerups();
   drawBlastTelegraphs();
+  drawTrails();
   drawBombs();
   drawFighters();
   drawExplosions();
@@ -10310,6 +11019,33 @@ function drawBombSkinBody(b, skin, pulse) {
     ctx.restore();
     return;
   }
+  if (skin.id === 'blackhole') {
+    const hole = ctx.createRadialGradient(x, y, 1, x, y, 20 * pulse);
+    hole.addColorStop(0, '#000000');
+    hole.addColorStop(0.55, '#111827');
+    hole.addColorStop(0.8, 'rgba(124,58,237,0.55)');
+    hole.addColorStop(1, 'rgba(124,58,237,0)');
+    ctx.fillStyle = hole;
+    ctx.beginPath(); ctx.arc(x, y, 20 * pulse, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(196,181,253,0.85)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.ellipse(x, y, 17 * pulse, 6 * pulse, nowT * 2 + b.seed, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(x, y, 9 * pulse, 0, Math.PI * 2); ctx.fill();
+    return;
+  }
+  if (skin.id === 'deathstar') {
+    const hull = ctx.createRadialGradient(x - 5, y - 6, 2, x, y, 16 * pulse);
+    hull.addColorStop(0, '#e2e8f0');
+    hull.addColorStop(0.6, '#64748b');
+    hull.addColorStop(1, '#1e293b');
+    ctx.fillStyle = hull;
+    ctx.beginPath(); ctx.arc(x, y, 15 * pulse, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(163,230,53,0.85)'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.ellipse(x, y, 15 * pulse, 4.5 * pulse, -0.35, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#a3e635';
+    ctx.beginPath(); ctx.arc(x - 4, y, 3.4, 0, Math.PI * 2); ctx.fill();
+    return;
+  }
   // Clássica: esfera metálica com pavio
   const metal = ctx.createRadialGradient(x - 5, y - 6, 2, x, y, 16 * pulse);
   metal.addColorStop(0, '#64748b');
@@ -10343,7 +11079,30 @@ function drawBombs() {
     ctx.fillStyle = glow;
     ctx.beginPath(); ctx.arc(b.x, b.y, 26, 0, Math.PI * 2); ctx.fill();
     if (isNormal) {
-      drawBombSkinBody(b, getBombSkin(b.skinId), pulse);
+      const bombCosmetic = getBombSkin(b.skinId);
+      drawBombSkinBody(b, bombCosmetic, pulse);
+      // Bombas lendárias/míticas ganham anéis girando ao redor.
+      const bombRank = rarityTier(bombCosmetic.rarity);
+      if (bombRank >= 4) {
+        const meta = rarityMeta(bombCosmetic.rarity);
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(nowT * (bombRank >= 5 ? 2.2 : 1.3) + b.seed);
+        ctx.strokeStyle = hexA(meta.color, 0.6);
+        ctx.lineWidth = 1.6;
+        ctx.setLineDash([7, 8]);
+        ctx.beginPath(); ctx.arc(0, 0, 22 * pulse, 0, Math.PI * 2); ctx.stroke();
+        ctx.rotate(-nowT * (bombRank >= 5 ? 3.4 : 2.1));
+        ctx.setLineDash([3, 9]);
+        ctx.beginPath(); ctx.arc(0, 0, 26 * pulse, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = hexA(meta.color, 0.8);
+        for (let i = 0; i < (bombRank >= 5 ? 4 : 3); i++) {
+          const a = (i / (bombRank >= 5 ? 4 : 3)) * Math.PI * 2 + b.seed;
+          ctx.beginPath(); ctx.arc(Math.cos(a) * 24, Math.sin(a) * 24, 1.8, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.restore();
+      }
     } else {
       ctx.fillStyle = '#111827';
       ctx.beginPath(); ctx.arc(b.x, b.y, 15 * pulse, 0, Math.PI * 2); ctx.fill();
@@ -10461,6 +11220,34 @@ function drawFighters() {
       ctx.fillStyle = `rgba(249,115,22,${0.35 + ember * 0.3})`;
       ctx.beginPath(); ctx.arc(f.x, f.y, PLAYER_RADIUS + 2, 0, Math.PI * 2); ctx.fill();
     }
+    // Skins lendárias/míticas: aura pulsante + partículas orbitando
+    // dentro do raio de 1 tile (32px).
+    const cosmeticSkinId = f.cosmeticSkin || (look ? look.skinId : null);
+    const skinRank = cosmeticSkinId ? rarityTier(cosmeticRarity('skins', cosmeticSkinId)) : 0;
+    if (skinRank >= 4) {
+      const meta = rarityMeta(cosmeticRarity('skins', cosmeticSkinId));
+      const pulse = 0.6 + Math.sin(nowT * 3 + f.name.length) * 0.25;
+      const auraR = TILE_SIZE * (0.82 + pulse * 0.12);
+      const aura = ctx.createRadialGradient(f.x, f.y, PLAYER_RADIUS * 0.5, f.x, f.y, auraR);
+      aura.addColorStop(0, hexA(meta.color, 0.02));
+      aura.addColorStop(0.7, hexA(meta.color, 0.10 + pulse * 0.06));
+      aura.addColorStop(1, hexA(meta.color, 0));
+      ctx.fillStyle = aura;
+      ctx.beginPath(); ctx.arc(f.x, f.y, auraR, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = hexA(meta.color, 0.35 + pulse * 0.2);
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 7]);
+      ctx.lineDashOffset = -nowT * 26;
+      ctx.beginPath(); ctx.arc(f.x, f.y, PLAYER_RADIUS + 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+      const orbitCount = skinRank >= 5 ? 6 : 4;
+      for (let i = 0; i < orbitCount; i++) {
+        const a = nowT * (skinRank >= 5 ? 1.6 : 1.1) + (i / orbitCount) * Math.PI * 2;
+        const r = PLAYER_RADIUS + 9 + Math.sin(nowT * 2 + i) * 3;
+        ctx.fillStyle = hexA(meta.color, 0.75);
+        ctx.beginPath(); ctx.arc(f.x + Math.cos(a) * r, f.y + Math.sin(a) * r * 0.9, skinRank >= 5 ? 2.4 : 1.9, 0, Math.PI * 2); ctx.fill();
+      }
+    }
     if (f.shield) {
       ctx.beginPath(); ctx.arc(f.x, f.y, PLAYER_RADIUS + 5, 0, Math.PI * 2);
       ctx.strokeStyle = 'rgba(34,211,238,0.9)'; ctx.lineWidth = 2; ctx.stroke();
@@ -10515,6 +11302,25 @@ function drawExplosions() {
         rr(x + pad + 8, y + pad + 8, TILE_SIZE - (pad + 8) * 2, TILE_SIZE - (pad + 8) * 2, 7); ctx.fill();
         ctx.restore();
       });
+      // Explosões lendárias/míticas: anel girando + onda colorida.
+      if (ex.tier >= 4) {
+        const meta = rarityMeta(ex.tier >= 5 ? 'mythic' : 'legendary');
+        const t = 1 - p;
+        ctx.save();
+        ctx.globalAlpha = p * 0.85;
+        ctx.strokeStyle = hexA(meta.color, 0.9);
+        ctx.lineWidth = 2 + p * 4;
+        ctx.beginPath(); ctx.arc(ex.x, ex.y, TILE_SIZE * (0.8 + t * 1.7), 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = hexA(meta.color, 0.35);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(ex.x, ex.y, TILE_SIZE * (0.45 + t * 1.05), 0, Math.PI * 2); ctx.stroke();
+        ctx.translate(ex.x, ex.y);
+        ctx.rotate(nowT * 5.5);
+        ctx.setLineDash([10, 13]);
+        ctx.beginPath(); ctx.arc(0, 0, TILE_SIZE * 1.15, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+      }
     } else if (ex.type === 'shock') {
       const t = 1 - p;
       const radius = ex.radius * (0.35 + t * 0.85);
@@ -10533,6 +11339,54 @@ function drawExplosions() {
         ctx.restore();
       });
     }
+  }
+}
+
+function updateTrails(dt) {
+  for (let i = trails.length - 1; i >= 0; i--) {
+    const p = trails[i]; p.life -= dt;
+    if (p.life <= 0) { trails.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.vx *= Math.exp(-3 * dt); p.vy *= Math.exp(-3 * dt);
+  }
+  if (match.demoMode || !match.running) return;
+  for (const f of fighters) {
+    if (!f.alive || !f.trailId || f.trailId === 'none') continue;
+    const skin = TRAIL_SKINS.find(t => t.id === f.trailId);
+    if (!skin) continue;
+    if (f._trailX == null) { f._trailX = f.x; f._trailY = f.y; f._trailAccum = 0; }
+    const moved = Math.hypot(f.x - f._trailX, f.y - f._trailY);
+    f._trailX = f.x; f._trailY = f.y;
+    if (moved < dt * 36) { f._trailAccum = 0; continue; }
+    f._trailAccum = (f._trailAccum || 0) + dt;
+    const tier = rarityTier(skin.rarity);
+    if (f._trailAccum < (tier >= 4 ? 0.05 : 0.085)) continue;
+    f._trailAccum = 0;
+    const count = tier >= 4 ? 2 : 1;
+    for (let i = 0; i < count; i++) {
+      trails.push({
+        x: f.x + (Math.random() - 0.5) * 10,
+        y: f.y + PLAYER_RADIUS * 0.45 + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 14, vy: (Math.random() - 0.5) * 14,
+        color: skin.color, glow: skin.glow,
+        size: (tier >= 4 ? 3.2 : 2.3) + Math.random() * 1.4,
+        life: TRAIL_LIFE, maxLife: TRAIL_LIFE
+      });
+    }
+  }
+  if (trails.length > 220) trails.splice(0, trails.length - 220);
+}
+
+function drawTrails() {
+  for (const p of trails) {
+    const a = clamp(p.life / p.maxLife, 0, 1);
+    ctx.save(); ctx.globalAlpha = a * 0.9;
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * a + 0.7, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = a * 0.28;
+    ctx.fillStyle = p.glow || p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, (p.size + 2.2) * a + 0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   }
 }
 

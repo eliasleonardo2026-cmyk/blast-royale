@@ -108,6 +108,13 @@
       competitive: competitiveOf(p),
       updatedAt: Date.now()
     };
+    // Economia e cosméticos viajam junto: moedas, XP, skins, efeitos,
+    // contadores diários e progresso do evento do ciclo atual.
+    try {
+      if (window.GameState && typeof window.GameState.cloudPayload === 'function') {
+        Object.assign(payload, window.GameState.cloudPayload());
+      }
+    } catch (e) {}
     try {
       const ref = db.collection('users').doc(state.uid);
       Promise.resolve(ref.set(payload, { merge: true })).catch(err => { state.lastError = 'firestore:' + (err && err.code || ''); });
@@ -137,7 +144,8 @@
         points: Math.max(0, Math.floor(Number(c.leaguePoints) || 0)),
         wins: Math.max(0, Math.floor(Number(c.rankedWins) || 0)),
         losses: Math.max(0, Math.floor(Number(c.rankedLosses) || 0)),
-        trophies: Math.max(0, Math.floor(Number(c.trophies) || 0))
+        trophies: Math.max(0, Math.floor(Number(c.trophies) || 0)),
+        cosmeticRank: typeof d.cosmeticRank === 'string' ? d.cosmeticRank : ''
       });
     });
     rows.sort((a, b) => b.points - a.points || b.wins - a.wins);
