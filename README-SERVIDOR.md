@@ -45,12 +45,16 @@ O servidor escuta em `0.0.0.0` por padrão.
 4. Os dois abrem um canal de dados P2P; o servidor para de participar.
 5. Se em ~7 s o canal P2P não abrir (ou a rede nem permitir criar
    `RTCPeerConnection`), os dois lados ligam o **relay**: snapshots e inputs
-   passam pelo servidor em lotes a cada ~50 ms. O selo do HUD troca de
-   `🌐` para `📡` e a latência sobe um pouco, mas a partida acontece.
+   passam pelo servidor. O selo do HUD troca de `🌐` para `📡` e a latência
+   sobe um pouco, mas a partida acontece.
    Se o P2P abrir, ele continua sendo o transporte usado (o relay não liga).
 
-O relay usa as mesmas rotas de sinalização (`signal` + `poll`), então
-qualquer instância deste servidor já o suporta. A sala só expira após
+O relay abre um **WebSocket por jogador** (`/api/rooms/:codigo/ws`), então
+cada mensagem vai e volta sem custo de requisição — ping de relay fica na
+casa de 100–200 ms mesmo com servidor na nuvem. Se o upgrade do WebSocket
+for bloqueado (proxy corporativo, Vercel serverless, ou `ws` ausente), o
+cliente cai sozinho no relay HTTP antigo (`signal` + `poll`, lotes a cada
+~50 ms) e a partida continua. A sala só expira após
 2 horas **sem atividade** — uma partida em relay mantém a sala viva.
 
 Também é possível compartilhar um link direto:

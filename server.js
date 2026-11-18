@@ -4,13 +4,18 @@
    - Serve o jogo (arquivos estáticos) em http://localhost:8123
    - Cria salas com código curto e troca offer/answer entre os dois jogadores
    - Não guarda dados de partida: o gameplay continua P2P (WebRTC)
-   - Zero dependências: rode `node server.js` (Node 18+)
+   - Relay com WebSocket (um socket por jogador) e fallback HTTP (signal+poll)
+   - Dependência: ws (opcional — sem ela o relay funciona só por HTTP)
    ========================================================================= */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+
+let WebSocketServer = null;
+try { ({ WebSocketServer } = require('ws')); }
+catch (err) { console.warn('pacote ws ausente: relay usa apenas HTTP'); }
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 8123);
@@ -94,6 +99,7 @@ function newRoom(name) {
     },
     messages: { host: [], guest: [] },
     polls: { host: new Set(), guest: new Set() },
+    sockets: { host: new Set(), guest: new Set() },
     closed: false
   };
   rooms.set(code, room);
@@ -177,7 +183,10 @@ function closeRoom(room, reason) {
   if (!room) return;
   room.closed = true;
   room.updated = Date.now();
+  broadcastSockets(room, { closed: true, peers: peersInfo(room), reason: reason || 'left' });
   ['host', 'guest'].forEach(role => {
+    room.sockets[role].forEach(ws => { try { ws.close(); } catch (err) {} });
+    room.sockets[role].clear();
     const entries = Array.from(room.polls[role] || []);
     room.polls[role].clear();
     entries.forEach(entry => {
@@ -192,6 +201,46 @@ function closeRoom(room, reason) {
     });
   });
   rooms.delete(room.code);
+}
+
+/* ------------------------------ WEBSOCKET ------------------------------- */
+/* Cada jogador pode abrir um socket na sala. Com socket, as mensagens vão
+   direto (sem requisição por lote); sem socket, a rota /signal + /poll
+   continua funcionando como fallback. */
+function sendToSockets(room, role, payload) {
+  const set = room.sockets[role];
+  if (!set || !set.size) return false;
+  const data = JSON.stringify(payload);
+  let sent = false;
+  set.forEach(ws => {
+    if (ws.readyState === 1) {
+      try { ws.send(data); sent = true; } catch (err) { /* ignore */ }
+    }
+  });
+  return sent;
+}
+
+function broadcastSockets(room, payload) {
+  sendToSockets(room, 'host', payload);
+  sendToSockets(room, 'guest', payload);
+}
+
+/* Entrega uma mensagem de jogo ao outro jogador: socket quando existe,
+   senão fila do long-poll. Sempre com seq para nunca duplicar.
+   `msg` pode ser null (sinal antigo em base64): aí vai como está. */
+function relayMessage(room, fromRole, msg, raw) {
+  const target = fromRole === 'host' ? 'guest' : 'host';
+  room.seq += 1;
+  const seq = room.seq;
+  room.updated = Date.now();
+  if (msg && typeof msg === 'object' && sendToSockets(room, target, { m: msg, seq })) return seq;
+  const data = typeof raw === 'string' ? raw : JSON.stringify(msg);
+  room.messages[target].push({ seq, data, ts: Date.now() });
+  if (room.messages[target].length > MAX_QUEUE) {
+    room.messages[target].splice(0, room.messages[target].length - MAX_QUEUE);
+  }
+  flushPolls(room, target);
+  return seq;
 }
 
 /* ------------------------------- ROTAS -------------------------------- */
@@ -246,6 +295,7 @@ async function handleApi(req, res, url) {
     };
     room.updated = Date.now();
     flushPolls(room, 'host');
+    broadcastSockets(room, { peers: peersInfo(room) });
     return sendJson(res, 200, {
       ok: true, code: room.code, role: 'guest', token: room.peers.guest.token, peers: peersInfo(room)
     });
@@ -258,14 +308,11 @@ async function handleApi(req, res, url) {
     const role = peerRole(room, body.token);
     if (!role) return sendJson(res, 403, { ok: false, error: 'invalid-token' });
     if (typeof body.data !== 'string' || !body.data) return sendJson(res, 400, { ok: false, error: 'missing-data' });
-    const target = role === 'host' ? 'guest' : 'host';
-    const waiting = room.polls[target].size > 0;
-    room.seq += 1;
-    room.messages[target].push({ seq: room.seq, data: body.data, ts: Date.now() });
-    if (room.messages[target].length > MAX_QUEUE) room.messages[target].splice(0, room.messages[target].length - MAX_QUEUE);
-    room.updated = Date.now();
-    flushPolls(room, target);
-    return sendJson(res, 200, { ok: true, seq: room.seq, delivered: waiting });
+    // Oferta/resposta antigas viajam em base64 puro; o relay usa JSON.
+    let msg = null;
+    try { msg = JSON.parse(body.data); } catch (err) { msg = null; }
+    const seq = relayMessage(room, role, msg, body.data);
+    return sendJson(res, 200, { ok: true, seq });
   }
 
   if (parts[1] === 'rooms' && parts[3] === 'poll' && req.method === 'GET') {
@@ -299,6 +346,7 @@ async function handleApi(req, res, url) {
     if (!role) return sendJson(res, 403, { ok: false, error: 'invalid-token' });
     room.peers[role] = null;
     room.updated = Date.now();
+    broadcastSockets(room, { peers: peersInfo(room) });
     const other = role === 'host' ? 'guest' : 'host';
     if (role === 'host') {
       closeRoom(room, 'host-left');
@@ -382,6 +430,64 @@ const server = http.createServer((req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return sendText(res, 405, 'Method not allowed');
   serveStatic(req, res, url);
 });
+
+/* --------------------------- WEBSOCKET: UPGRADE ------------------------- */
+function drainQueue(room, role, ws) {
+  const pending = (room.messages[role] || []).splice(0);
+  pending.forEach(item => {
+    let msg = null;
+    try { msg = JSON.parse(item.data); } catch (err) { return; }
+    try { ws.send(JSON.stringify({ m: msg, seq: item.seq })); } catch (err) { /* ignore */ }
+  });
+}
+
+if (WebSocketServer) {
+  const wss = new WebSocketServer({ noServer: true });
+
+  server.on('upgrade', (req, socket, head) => {
+    let url = null;
+    try { url = new URL(req.url || '/', 'http://localhost'); }
+    catch (err) { socket.destroy(); return; }
+    const parts = url.pathname.split('/').filter(Boolean); // api rooms CODE ws
+    if (parts[0] !== 'api' || parts[1] !== 'rooms' || parts[3] !== 'ws') { socket.destroy(); return; }
+    const room = rooms.get(String(parts[2] || '').toUpperCase());
+    const role = peerRole(room, url.searchParams.get('token') || '');
+    if (!room || !role) {
+      socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, ws => {
+      room.sockets[role].add(ws);
+      room.updated = Date.now();
+      ws.isAlive = true;
+      try { ws.send(JSON.stringify({ peers: peersInfo(room), role })); } catch (err) { /* ignore */ }
+      drainQueue(room, role, ws);
+      ws.on('pong', () => { ws.isAlive = true; });
+      ws.on('message', raw => {
+        let frame = null;
+        try { frame = JSON.parse(String(raw)); } catch (err) { return; }
+        if (!frame || typeof frame !== 'object' || !frame.m || room.closed) return;
+        relayMessage(room, role, frame.m);
+      });
+      ws.on('close', () => {
+        room.sockets[role].delete(ws);
+        room.updated = Date.now();
+      });
+      ws.on('error', () => {
+        room.sockets[role].delete(ws);
+      });
+    });
+  });
+
+  setInterval(() => {
+    wss.clients.forEach(ws => {
+      if (!ws.isAlive) return ws.terminate();
+      ws.isAlive = false;
+      try { ws.ping(); } catch (err) { /* ignore */ }
+    });
+  }, 30000).unref();
+}
 
 setInterval(() => {
   const now = Date.now();

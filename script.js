@@ -6600,7 +6600,8 @@ const netServer = {
   })(),
   available: false, checked: false, serverless: false, code: '', token: '', role: null,
   since: 0, polling: false, pollAbort: null, busy: false, roomToken: '',
-  peers: { host: false, guest: false }
+  peers: { host: false, guest: false },
+  ws: null, wsWanted: false, wsTries: 0
 };
 function netApiUrl(p) { return netServer.base + p; }
 function netServerLikely() {
@@ -6662,6 +6663,7 @@ function netRelayStop() {
   net.relayFails = 0;
   clearInterval(net.relayPump); net.relayPump = null;
   clearTimeout(net.relayFallbackTimer); net.relayFallbackTimer = null;
+  netServerSocketClose();
 }
 
 let netGraceInterval = null;
@@ -6677,6 +6679,9 @@ function netSend(obj) {
   const raw = typeof obj === 'string' ? obj : JSON.stringify(obj);
   if (!net.relay && net.dc && net.dc.readyState === 'open') {
     try { net.dc.send(raw); return true; } catch (e) {}
+  }
+  if (net.relay && netServer.ws && netServer.ws.readyState === 1 && typeof obj !== 'string') {
+    try { netServer.ws.send('{"m":' + raw + '}'); return true; } catch (e) {}
   }
   if (net.relay && netServer.code && netServer.token) {
     net.relayOut.push(raw);
@@ -7150,6 +7155,74 @@ async function netServerHandleSignal(data) {
 /* ---------- Relay do servidor: partida mesmo sem P2P ---------- */
 const NET_RELAY_DELAY_MS = 7000;
 
+/* Socket por sala: um envio/recebimento por mensagem, sem custo de
+   requisição. Quando o servidor não aceita o upgrade (proxy, Vercel,
+   `ws` ausente), o relay HTTP com lotes continua exatamente como antes. */
+function netWsUrl() {
+  if (!netServer.code || !netServer.token) return '';
+  const p = `/api/rooms/${netServer.code}/ws?token=${encodeURIComponent(netServer.token)}`;
+  if (netServer.base) return netServer.base.replace(/^http/i, 'ws') + p;
+  if (location.protocol === 'https:') return 'wss://' + location.host + p;
+  if (location.protocol === 'http:') return 'ws://' + location.host + p;
+  return '';
+}
+
+function netServerSocketOpen() {
+  if (netServer.ws || !netServer.wsWanted) return;
+  const url = netWsUrl();
+  if (!url || typeof WebSocket === 'undefined') return;
+  let ws = null;
+  try { ws = new WebSocket(url); } catch (e) { return; }
+  ws.onopen = () => {
+    if (!netServer.wsWanted) { try { ws.close(); } catch (e) {} return; }
+    netServer.ws = ws;
+    netServer.wsTries = 0;
+    // O que estava na fila do HTTP sai agora pelo socket, na ordem.
+    const queued = net.relayOut.splice(0);
+    queued.forEach(raw => { try { ws.send('{"m":' + raw + '}'); } catch (e) {} });
+    netServerStopPoll();
+  };
+  ws.onmessage = ev => {
+    let frame = null;
+    try { frame = JSON.parse(ev.data); } catch (e) { return; }
+    if (!frame) return;
+    if (frame.peers) {
+      netServer.peers = frame.peers;
+      if (net.relay && net.started && !frame.peers.guest && netServer.role === 'host' && !net.closing) netHandleDrop();
+    }
+    if (frame.closed) {
+      netServerHint('serverRoomClosed');
+      netSetStatus('netLost', 'err');
+      if (net.relay && net.started && !net.closing) netHandleDrop();
+      return;
+    }
+    if (frame.m) {
+      if (Number(frame.seq)) netServer.since = Number(frame.seq);
+      netHandleMessage(frame.m);
+    }
+  };
+  ws.onclose = () => {
+    if (netServer.ws !== ws) return;
+    netServer.ws = null;
+    if (!netServer.wsWanted || net.closing || net.dropped) return;
+    // Sem socket, volta para o long-poll para a partida não parar.
+    if (net.relay && !netServer.polling) netServerStartPoll();
+    netServer.wsTries = (netServer.wsTries || 0) + 1;
+    if (netServer.wsTries <= 3) setTimeout(netServerSocketOpen, 1200);
+  };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+
+function netServerSocketClose() {
+  netServer.wsWanted = false;
+  netServer.wsTries = 0;
+  if (netServer.ws) {
+    const ws = netServer.ws;
+    netServer.ws = null;
+    try { ws.close(); } catch (e) {}
+  }
+}
+
 /* Migra a partida para o relay do servidor de salas. É o caminho que
    garante partida quando o WebRTC é bloqueado (4G, CGNAT, Wi-Fi
    corporativo). Quando o P2P abre, ele continua sendo o transporte rápido. */
@@ -7178,6 +7251,9 @@ function netEnterRelay(opts = {}) {
   if (!netServer.polling) netServerStartPoll();
   clearInterval(net.relayPump);
   net.relayPump = setInterval(netServerRelayPump, 50);
+  netServer.wsTries = 0;
+  netServer.wsWanted = true;
+  netServerSocketOpen();
   netShowReconnect(false);
   netSetStatus('netConnected', 'ok');
   netUpdateBadge();
@@ -7194,9 +7270,15 @@ function netEnterRelay(opts = {}) {
 }
 
 /* Um POST por lote: snapshots (30 Hz) + inputs (60 Hz) viram ~15
-   requisições por segundo, na ordem, sem sobrecarregar o servidor. */
+   requisições por segundo, na ordem, sem sobrecarregar o servidor.
+   Com o socket aberto a fila sai por ele e o HTTP fica de reserva. */
 function netServerRelayPump() {
   if (!net.relay || net.relayPosting || !net.relayOut.length) return;
+  if (netServer.ws && netServer.ws.readyState === 1) {
+    const raw = net.relayOut.splice(0, 64);
+    raw.forEach(s => { try { netServer.ws.send('{"m":' + s + '}'); } catch (e) {} });
+    return;
+  }
   if (!netServer.code || !netServer.token) return;
   const raw = net.relayOut.splice(0, net.relayOut.length > 40 ? 24 : 12);
   const batch = [];
