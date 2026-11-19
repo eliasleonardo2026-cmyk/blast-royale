@@ -191,11 +191,15 @@ const I18N = {
     tabShop: "LOJA VISUAL", tabShopSub: "Skins de personagens, bombas e efeitos",
     shopCoins: "moedas", shopDaily: "🎁 DIÁRIA", shopTest: "+200 MOEDAS", shopZeroP2W: "Só visual: nenhuma skin altera dano, vida ou alcance.",
     shopChars: "PERSONAGENS", shopBombs: "BOMBAS", shopBuy: "COMPRAR {n} 💰", shopEquip: "EQUIPAR",
-    shopEquipped: "✓ EQUIPADA", shopOwned: "COMPRADA", shopNotEnough: "Moedas insuficientes. Jogue partidas para ganhar mais!",
+    shopEquipped: "✓ EM USO", shopOwned: "COMPRADA", shopInUse: "EM USO", shopNotEnough: "Moedas insuficientes. Jogue partidas para ganhar mais!",
     shopBought: "{name} desbloqueado!", shopEquippedMsg: "{name} equipado!", shopDailyDone: "Diária já resgatada hoje.",
     shopDailyGain: "🎁 +100 moedas da diária!", shopTestGain: "🧪 +200 moedas de teste!",
     shopTabSkins: "SKINS", shopTabBombs: "BOMBAS", shopTabExplosions: "EXPLOSÕES", shopTabTrails: "RASTROS", shopTabAvatars: "AVATARES",
     shopAdChest: "📺 BAÚ +40 💰", shopChestGain: "📺 +40 moedas do baú patrocinado!", shopDefault: "↩ USAR PADRÃO",
+    previewBuy: "COMPRAR {n} 💰", previewEquip: "EQUIPAR", previewInUse: "✓ EM USO",
+    previewConfirmTitle: "Confirmar compra de {name} por {n} 💰?",
+    previewConfirmBody: "Saldo agora: {a} 💰 • depois da compra: {b} 💰",
+    previewConfirmYes: "CONFIRMAR", previewConfirmNo: "CANCELAR", previewOwned: "Item desbloqueado — é só equipar.",
     endTrainingCap: "🚫 Limite de 5 vitórias contra bots por dia — jogue ONLINE para mais recompensas.",
     endMatchCoins: "💰 +{c}",
     doubleRewardBtn: "DOBRAR +40 MOEDAS", doubleGain: "📺 +40 moedas extras!",
@@ -204,6 +208,10 @@ const I18N = {
     adTypeCap: "Você já usou este anúncio hoje.", adUnavailable: "Anúncio indisponível agora. Tente de novo mais tarde.",
     tabEvent: "EVENTO", tabEventSub: "Rotativo a cada 3 horas • fora da Liga",
     eventNextLabel: "Próximo evento em", eventGoal: "Vença 2 partidas neste evento",
+    eventNextUp: "A seguir", eventStartsIn: "em", eventRotated: "🎪 Novo evento: {name}!",
+    eventFirstReward: "🎪 Evento: 1ª vitória! +10 moedas. Mais 1 para +35 moedas e +25 XP.",
+    eventSplashBadge: "EVENTO ATIVO", eventSplashTag: "3H • Fora da Liga • Recompensa a cada 2 vitórias",
+    eventHudChip: "EVENTO",
     eventRewardReady: "Recompensa de +35 moedas e +25 XP resgatada!",
     eventPlayBtn: "JOGAR EVENTO", eventNoLeague: "O evento não vale pontos na Liga nem troféus.",
     eventRewardGranted: "🎪 Evento: +35 moedas e +{x} XP pela 2ª vitória!",
@@ -421,11 +429,15 @@ const I18N = {
     tabShop: "VISUAL SHOP", tabShopSub: "Character, bomb and effect skins",
     shopCoins: "coins", shopDaily: "🎁 DAILY", shopTest: "+200 COINS", shopZeroP2W: "Cosmetic only: no skin changes damage, health or range.",
     shopChars: "CHARACTERS", shopBombs: "BOMBS", shopBuy: "BUY {n} 💰", shopEquip: "EQUIP",
-    shopEquipped: "✓ EQUIPPED", shopOwned: "OWNED", shopNotEnough: "Not enough coins. Play matches to earn more!",
+    shopEquipped: "✓ IN USE", shopOwned: "OWNED", shopInUse: "IN USE", shopNotEnough: "Not enough coins. Play matches to earn more!",
     shopBought: "{name} unlocked!", shopEquippedMsg: "{name} equipped!", shopDailyDone: "Daily reward already claimed today.",
     shopDailyGain: "🎁 +100 daily coins!", shopTestGain: "🧪 +200 test coins!",
     shopTabSkins: "SKINS", shopTabBombs: "BOMBS", shopTabExplosions: "BLASTS", shopTabTrails: "TRAILS", shopTabAvatars: "AVATARS",
     shopAdChest: "📺 CHEST +40 💰", shopChestGain: "📺 +40 coins from the sponsored chest!", shopDefault: "↩ USE DEFAULT",
+    previewBuy: "BUY {n} 💰", previewEquip: "EQUIP", previewInUse: "✓ IN USE",
+    previewConfirmTitle: "Confirm buying {name} for {n} 💰?",
+    previewConfirmBody: "Balance now: {a} 💰 • after purchase: {b} 💰",
+    previewConfirmYes: "CONFIRM", previewConfirmNo: "CANCEL", previewOwned: "Already yours — just equip it.",
     endTrainingCap: "🚫 Limit of 5 bot wins per day — play ONLINE for more rewards.",
     endMatchCoins: "💰 +{c}",
     doubleRewardBtn: "DOUBLE +40 COINS", doubleGain: "📺 +40 extra coins!",
@@ -434,6 +446,10 @@ const I18N = {
     adTypeCap: "You already used this ad today.", adUnavailable: "Ad unavailable right now. Try again later.",
     tabEvent: "EVENT", tabEventSub: "Rotates every 3 hours • outside the League",
     eventNextLabel: "Next event in", eventGoal: "Win 2 matches in this event",
+    eventNextUp: "Up next", eventStartsIn: "in", eventRotated: "🎪 New event: {name}!",
+    eventFirstReward: "🎪 Event: 1st win! +10 coins. One more for +35 coins and +25 XP.",
+    eventSplashBadge: "EVENT ACTIVE", eventSplashTag: "3H • Outside the League • Reward every 2 wins",
+    eventHudChip: "EVENT",
     eventRewardReady: "Reward of +35 coins and +25 XP claimed!",
     eventPlayBtn: "PLAY EVENT", eventNoLeague: "The event grants no League points or trophies.",
     eventRewardGranted: "🎪 Event: +35 coins and +{x} XP for the 2nd win!",
@@ -715,6 +731,14 @@ class SoundFX {
     if (this.muted || !this.ctx) return;
     if (AUDIO_POOL.play('win', 0.7)) return;
     [523.25, 659.25, 783.99, 1046.5].forEach((f) => this._tone('triangle', f, 0.47, 0.14));
+  }
+  playUnlock() {
+    if (this.muted || !this.ctx) return;
+    [659.25, 880, 1174.66].forEach((f, i) => setTimeout(() => this._tone('triangle', f, 0.26, 0.12), i * 70));
+  }
+  playEventStart() {
+    if (this.muted || !this.ctx) return;
+    [392, 523.25, 659.25].forEach((f, i) => setTimeout(() => this._tone('sawtooth', f, 0.22, 0.07), i * 90));
   }
   playChromaCorrect() {
     if (this.muted || !this.ctx) return;
@@ -1118,7 +1142,7 @@ const GameState = (() => {
       botDay: '', botWins: 0,
       adDay: '', ads: 0,
       chestDay: '', chest: 0, doubleDay: '', double: 0, spinDay: '', spin: 0,
-      eventSlot: null, eventWins: 0, eventRewarded: false,
+      eventSlot: null, eventWins: 0, eventRewarded: false, eventFirst: false,
       goldSlot: null, goldCoins: 0
     },
     league: [],
@@ -1219,6 +1243,7 @@ const GameState = (() => {
       econ[k] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
     });
     econ.eventRewarded = !!econ.eventRewarded;
+    econ.eventFirst = !!econ.eventFirst;
     ['botDay', 'adDay', 'chestDay', 'doubleDay', 'spinDay'].forEach(k => { if (typeof econ[k] !== 'string') econ[k] = ''; });
     if (!Number.isFinite(Number(econ.eventSlot))) econ.eventSlot = null;
     if (!Number.isFinite(Number(econ.goldSlot))) econ.goldSlot = null;
@@ -1338,9 +1363,10 @@ const GameState = (() => {
       maxSame('spinDay', 'spin');
       const slot = currentSlotId();
       if (Number(re.eventSlot) === slot) {
-        if (e.eventSlot !== slot) { e.eventSlot = slot; e.eventWins = 0; e.eventRewarded = false; }
+        if (e.eventSlot !== slot) { e.eventSlot = slot; e.eventWins = 0; e.eventRewarded = false; e.eventFirst = false; }
         e.eventWins = Math.max(e.eventWins, Math.min(2, Number(re.eventWins) || 0));
         e.eventRewarded = e.eventRewarded || !!re.eventRewarded;
+        e.eventFirst = e.eventFirst || !!re.eventFirst;
       }
       if (Number(re.goldSlot) === slot) {
         if (e.goldSlot !== slot) { e.goldSlot = slot; e.goldCoins = 0; }
@@ -1504,6 +1530,7 @@ const GameState = (() => {
         doubleDay: state.economy.doubleDay, double: state.economy.double,
         spinDay: state.economy.spinDay, spin: state.economy.spin,
         eventSlot: state.economy.eventSlot, eventWins: state.economy.eventWins, eventRewarded: state.economy.eventRewarded,
+        eventFirst: !!state.economy.eventFirst,
         goldSlot: state.economy.goldSlot, goldCoins: state.economy.goldCoins
       }
     };
@@ -1532,13 +1559,18 @@ const GameState = (() => {
   function registerEventWin() {
     const slot = currentSlotId();
     const e = state.economy;
-    if (e.eventSlot !== slot) { e.eventSlot = slot; e.eventWins = 0; e.eventRewarded = false; }
+    if (e.eventSlot !== slot) { e.eventSlot = slot; e.eventWins = 0; e.eventRewarded = false; e.eventFirst = false; }
     e.eventWins = Math.min(2, e.eventWins + 1);
     let reward = null;
     if (e.eventWins >= 2 && !e.eventRewarded) {
       e.eventRewarded = true;
       state.coins += 35;
       reward = { coins: 35, xp: rotatingEventIndexFor(slot) === 7 ? 50 : 25 };
+    } else if (e.eventWins === 1 && !e.eventFirst) {
+      // Escalonado: a 1ª vitória do ciclo já rende +10 moedas.
+      e.eventFirst = true;
+      state.coins += 10;
+      reward = { coins: 10, xp: 0, first: true };
     }
     save();
     return reward;
@@ -1666,6 +1698,11 @@ window.GameState = GameState;
    do horário do sistema (Date.now), sem depender de servidor.
    ======================================================================== */
 const EVENT_SLOT_MS = 3 * 60 * 60 * 1000;
+/* Cor da identidade de cada evento (mesma ordem de ROTATING_EVENTS). */
+const EVENT_THEMES = [
+  '#f472b6', '#a78bfa', '#fbbf24', '#fb7185', '#f97316', '#38bdf8', '#f43f5e', '#34d399'
+];
+function eventThemeColor(index) { return EVENT_THEMES[index] || EVENT_THEMES[0]; }
 const ROTATING_EVENTS = [
   { id: 'powerups', icon: '🎁', name: 'Chuva de Power-Ups', desc: 'Caixas soltam itens com o dobro de frequência.', nameEn: 'Power-Up Rain', descEn: 'Crates drop items twice as often.' },
   { id: 'turbo', icon: '🚀', name: 'Velocidade Turbo', desc: 'Todo mundo começa na velocidade máxima.', nameEn: 'Turbo Speed', descEn: 'Everyone starts at max speed.' },
@@ -1676,7 +1713,31 @@ const ROTATING_EVENTS = [
   { id: 'sudden', icon: '❤️', name: 'Morte Súbita 1 HP', desc: 'Apenas 1 coração por partida.', nameEn: 'Sudden Death 1 HP', descEn: 'Only 1 heart per match.' },
   { id: 'pass', icon: '✨', name: 'Hora do Passe', desc: 'Todo XP ganho agora vale 2x.', nameEn: 'Pass Hour', descEn: 'All XP earned now counts 2x.' }
 ];
-function currentSlotId() { return Math.floor(Date.now() / EVENT_SLOT_MS); }
+/* Relógio do servidor: o cabeçalho Date do /api/health corrige o relógio
+   local. A rotação fica igual para todos e imune a mudança de hora do
+   aparelho. Sem rede, vale o relógio local (offset 0). */
+let serverClockOffset = 0;
+function serverNow() { return Date.now() + serverClockOffset; }
+function syncServerClock() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  const t0 = Date.now();
+  fetch('api/health', { cache: 'no-store' })
+    .then(res => {
+      const dateHeader = res.headers.get('date');
+      if (!dateHeader) return;
+      const serverMs = Date.parse(dateHeader);
+      if (!serverMs) return;
+      const t1 = Date.now();
+      const offset = Math.round(serverMs + (t1 - t0) / 2 - t1);
+      if (Math.abs(offset) < 12 * 60 * 60 * 1000) serverClockOffset = offset;
+    })
+    .catch(() => {});
+}
+syncServerClock();
+setInterval(syncServerClock, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncServerClock(); });
+
+function currentSlotId() { return Math.floor(serverNow() / EVENT_SLOT_MS); }
 function rotatingEventIndexFor(slot) { return ((slot % ROTATING_EVENTS.length) + ROTATING_EVENTS.length) % ROTATING_EVENTS.length; }
 function currentRotatingEvent() {
   const slot = currentSlotId();
@@ -1696,6 +1757,62 @@ function eventCountdownText(ms) {
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+/* Identidade visual do evento dentro da partida: chip no HUD, splash de
+   abertura e uma vinheta discreta na cor do evento. */
+let eventSplashTimer = 0;
+function applyEventHud(index) {
+  const chip = document.getElementById('eventHudChip');
+  if (!chip) return;
+  if (index < 0) { chip.classList.add('hidden'); return; }
+  const ev = ROTATING_EVENTS[index];
+  const dict = I18N[currentLang] || {};
+  const color = eventThemeColor(index);
+  const nameEl = document.getElementById('eventHudName');
+  if (nameEl) nameEl.textContent = `${(dict.eventHudChip || 'EVENTO')} · ${currentLang === 'en' ? ev.nameEn : ev.name}`;
+  chip.style.setProperty('--event-accent', color);
+  chip.classList.remove('hidden');
+}
+function showEventSplash(rot) {
+  const el = document.getElementById('eventSplash');
+  if (!el || !rot) return;
+  const dict = I18N[currentLang] || {};
+  const en = currentLang === 'en';
+  const setText = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
+  const color = eventThemeColor(rot.index);
+  el.style.setProperty('--event-accent', color);
+  setText('eventSplashIcon', rot.event.icon);
+  setText('eventSplashName', en ? rot.event.nameEn : rot.event.name);
+  setText('eventSplashDesc', en ? rot.event.descEn : rot.event.desc);
+  setText('eventSplashBadge', dict.eventSplashBadge || 'EVENTO ATIVO');
+  setText('eventSplashTag', dict.eventSplashTag || '3H • Fora da Liga');
+  el.classList.remove('hidden');
+  const card = document.getElementById('eventSplashCard');
+  if (card && card.animate) {
+    card.animate([
+      { transform: 'scale(.82) translateY(14px)', opacity: 0 },
+      { transform: 'scale(1.04) translateY(0)', opacity: 1, offset: 0.6 },
+      { transform: 'scale(1)', opacity: 1 }
+    ], { duration: 420, easing: 'cubic-bezier(.2,.8,.3,1.2)' });
+  }
+  clearTimeout(eventSplashTimer);
+  eventSplashTimer = setTimeout(() => el.classList.add('hidden'), 2600);
+}
+function drawEventTint() {
+  if (!match.eventMode || !match.running || match.ended || match.demoMode) return;
+  const color = eventThemeColor(match.eventIndex);
+  const grad = ctx.createRadialGradient(viewW / 2, viewH / 2, Math.min(viewW, viewH) * 0.34, viewW / 2, viewH / 2, Math.max(viewW, viewH) * 0.78);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, hexToRgba(color, 0.11));
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, viewW, viewH);
+}
+function hexToRgba(hex, alpha) {
+  const h = String(hex || '').replace('#', '');
+  if (h.length !== 6) return `rgba(148,163,184,${alpha})`;
+  const n = parseInt(h, 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
 }
 
 /* ========================================================================
@@ -2840,6 +2957,7 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   pendingEventMatch = false;
   match.eventGoldSpawned = false;
   const rotEv = match.eventMode ? currentRotatingEvent() : null;
+  match.eventIndex = rotEv ? rotEv.index : -1;
   match.eventMods = rotEv ? {
     speed: rotEv.index === 1 ? 3 : 0,
     bombs: rotEv.index === 4 ? 3 : 0,
@@ -2972,6 +3090,17 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   if (cfg.duel) updateDuelHUD();
   MUSIC.play(isDemo ? 'menu' : 'battle');
   updateRotateGate();
+  if (!isDemo) {
+    if (match.eventMode && rotEv) {
+      applyEventHud(match.eventIndex);
+      showEventSplash(rotEv);
+      SFX.playEventStart();
+    } else {
+      applyEventHud(-1);
+    }
+  } else {
+    applyEventHud(-1);
+  }
 }
 
 function makeFighter(idx, sp, name, color, visor, device = 'bot', team = 0, profile = null) {
@@ -4745,7 +4874,9 @@ function endMatch(win, isTeamMode = false, opts = {}) {
     const prog = GameState.eventProgress();
     if (ownerWon) {
       const reward = GameState.registerEventWin();
-      if (reward) {
+      if (reward && reward.first) {
+        endEventEl.textContent = evDict.eventFirstReward || '🎪 Evento: 1ª vitória! +10 moedas. Mais 1 para +35 moedas e +25 XP.';
+      } else if (reward) {
         const gained = addXp(reward.xp, 'Evento', { raw: true });
         match.lastXp = (match.lastXp || 0) + gained;
         endEventEl.textContent = (evDict.eventRewardGranted || '🎪 Evento: +35 moedas e +{x} XP pela 2ª vitória!').replace('{x}', gained);
@@ -6201,7 +6332,8 @@ function shopItemHtml(kind, item, dict) {
   else if (item.rarity === 'starter') btn = `<button type="button" class="shop-buy equip" data-shop-kind="${kind}" data-shop-id="${item.id}" data-shop-act="equip">${dict.shopDefault || 'PADRÃO'}</button>`;
   else btn = `<button type="button" class="shop-buy buy" data-shop-kind="${kind}" data-shop-id="${item.id}" data-shop-act="buy">${(dict.shopBuy || 'COMPRAR {n} 💰').replace('{n}', item.price)}</button>`;
   const rarityLabel = currentLang === 'en' ? meta.labelEn : meta.label;
-  return `<div class="shop-item${equipped ? ' equipped' : ''}${item.rarity === 'starter' ? ' starter' : ''}" style="--rarity:${meta.color}">
+  return `<div class="shop-item${equipped ? ' equipped' : ''}${item.rarity === 'starter' ? ' starter' : ''}" data-shop-kind="${kind}" data-shop-id="${item.id}" style="--rarity:${meta.color}">
+    ${equipped ? `<span class="shop-owned">${dict.shopInUse || 'EM USO'}</span>` : ''}
     <div class="shop-item-top">
       <div class="shop-preview" style="background:${previewBg};border:1px solid ${swatch}77">${emoji}</div>
       <div style="min-width:0">
@@ -6248,6 +6380,8 @@ function renderEventLobby() {
   setText('eventIcon', ev.icon);
   setText('eventName', en ? ev.nameEn : ev.name);
   setText('eventDesc', en ? ev.descEn : ev.desc);
+  const card = document.querySelector('.event-card');
+  if (card) card.style.setProperty('--event-accent', eventThemeColor(rot.index));
   const prog = GameState.eventProgress();
   setText('eventProgressCount', `${Math.min(2, prog.wins)}/2`);
   const fill = document.getElementById('eventProgressFill');
@@ -6267,11 +6401,29 @@ function updateEventCountdown() {
   const el = document.getElementById('eventCountdown');
   if (!el) return;
   const rot = currentRotatingEvent();
-  el.textContent = eventCountdownText(rot.endsAt - Date.now());
-  // Virada de slot: o card se atualiza sozinho, sem recarregar o lobby.
+  const remaining = eventCountdownText(rot.endsAt - serverNow());
+  el.textContent = remaining;
+  const nextEv = ROTATING_EVENTS[rotatingEventIndexFor(rot.slot + 1)];
+  const nextName = document.getElementById('eventNextName');
+  if (nextName) nextName.textContent = currentLang === 'en' ? nextEv.nameEn : nextEv.name;
+  const nextTimer = document.getElementById('eventNextCountdown');
+  if (nextTimer) nextTimer.textContent = remaining;
+  // Virada de slot: card se atualiza sozinho e o lobby anuncia o novo evento.
   if (eventLobbySlot !== rot.slot) {
+    const prev = eventLobbySlot;
     eventLobbySlot = rot.slot;
-    if (lobbyTab === 'event') renderEventLobby();
+    const lobbyOpen = UI.startScreen && !UI.startScreen.classList.contains('hidden');
+    if (lobbyOpen) {
+      renderEventLobby();
+      if (prev !== 0) {
+        const dict = I18N[currentLang] || {};
+        const name = currentLang === 'en' ? rot.event.nameEn : rot.event.name;
+        showToast((dict.eventRotated || '🎪 Novo evento: {name}!').replace('{name}', name));
+        SFX.playBeep();
+      }
+    } else if (lobbyTab === 'event') {
+      renderEventLobby();
+    }
   }
 }
 setInterval(updateEventCountdown, 1000);
@@ -6302,6 +6454,301 @@ function renderShop() {
     chestBtn.disabled = !st.ok;
   }
   setShopTab(shopTab);
+}
+
+/* ---------- Preview animado da loja ----------
+   Cada item ganha um palco em canvas com a mesma linguagem visual do jogo:
+   skins andando, bombas girando, explosões em loop, rastros desenhando no
+   chão e avatares pulsando. Lendários/míticos ganham aura e partículas. */
+const previewState = { kind: null, id: null, item: null, raf: 0 };
+
+function equippedIdFor(kind) {
+  if (kind === 'bombs') return GameState.state.bombs.equipped;
+  if (kind === 'skins') return GameState.state.skins.equipped;
+  return GameState.state.cosmetics[kind].equipped;
+}
+
+function openShopPreview(kind, id) {
+  const item = cosmeticCatalog(kind).find(x => x.id === id);
+  if (!item) return;
+  const card = document.getElementById('shopPreview');
+  if (!card) return;
+  previewState.kind = kind; previewState.id = id; previewState.item = item;
+  const dict = I18N[currentLang] || {};
+  const en = currentLang === 'en';
+  const meta = rarityMeta(item.rarity);
+  const owned = GameState.isOwned(kind, id);
+  const equipped = equippedIdFor(kind) === id;
+  const nameEl = document.getElementById('previewName');
+  if (nameEl) nameEl.textContent = item.name;
+  const descEl = document.getElementById('previewDesc');
+  if (descEl) descEl.textContent = (item.desc && (item.desc[currentLang] || item.desc.pt)) || '';
+  const rarEl = document.getElementById('previewRarity');
+  if (rarEl) {
+    rarEl.textContent = en ? meta.labelEn : meta.label;
+    rarEl.style.setProperty('--rarity', meta.color);
+  }
+  const confirmBox = document.getElementById('previewConfirm');
+  if (confirmBox) confirmBox.classList.add('hidden');
+  const actions = document.getElementById('previewActions');
+  if (actions) actions.classList.remove('hidden');
+  const buyBtn = document.getElementById('btnPreviewBuy');
+  if (buyBtn) {
+    buyBtn.classList.toggle('hidden', owned);
+    buyBtn.textContent = (dict.previewBuy || 'COMPRAR {n} 💰').replace('{n}', item.price);
+  }
+  const equipBtn = document.getElementById('btnPreviewEquip');
+  if (equipBtn) {
+    equipBtn.classList.toggle('hidden', !owned);
+    equipBtn.textContent = equipped ? (dict.previewInUse || '✓ EM USO') : (dict.previewEquip || 'EQUIPAR');
+    equipBtn.disabled = equipped;
+  }
+  const balance = document.getElementById('previewBalance');
+  if (balance) {
+    balance.classList.toggle('hidden', owned);
+    const now = GameState.state.coins;
+    const nowEl = document.getElementById('previewBalanceNow');
+    const afterEl = document.getElementById('previewBalanceAfter');
+    if (nowEl) nowEl.textContent = now;
+    if (afterEl) afterEl.textContent = Math.max(0, now - item.price);
+  }
+  card.classList.remove('hidden');
+  startPreviewLoop();
+}
+
+function closeShopPreview() {
+  stopPreviewLoop();
+  const card = document.getElementById('shopPreview');
+  if (card) card.classList.add('hidden');
+  previewState.kind = null; previewState.id = null; previewState.item = null;
+}
+
+function startPreviewLoop() {
+  stopPreviewLoop();
+  const cnv = document.getElementById('previewCanvas');
+  if (!cnv) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cnv.width = 320 * dpr; cnv.height = 190 * dpr;
+  const pctx = cnv.getContext('2d');
+  if (!pctx) return;
+  const t0 = performance.now();
+  const draw = t => {
+    const host = document.getElementById('shopPreview');
+    if (!host || host.classList.contains('hidden')) { previewState.raf = 0; return; }
+    const sec = (t - t0) / 1000;
+    pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    pctx.clearRect(0, 0, 320, 190);
+    drawPreviewItem(pctx, 320, 190, previewState.kind, previewState.item, sec);
+    previewState.raf = requestAnimationFrame(draw);
+  };
+  previewState.raf = requestAnimationFrame(draw);
+}
+
+function stopPreviewLoop() {
+  if (previewState.raf) cancelAnimationFrame(previewState.raf);
+  previewState.raf = 0;
+}
+
+function drawPreviewItem(p, w, h, kind, item, t) {
+  if (!item) return;
+  const tier = rarityTier(item.rarity);
+  const swatch = item.body || item.color || item.glow || rarityMeta(item.rarity).color;
+  const cx = w / 2;
+  const bg = p.createRadialGradient(cx, h * 0.42, 8, cx, h * 0.42, w * 0.62);
+  bg.addColorStop(0, hexToRgba(swatch, 0.28));
+  bg.addColorStop(1, 'rgba(2,6,23,0)');
+  p.fillStyle = bg;
+  p.fillRect(0, 0, w, h);
+
+  const aura = (color, radius) => {
+    if (tier < 4) return;
+    const g = p.createRadialGradient(cx, h * 0.5, 6, cx, h * 0.5, radius);
+    g.addColorStop(0, hexToRgba(color, 0.22 + Math.sin(t * 3) * 0.05));
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    p.fillStyle = g;
+    p.fillRect(cx - radius, h * 0.5 - radius, radius * 2, radius * 2);
+    for (let i = 0; i < 6; i++) {
+      const ang = t * 1.6 + i * (Math.PI / 3);
+      const orbit = radius * 0.72;
+      p.fillStyle = hexToRgba(color, 0.85);
+      p.beginPath();
+      p.arc(cx + Math.cos(ang) * orbit, h * 0.5 + Math.sin(ang) * orbit * 0.55, 2.4, 0, Math.PI * 2);
+      p.fill();
+    }
+  };
+
+  if (kind === 'skins') {
+    aura(item.accent || swatch, 82);
+    const bob = Math.sin(t * 3) * 3;
+    const cy = h * 0.54 + bob;
+    p.fillStyle = 'rgba(0,0,0,0.4)';
+    p.beginPath(); p.ellipse(cx, cy + 30, 24, 7, 0, 0, Math.PI * 2); p.fill();
+    const grad = p.createRadialGradient(cx - 10, cy - 12, 3, cx, cy, 36);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.3, item.body || swatch);
+    grad.addColorStop(1, '#0b1220');
+    p.fillStyle = grad;
+    p.beginPath(); p.arc(cx, cy, 32, 0, Math.PI * 2); p.fill();
+    p.strokeStyle = item.accent || swatch;
+    p.lineWidth = 3;
+    p.beginPath(); p.arc(cx, cy, 32, 0, Math.PI * 2); p.stroke();
+    p.fillStyle = item.visor || '#e2e8f0';
+    p.beginPath(); p.ellipse(cx, cy - 5, 15, 8, 0, 0, Math.PI * 2); p.fill();
+    p.fillStyle = 'rgba(2,6,23,0.85)';
+    p.beginPath(); p.ellipse(cx - 5, cy - 5, 3, 4, 0, 0, Math.PI * 2); p.fill();
+    p.beginPath(); p.ellipse(cx + 6, cy - 5, 3, 4, 0, 0, Math.PI * 2); p.fill();
+    if (item.style === 'dragon') {
+      p.fillStyle = item.accent || swatch;
+      [[-1, 0], [1, 0]].forEach(([s]) => {
+        p.beginPath();
+        p.moveTo(cx + s * 18, cy - 26); p.lineTo(cx + s * 28, cy - 40); p.lineTo(cx + s * 30, cy - 22);
+        p.closePath(); p.fill();
+      });
+    }
+    if (item.style === 'cosmic') {
+      p.strokeStyle = hexToRgba('#ddd6fe', 0.8);
+      p.lineWidth = 2;
+      p.beginPath(); p.ellipse(cx, cy - 2, 44, 12, t * 0.6, 0, Math.PI * 2); p.stroke();
+    }
+    if (item.style === 'guardian') {
+      p.strokeStyle = hexToRgba('#fef3c7', 0.9);
+      p.lineWidth = 3;
+      p.beginPath(); p.ellipse(cx, cy - 30, 16, 5, 0, 0, Math.PI * 2); p.stroke();
+    }
+    return;
+  }
+
+  if (kind === 'bombs') {
+    aura(item.color || swatch, 76);
+    const bob = Math.sin(t * 2.4) * 3;
+    const cy = h * 0.56 + bob;
+    p.strokeStyle = hexToRgba(item.flame, 0.85);
+    p.lineWidth = 3;
+    p.beginPath(); p.moveTo(cx + 10, cy - 22); p.quadraticCurveTo(cx + 18, cy - 36, cx + 14, cy - 44); p.stroke();
+    const spark = 1 + Math.sin(t * 14) * 0.35;
+    p.fillStyle = item.core || '#fef3c7';
+    p.beginPath(); p.arc(cx + 14, cy - 45, 3.4 * spark, 0, Math.PI * 2); p.fill();
+    const g = p.createRadialGradient(cx - 9, cy - 10, 2, cx, cy, 34);
+    g.addColorStop(0, '#f8fafc');
+    g.addColorStop(0.35, item.color || swatch);
+    g.addColorStop(1, '#0b1220');
+    p.fillStyle = g;
+    p.beginPath(); p.arc(cx, cy, 30, 0, Math.PI * 2); p.fill();
+    p.strokeStyle = hexToRgba(item.flame, 0.9);
+    p.lineWidth = 2.5;
+    p.beginPath(); p.arc(cx, cy, 30, 0, Math.PI * 2); p.stroke();
+    p.fillStyle = hexToRgba(item.core, 0.85);
+    p.beginPath(); p.arc(cx - 9, cy - 9, 6, 0, Math.PI * 2); p.fill();
+    if (tier >= 4) {
+      p.strokeStyle = hexToRgba(item.flame, 0.75);
+      p.lineWidth = 2;
+      p.beginPath(); p.ellipse(cx, cy, 42, 13, t * 1.2, 0, Math.PI * 2); p.stroke();
+      p.beginPath(); p.ellipse(cx, cy, 42, 13, -t * 1.2 + 0.8, 0, Math.PI * 2); p.stroke();
+    }
+    return;
+  }
+
+  if (kind === 'explosions') {
+    aura(item.color || swatch, 84);
+    const cycle = (t % 1.5) / 1.5;
+    const cy = h * 0.54;
+    const rings = [
+      { r: 14 + cycle * 62, a: 1 - cycle, lw: 4 },
+      { r: 8 + ((cycle + 0.35) % 1) * 58, a: 1 - ((cycle + 0.35) % 1), lw: 2.5 }
+    ];
+    rings.forEach(ring => {
+      p.strokeStyle = hexToRgba(ring.r > 40 ? item.color : item.flame, Math.max(0, ring.a) * 0.9);
+      p.lineWidth = ring.lw;
+      p.beginPath(); p.arc(cx, cy, ring.r, 0, Math.PI * 2); p.stroke();
+    });
+    const flash = Math.max(0, 1 - cycle * 2.2);
+    const core = p.createRadialGradient(cx, cy, 1, cx, cy, 26 + (1 - flash) * 14);
+    core.addColorStop(0, hexToRgba(item.core, 0.95 * flash));
+    core.addColorStop(1, 'rgba(0,0,0,0)');
+    p.fillStyle = core;
+    p.beginPath(); p.arc(cx, cy, 30, 0, Math.PI * 2); p.fill();
+    return;
+  }
+
+  if (kind === 'trails') {
+    aura(item.glow || swatch, 78);
+    const baseY = h * 0.6;
+    const px = x => cx + Math.sin(x * 1.5) * 64;
+    const py = x => baseY + Math.sin(x * 3) * 7;
+    for (let i = 14; i >= 1; i--) {
+      const x = t - i * 0.09;
+      p.fillStyle = hexToRgba(i % 2 ? item.color : item.glow, (1 - i / 15) * 0.8);
+      p.beginPath(); p.arc(px(x), py(x), 5 - i * 0.22, 0, Math.PI * 2); p.fill();
+    }
+    p.fillStyle = '#f8fafc';
+    p.beginPath(); p.arc(px(t), py(t), 7, 0, Math.PI * 2); p.fill();
+    p.strokeStyle = hexToRgba(item.color, 0.9);
+    p.lineWidth = 2;
+    p.beginPath(); p.arc(px(t), py(t), 10, 0, Math.PI * 2); p.stroke();
+    return;
+  }
+
+  // avatars
+  aura(rarityMeta(item.rarity).color, 80);
+  const bob = Math.sin(t * 2.6) * 4;
+  p.save();
+  p.textAlign = 'center';
+  p.textBaseline = 'middle';
+  p.font = '64px serif';
+  p.fillText(item.emoji || '🪪', cx, h * 0.52 + bob);
+  p.restore();
+  if (item.rarity !== 'starter') {
+    p.strokeStyle = hexToRgba(rarityMeta(item.rarity).color, 0.85);
+    p.lineWidth = 2.5;
+    p.beginPath(); p.arc(cx, h * 0.52 + bob, 44 + Math.sin(t * 4) * 2, 0, Math.PI * 2); p.stroke();
+  }
+}
+
+function buyFromPreview() {
+  const { kind, id, item } = previewState;
+  if (!item) return;
+  const dict = I18N[currentLang] || {};
+  const res = GameState.buy(kind, id);
+  if (!res.ok) { showToast(dict.shopNotEnough || 'Moedas insuficientes'); return; }
+  GameState.equip(kind, id);
+  SFX.playUnlock();
+  haptic(35);
+  showToast((dict.shopBought || '{name} desbloqueado!').replace('{name}', item.name));
+  const stage = document.querySelector('.preview-stage');
+  const wallet = document.querySelector('.shop-coins');
+  if (stage && wallet) coinFly(stage, wallet, rarityMeta(item.rarity).color);
+  const cardEl = document.querySelector(`.shop-item[data-shop-kind="${kind}"][data-shop-id="${id}"]`);
+  if (cardEl) { cardEl.classList.add('burst'); setTimeout(() => cardEl.classList.remove('burst'), 520); }
+  renderShop();
+  openShopPreview(kind, id);
+  if (UI.startScreen && !UI.startScreen.classList.contains('hidden')) refreshDemo();
+}
+
+function coinFly(fromEl, toEl, color) {
+  const a = fromEl.getBoundingClientRect();
+  const b = toEl.getBoundingClientRect();
+  const sx = a.left + a.width / 2, sy = a.top + a.height / 2;
+  const tx = b.left + b.width / 2, ty = b.top + b.height / 2;
+  for (let i = 0; i < 8; i++) {
+    const coin = document.createElement('span');
+    coin.className = 'coin-fly';
+    if (color) coin.style.background = `radial-gradient(circle at 35% 30%, #fff, ${color} 60%, #111827)`;
+    coin.style.left = `${sx + (Math.random() - 0.5) * 40}px`;
+    coin.style.top = `${sy + (Math.random() - 0.5) * 30}px`;
+    document.body.appendChild(coin);
+    const dx = tx - sx + (Math.random() - 0.5) * 24;
+    const dy = ty - sy + (Math.random() - 0.5) * 18;
+    coin.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 26}px) scale(1.1)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${dx}px, ${dy}px) scale(.5)`, opacity: 0 }
+    ], { duration: 620 + i * 35, easing: 'cubic-bezier(.25,.7,.35,1)' }).onfinish = () => coin.remove();
+  }
+  if (toEl) {
+    toEl.classList.remove('wallet-bump');
+    void toEl.offsetWidth;
+    toEl.classList.add('wallet-bump');
+  }
 }
 
 function refreshLobbyScreens() {
@@ -6776,30 +7223,66 @@ function bindUI() {
   const scheduleModal = document.getElementById('scheduleModal');
   if (scheduleModal) scheduleModal.addEventListener('click', e => { if (e.target === scheduleModal) closeScheduleModal(); });
 
-  // LOJA
+  // LOJA: o card abre o preview animado; comprar/equipar acontecem no modal.
   const shopClick = e => {
-    const btn = e.target.closest('[data-shop-act]');
-    if (!btn) return;
-    const dict = I18N[currentLang] || {};
-    const kind = SHOP_TABS.includes(btn.dataset.shopKind) ? btn.dataset.shopKind : 'skins';
-    const id = btn.dataset.shopId;
-    const item = cosmeticCatalog(kind).find(x => x.id === id);
-    if (!item) return;
-    if (btn.dataset.shopAct === 'buy') {
-      const res = GameState.buy(kind, id);
-      if (!res.ok) { showToast(dict.shopNotEnough || 'Moedas insuficientes'); renderShop(); return; }
-      GameState.equip(kind, id);
-      showToast((dict.shopBought || '{name} desbloqueado!').replace('{name}', item.name));
-    } else {
-      GameState.equip(kind, id);
-      showToast((dict.shopEquippedMsg || '{name} equipado!').replace('{name}', item.name));
-    }
-    renderShop();
-    if (UI.startScreen && !UI.startScreen.classList.contains('hidden')) refreshDemo();
+    const cardEl = e.target.closest('.shop-item');
+    if (!cardEl) return;
+    const grid = cardEl.closest('.shop-grid');
+    if (!grid) return;
+    const kind = SHOP_TABS.find(k => SHOP_GRID_IDS[k] === grid.id);
+    const id = cardEl.dataset.shopId;
+    if (kind && id) openShopPreview(kind, id);
   };
   Object.values(SHOP_GRID_IDS).forEach(gid => {
     const el = document.getElementById(gid);
     if (el) el.addEventListener('click', shopClick);
+  });
+  const previewModal = document.getElementById('shopPreview');
+  if (previewModal) previewModal.addEventListener('click', e => { if (e.target === previewModal) closeShopPreview(); });
+  const btnPreviewClose = document.getElementById('btnPreviewClose');
+  if (btnPreviewClose) btnPreviewClose.addEventListener('click', closeShopPreview);
+  const btnPreviewEquip = document.getElementById('btnPreviewEquip');
+  if (btnPreviewEquip) btnPreviewEquip.addEventListener('click', () => {
+    const { kind, id, item } = previewState;
+    if (!kind || !id) return;
+    const dict = I18N[currentLang] || {};
+    GameState.equip(kind, id);
+    SFX.playPickup();
+    haptic(20);
+    showToast((dict.shopEquippedMsg || '{name} equipado!').replace('{name}', item ? item.name : id));
+    renderShop();
+    openShopPreview(kind, id);
+    if (UI.startScreen && !UI.startScreen.classList.contains('hidden')) refreshDemo();
+  });
+  const btnPreviewBuy = document.getElementById('btnPreviewBuy');
+  if (btnPreviewBuy) btnPreviewBuy.addEventListener('click', () => {
+    const { item } = previewState;
+    if (!item) return;
+    const dict = I18N[currentLang] || {};
+    const price = Number(item.price) || 0;
+    // Itens caros pedem confirmação em duas etapas com o saldo depois.
+    if (price >= 3500) {
+      const box = document.getElementById('previewConfirm');
+      const title = document.getElementById('previewConfirmTitle');
+      const body = document.getElementById('previewConfirmBody');
+      const actions = document.getElementById('previewActions');
+      if (title) title.textContent = (dict.previewConfirmTitle || 'Confirmar compra de {name} por {n} 💰?')
+        .replace('{name}', item.name).replace('{n}', price);
+      if (body) body.textContent = (dict.previewConfirmBody || 'Saldo agora: {a} 💰 • depois da compra: {b} 💰')
+        .replace('{a}', GameState.state.coins).replace('{b}', Math.max(0, GameState.state.coins - price));
+      if (box) box.classList.remove('hidden');
+      if (actions) actions.classList.add('hidden');
+      haptic(15);
+      return;
+    }
+    buyFromPreview();
+  });
+  const btnPreviewConfirm = document.getElementById('btnPreviewConfirm');
+  if (btnPreviewConfirm) btnPreviewConfirm.addEventListener('click', buyFromPreview);
+  const btnPreviewCancel = document.getElementById('btnPreviewCancel');
+  if (btnPreviewCancel) btnPreviewCancel.addEventListener('click', () => {
+    const { kind, id } = previewState;
+    if (kind && id) openShopPreview(kind, id);
   });
   document.querySelectorAll('[data-shop-tab]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -9836,6 +10319,7 @@ function render() {
   ctx.restore();
   drawStormVignette();
   drawHitVignette();
+  drawEventTint();
   renderRadar();
 }
 

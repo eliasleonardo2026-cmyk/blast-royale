@@ -43,9 +43,21 @@
 <div id="fpsCounter" class="hidden fixed left-1 bottom-1 z-30 text-[10px] font-bold text-emerald-300/80 pointer-events-none">60 FPS</div>
 
 <!-- ================= HUD IN-GAME ================= -->
+<!-- ================= EVENTO ATIVO NA PARTIDA ================= -->
+<div id="eventSplash" class="hidden fixed inset-0 z-30 flex items-center justify-center pointer-events-none p-4">
+  <div id="eventSplashCard" class="event-splash-card">
+    <span id="eventSplashBadge" class="event-splash-badge" data-i18n="eventSplashBadge">EVENTO ATIVO</span>
+    <span id="eventSplashIcon" class="event-splash-icon">🎁</span>
+    <span id="eventSplashName" class="event-splash-name">—</span>
+    <span id="eventSplashDesc" class="event-splash-desc">—</span>
+    <span id="eventSplashTag" class="event-splash-tag" data-i18n="eventSplashTag">3H • Fora da Liga</span>
+  </div>
+</div>
+
 <div id="hudLayer" class="hidden fixed inset-0 pointer-events-none z-20 flex flex-col justify-between px-2.5 sm:px-4 safe-top safe-bottom">
   <div class="flex items-start justify-between gap-1.5 w-full">
     <div class="flex flex-col gap-1 pointer-events-auto max-w-[62%]">
+      <div id="eventHudChip" class="event-hud-chip hidden self-start">🎪 <b id="eventHudName">EVENTO</b></div>
 
       <!-- Linha 1: HP + Vivos + Zona -->
       <div class="flex flex-wrap items-center gap-1.5 bg-slate-950/85 backdrop-blur-md border border-slate-700/70 px-2.5 py-1 rounded-2xl shadow-lg">
@@ -639,6 +651,7 @@
             <span class="event-tag">3H</span>
           </div>
           <div class="event-countdown">⏳ <span data-i18n="eventNextLabel">Próximo evento em</span> <b id="eventCountdown">--:--:--</b></div>
+          <div class="event-next">⏭ <span data-i18n="eventNextUp">A seguir</span>: <b id="eventNextName">—</b> • <span data-i18n="eventStartsIn">em</span> <b id="eventNextCountdown">--:--:--</b></div>
           <div class="event-progress-wrap">
             <div class="event-progress-label">
               <span data-i18n="eventGoal">Vença 2 partidas neste evento</span>
@@ -1109,6 +1122,36 @@
     <p id="adOverlayLabel" class="ad-label" data-i18n="adSimulating">Simulando Anúncio Premiado...</p>
     <div class="ad-progress"><span id="adOverlayBar"></span></div>
     <p class="ad-note" data-i18n="adNote">Teste local: o vídeo real só aparece no app Android com AdMob configurado.</p>
+  </div>
+</div>
+
+<!-- ================= PREVIEW DA LOJA ================= -->
+<div id="shopPreview" class="hidden fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="preview-card">
+    <button id="btnPreviewClose" type="button" class="stats-close" aria-label="Fechar">✕</button>
+    <div class="preview-stage">
+      <canvas id="previewCanvas" width="320" height="190"></canvas>
+    </div>
+    <div class="preview-head">
+      <div class="min-w-0">
+        <div id="previewName" class="preview-name">—</div>
+        <div id="previewDesc" class="preview-desc">—</div>
+      </div>
+      <span id="previewRarity" class="shop-rarity">COMUM</span>
+    </div>
+    <div id="previewConfirm" class="preview-confirm hidden">
+      <p id="previewConfirmTitle" class="preview-confirm-title">—</p>
+      <p id="previewConfirmBody" class="preview-confirm-body">—</p>
+      <div class="preview-actions">
+        <button id="btnPreviewConfirm" type="button" class="shop-buy buy" data-i18n="previewConfirmYes">CONFIRMAR</button>
+        <button id="btnPreviewCancel" type="button" class="shop-buy equip" data-i18n="previewConfirmNo">CANCELAR</button>
+      </div>
+    </div>
+    <div id="previewActions" class="preview-actions">
+      <button id="btnPreviewBuy" type="button" class="shop-buy buy">COMPRAR 500 💰</button>
+      <button id="btnPreviewEquip" type="button" class="shop-buy equip" data-i18n="previewEquip">EQUIPAR</button>
+    </div>
+    <div id="previewBalance" class="preview-balance">💰 <b id="previewBalanceNow">0</b> → <b id="previewBalanceAfter">0</b></div>
   </div>
 </div>
 
