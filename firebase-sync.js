@@ -31,7 +31,9 @@
     listeners: [],
     saveTimer: null,
     lastComp: null,       // último progresso competitivo confirmado na nuvem
-    compLocked: false     // regra rejeitou: sincroniza o resto e tenta depois
+    compLocked: false,    // regra rejeitou: sincroniza o resto e tenta depois
+    hasCloudDoc: false,   // documento já existe no Firestore (create vs update)
+    catchUpTimer: null    // agenda o envio do excedente competitivo
   };
   let app = null, auth = null, db = null, rtdb = null;
 
@@ -100,28 +102,57 @@
     return compOfRaw(p && p.competitive);
   }
 
+  // A regra do Firestore aceita no máximo +3 pts, +1 vitória/derrota e
+  // troféus entre -22 e +30 por gravação. O excedente fica para as próximas
+  // janelas de 60 s; enviar o total de uma vez seria rejeitado para sempre.
+  function clampToStep(target, base) {
+    if (!base) return target;
+    let wins = target.rankedWins, losses = target.rankedLosses;
+    // A regra não aceita vitória e derrota no mesmo avanço.
+    if (wins > base.rankedWins && losses > base.rankedLosses) losses = base.rankedLosses;
+    return {
+      leaguePoints: Math.max(base.leaguePoints, Math.min(target.leaguePoints, base.leaguePoints + 3)),
+      rankedWins: Math.min(wins, base.rankedWins + 1),
+      rankedLosses: Math.min(losses, base.rankedLosses + 1),
+      trophies: Math.max(base.trophies - 22, Math.min(target.trophies, base.trophies + 30))
+    };
+  }
+
+  function scheduleCompCatchUp() {
+    if (state.catchUpTimer) return;
+    state.catchUpTimer = setTimeout(() => {
+      state.catchUpTimer = null;
+      if (!state.ready || state.compLocked) return;
+      if (JSON.stringify(competitiveOf(profile())) === JSON.stringify(state.lastComp)) return;
+      saveProfileNow();
+    }, 62000);
+  }
+
   function saveProfileNow(retrying = false) {
     if (!state.ready) return;
     const p = profile();
     const nome = String(p.nick || '').trim();
     if (!nome) return; // sem nick não há documento público
-    const competitive = competitiveOf(p);
+    const targetComp = competitiveOf(p);
+    let competitive = targetComp;
+    let compChanged = false;
+    if (!state.compLocked) {
+      competitive = clampToStep(targetComp, state.lastComp);
+      compChanged = JSON.stringify(competitive) !== JSON.stringify(state.lastComp);
+    }
     const payload = {
       nick: nome,
       avatar: p.avatar || '🐍',
       updatedAt: Date.now()
     };
-    // Progresso competitivo só sobe de forma validada: as regras do
-    // Firestore aceitam no máximo +3 pts, +1 vitória/derrota e exigem
-    // rankedAt == request.time, além de um intervalo mínimo entre
-    // atualizações. Se já houve rejeição, o campo fica de fora até a
-    // nova tentativa para não bloquear a economia/cosméticos.
-    const compChanged = !state.compLocked && JSON.stringify(competitive) !== JSON.stringify(state.lastComp);
+    // Progresso competitivo viaja com rankedAt para as regras validarem o
+    // incremento e o intervalo mínimo. Se já houve rejeição, o campo fica de
+    // fora até a nova tentativa para não bloquear a economia/cosméticos.
     if (compChanged) {
       payload.competitive = competitive;
-      payload.rankedAt = firebase.firestore.FieldValue.serverTimestamp();
-    } else if (!state.compLocked) {
-      payload.competitive = competitive;
+      // A primeira gravação cria o documento: sem rankedAt aqui, o primeiro
+      // avanço depois do cadastro não fica preso no cooldown de 60 s.
+      if (state.hasCloudDoc) payload.rankedAt = firebase.firestore.FieldValue.serverTimestamp();
     }
     // Economia e cosméticos viajam junto: moedas, XP, skins, efeitos,
     // contadores diários e progresso do evento do ciclo atual.
@@ -133,9 +164,11 @@
     try {
       const ref = db.collection('users').doc(state.uid);
       Promise.resolve(ref.set(payload, { merge: true })).then(() => {
+        state.hasCloudDoc = true;
         if (compChanged) {
           state.lastComp = competitive;
           state.compLocked = false;
+          if (JSON.stringify(competitive) !== JSON.stringify(targetComp)) scheduleCompCatchUp();
         }
       }).catch(err => {
         const code = (err && err.code) || '';
@@ -237,6 +270,7 @@
       try {
         const doc = await db.collection('users').doc(state.uid).get();
         if (doc && doc.exists) {
+          state.hasCloudDoc = true;
           state.lastComp = compOfRaw((doc.data() || {}).competitive);
           window.GameState.mergeRemoteProfile(doc.data());
         }
