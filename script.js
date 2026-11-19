@@ -130,6 +130,8 @@ const I18N = {
     progTitle: "PROGRESSO", progSub: "Nível, missões, passe e ranking", progLevelLabel: "NÍVEL",
     pwaUpdated: "Nova versão instalada. Recarregue para atualizar.",
     setFps: "Mostrar FPS", setFpsDesc: "Exibe a taxa de quadros durante o jogo",
+    setGraphics: "Gráficos", setGraphicsDesc: "Qualidade visual — baixe em celulares mais fracos",
+    gfxLow: "Baixo", gfxMedium: "Médio", gfxHigh: "Alto", gfxUltra: "Ultra",
     setReset: "RESTAURAR PADRÕES", joySmall: "P", joyMedium: "M", joyLarge: "G",
     duelModeDesc: "Série MD3 • Arena 15×15 simétrica",
     duelFormatLabel: "Formato da Série", duelFormatHint: "MD5 é usada nas finais do mata-mata.",
@@ -368,6 +370,8 @@ const I18N = {
     progTitle: "PROGRESS", progSub: "Level, missions, pass and ranking", progLevelLabel: "LEVEL",
     pwaUpdated: "New version installed. Reload to update.",
     setFps: "Show FPS", setFpsDesc: "Display frame rate while playing",
+    setGraphics: "Graphics", setGraphicsDesc: "Visual quality — lower it on weaker phones",
+    gfxLow: "Low", gfxMedium: "Medium", gfxHigh: "High", gfxUltra: "Ultra",
     setReset: "RESTORE DEFAULTS", joySmall: "S", joyMedium: "M", joyLarge: "L",
     duelModeDesc: "Best-of-3 series • 15×15 symmetric arena",
     duelFormatLabel: "Series Format", duelFormatHint: "MD5 is used in knockout finals.",
@@ -1000,7 +1004,8 @@ function loadPrefs() {
     if (raw) Object.assign(prefs, JSON.parse(raw) || {});
     if (!prefs.achievements) prefs.achievements = {};
     if (!prefs.ownedSkins) prefs.ownedSkins = { VIPER: true };
-    if (!prefs.season || !prefs.season.claimed) prefs.season = { claimed: {} };
+    if (!prefs.season || typeof prefs.season !== 'object') prefs.season = {};
+    if (!prefs.season.claimed || typeof prefs.season.claimed !== 'object') prefs.season.claimed = {};
     if (!Array.isArray(prefs.ranking)) prefs.ranking = [];
     if (!prefs.missions || !Array.isArray(prefs.missions.list)) prefs.missions = { day: '', list: [] };
   } catch (e) {}
@@ -1506,6 +1511,17 @@ const GameState = (() => {
     save();
     return true;
   }
+  // Entrega cosméticos sem cobrar (passe, eventos, presentes). Retorna true
+  // apenas quando o item é realmente novo no inventário.
+  function grant(kind, id) {
+    const bucket = bucketFor(kind);
+    const item = cosmeticCatalog(kind).find(x => x.id === id);
+    if (!bucket || !item) return false;
+    if (bucket.owned.includes(id) || id === defaultIdFor(kind)) return false;
+    bucket.owned.push(id);
+    save();
+    return true;
+  }
   function equipped(kind) { return getCosmetic(kind, bucketFor(kind).equipped); }
   // Payload para a nuvem: o que não é competitivo também precisa sobreviver
   // à troca de aparelho (moedas, cosméticos e contadores diários).
@@ -1680,7 +1696,7 @@ const GameState = (() => {
     load, save, subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     // Gancho para Firestore/Realtime DB: substitui o snapshot inteiro.
     hydrate(data) { if (!data || typeof data !== 'object') return state; Object.assign(state, data); sanitize(); save(); return state; },
-    addCoins, setProfile, addResult, leagueTable, isOwned, buy, equip, equipped, defaultIdFor,
+    addCoins, setProfile, addResult, leagueTable, isOwned, buy, equip, grant, equipped, defaultIdFor,
     validateNick, setLeague, mergeRemoteProfile, cloudPayload,
     trophyRank, ensureCopa, claimCopaReward, weekKey,
     claimDaily, getSchedule, proposeSchedule, acceptSchedule, nextOccurrence,
@@ -1913,11 +1929,21 @@ function botProfileFor(name) {
 }
 
 /* ---------- Ajustes do jogador ---------- */
+// Presets de gráficos: controlam resolução (DPR/escala), partículas, rastros
+// e efeitos de brilho. "Baixo" e "Médio" priorizam celulares mais fracos.
+const GRAPHICS_PRESETS = {
+  low:    { label: 'Baixo', labelEn: 'Low',    dprCap: 1,   scaleCap: 0.75, scaleMin: 0.5,  particles: 0.35, trailCap: 60,  glow: false, ambience: false },
+  medium: { label: 'Médio', labelEn: 'Medium', dprCap: 1.3, scaleCap: 0.9,  scaleMin: 0.55, particles: 0.65, trailCap: 120, glow: false, ambience: true },
+  high:   { label: 'Alto',  labelEn: 'High',   dprCap: 2,   scaleCap: 1,    scaleMin: 0.6,  particles: 1,    trailCap: 220, glow: true,  ambience: true },
+  ultra:  { label: 'Ultra', labelEn: 'Ultra',  dprCap: 2.5, scaleCap: 1,    scaleMin: 0.7,  particles: 1.4,  trailCap: 300, glow: true,  ambience: true }
+};
 const DEFAULT_SETTINGS = {
   volume: 80, music: 35, vibration: true, shake: true, reduceMotion: false,
-  joySize: 112, joyOpacity: 80, deadzone: 22, showFps: false
+  joySize: 112, joyOpacity: 80, deadzone: 22, showFps: false,
+  graphics: IS_TOUCH ? 'medium' : 'high'
 };
 const settings = { ...DEFAULT_SETTINGS };
+let QUALITY = GRAPHICS_PRESETS[settings.graphics];
 
 function loadSettings() {
   const stored = prefs.settings && typeof prefs.settings === 'object' ? prefs.settings : null;
@@ -1932,6 +1958,7 @@ function loadSettings() {
     const mq = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
     settings.reduceMotion = !!(mq && mq.matches);
   }
+  if (!GRAPHICS_PRESETS[settings.graphics]) settings.graphics = IS_TOUCH ? 'medium' : 'high';
 }
 
 function saveSettings() { savePrefs({ settings: { ...settings } }); }
@@ -1952,6 +1979,8 @@ function applySettings() {
     shakeBtn.classList.toggle('border-cyan-500/60', match.shakeEnabled);
     shakeBtn.classList.toggle('border-slate-700/80', !match.shakeEnabled);
   }
+  QUALITY = GRAPHICS_PRESETS[settings.graphics] || GRAPHICS_PRESETS.high;
+  if (typeof resize === 'function' && canvas && canvas.width) resize();
 }
 
 function syncSettingsUI() {
@@ -1969,6 +1998,10 @@ function syncSettingsUI() {
   });
   document.querySelectorAll('#setJoySize button').forEach(b => {
     b.classList.toggle('active', parseInt(b.dataset.size, 10) === settings.joySize);
+  });
+  const segGfx = q('setGraphics');
+  if (segGfx) segGfx.querySelectorAll('button[data-graphics]').forEach(b => {
+    b.classList.toggle('active', b.dataset.graphics === settings.graphics);
   });
 }
 
@@ -2136,40 +2169,119 @@ function equipSkin(id) {
 /* ---------- Temporada / Passe ---------- */
 const SEASON_NAME = 'Temporada 1 · Neon Rift';
 const SEASON_PLUS_LEVEL = 8;
-const SEASON_TIERS = Array.from({ length: 12 }, (_, i) => {
-  const tier = i + 1;
-  const plusSkin = { 4: 'NEON', 8: 'SAKURA', 12: 'OBSIDIAN' }[tier] || null;
-  return {
-    tier,
-    free: { type: 'xp', amount: tier % 4 === 0 ? 200 : 80 },
-    plus: plusSkin ? { type: 'skin', id: plusSkin } : { type: 'xp', amount: 140 }
-  };
-});
+// O passe tem progressão própria (XP do passe), separada do nível da conta.
+// A XP do passe tem teto diário: a temporada dura semanas, não um dia.
+const SEASON_PASS_TIERS_COUNT = 30;
+const SEASON_PASS_TIER_COST = 500;
+const SEASON_PASS_DAILY_CAP = 800;
+const SEASON_PASS_XP_FACTOR = 4;
+const PASS_COINS = amount => ({ type: 'coins', amount });
+const PASS_ITEM = (kind, id) => ({ type: 'cosmetic', kind, id });
+const PASS_LEGACY = id => ({ type: 'legacySkin', id });
+const SEASON_PASS_REWARDS = [
+  { tier: 1, free: PASS_COINS(60), plus: PASS_COINS(120) },
+  { tier: 2, free: PASS_COINS(60), plus: PASS_ITEM('bombs', 'dynamite') },
+  { tier: 3, free: PASS_COINS(70), plus: PASS_COINS(140) },
+  { tier: 4, free: PASS_ITEM('trails', 'fire'), plus: PASS_LEGACY('NEON') },
+  { tier: 5, free: PASS_COINS(80), plus: PASS_COINS(160) },
+  { tier: 6, free: PASS_COINS(80), plus: PASS_ITEM('explosions', 'spark') },
+  { tier: 7, free: PASS_COINS(90), plus: PASS_COINS(180) },
+  { tier: 8, free: PASS_COINS(100), plus: PASS_LEGACY('SAKURA') },
+  { tier: 9, free: PASS_ITEM('bombs', 'crystal'), plus: PASS_COINS(220) },
+  { tier: 10, free: PASS_COINS(100), plus: PASS_ITEM('explosions', 'boom') },
+  { tier: 11, free: PASS_COINS(110), plus: PASS_COINS(240) },
+  { tier: 12, free: PASS_COINS(110), plus: PASS_LEGACY('OBSIDIAN') },
+  { tier: 13, free: PASS_COINS(120), plus: PASS_ITEM('skins', 'guardian') },
+  { tier: 14, free: PASS_ITEM('explosions', 'toxic'), plus: PASS_COINS(300) },
+  { tier: 15, free: PASS_COINS(130), plus: PASS_ITEM('trails', 'ice') },
+  { tier: 16, free: PASS_COINS(140), plus: PASS_COINS(320) },
+  { tier: 17, free: PASS_ITEM('trails', 'leaf'), plus: PASS_ITEM('skins', 'arctic') },
+  { tier: 18, free: PASS_COINS(150), plus: PASS_ITEM('skins', 'fusion') },
+  { tier: 19, free: PASS_COINS(160), plus: PASS_COINS(380) },
+  { tier: 20, free: PASS_ITEM('bombs', 'supernova'), plus: PASS_ITEM('explosions', 'bluefire') },
+  { tier: 21, free: PASS_COINS(170), plus: PASS_ITEM('trails', 'comet') },
+  { tier: 22, free: PASS_COINS(180), plus: PASS_COINS(420) },
+  { tier: 23, free: PASS_ITEM('explosions', 'solar'), plus: PASS_ITEM('avatars', 'wolf') },
+  { tier: 24, free: PASS_COINS(200), plus: PASS_ITEM('explosions', 'pulse') },
+  { tier: 25, free: PASS_ITEM('trails', 'sonic'), plus: PASS_COINS(500) },
+  { tier: 26, free: PASS_COINS(220), plus: PASS_ITEM('skins', 'dragonlord') },
+  { tier: 27, free: PASS_COINS(240), plus: PASS_ITEM('avatars', 'dragon') },
+  { tier: 28, free: PASS_ITEM('bombs', 'golddragon'), plus: PASS_ITEM('trails', 'phoenix') },
+  { tier: 29, free: PASS_COINS(300), plus: PASS_COINS(700) },
+  { tier: 30, free: PASS_ITEM('explosions', 'supernova'), plus: PASS_ITEM('skins', 'cosmic') }
+];
+function seasonState() {
+  if (!prefs.season || typeof prefs.season !== 'object') prefs.season = {};
+  const s = prefs.season;
+  if (!s.claimed || typeof s.claimed !== 'object') s.claimed = {};
+  if (!Number.isFinite(s.xp)) s.xp = 0;
+  if (!Number.isFinite(s.dayXp)) s.dayXp = 0;
+  const day = dayKey();
+  if (s.day !== day) { s.day = day; s.dayXp = 0; }
+  return s;
+}
+function seasonLevel() {
+  return Math.min(SEASON_PASS_TIERS_COUNT, Math.floor(seasonState().xp / SEASON_PASS_TIER_COST));
+}
+function seasonInto() { return seasonState().xp % SEASON_PASS_TIER_COST; }
+function addSeasonXp(amount) {
+  const s = seasonState();
+  const left = Math.max(0, SEASON_PASS_DAILY_CAP - s.dayXp);
+  const gain = Math.max(0, Math.min(Math.round(amount), left));
+  if (!gain) return 0;
+  const before = seasonLevel();
+  s.dayXp += gain;
+  s.xp += gain;
+  savePrefs({ season: s });
+  if (seasonLevel() > before) {
+    showToast(currentLang === 'en'
+      ? `🎫 Pass tier ${seasonLevel()} unlocked!`
+      : `🎫 Passe: nível ${seasonLevel()} liberado!`);
+  }
+  return gain;
+}
 function plusPassUnlocked() { return levelInfo().level >= SEASON_PLUS_LEVEL; }
 function seasonClaimed(tier, track) {
-  return !!(prefs.season && prefs.season.claimed && prefs.season.claimed[`${tier}-${track}`]);
+  return !!seasonState().claimed[`${tier}-${track}`];
+}
+function seasonRewardRarity(reward) {
+  if (!reward) return '';
+  if (reward.type === 'cosmetic') return getCosmetic(reward.kind, reward.id).rarity || '';
+  if (reward.type === 'legacySkin') return 'epic';
+  return '';
+}
+function seasonRewardLabel(reward, en) {
+  if (reward.type === 'coins') return `💰 ${reward.amount}`;
+  if (reward.type === 'legacySkin') return `🎁 ${getSkin(reward.id).name}`;
+  return `🎁 ${getCosmetic(reward.kind, reward.id).name}`;
 }
 function claimSeasonReward(tier, track) {
-  const row = SEASON_TIERS.find(t => t.tier === tier);
+  const row = SEASON_PASS_REWARDS.find(t => t.tier === tier);
   if (!row) return;
-  const lv = levelInfo().level;
-  if (lv < tier) { showToast(`🔒 Alcança o nível ${tier} para resgatar`); return; }
-  if (track === 'plus' && !plusPassUnlocked()) { showToast(`🔒 Passe Plus libera no nível ${SEASON_PLUS_LEVEL}`); return; }
-  if (seasonClaimed(tier, track)) return;
+  const en = currentLang === 'en';
+  if (seasonLevel() < tier) { showToast(en ? `🔒 Reach pass tier ${tier}` : `🔒 Alcança o nível ${tier} do passe`); return; }
+  if (track === 'plus' && !plusPassUnlocked()) { showToast(en ? `🔒 Plus Pass unlocks at account level ${SEASON_PLUS_LEVEL}` : `🔒 Passe Plus libera no nível ${SEASON_PLUS_LEVEL}`); return; }
+  const s = seasonState();
+  if (s.claimed[`${tier}-${track}`]) return;
   const reward = row[track];
-  prefs.season.claimed[`${tier}-${track}`] = true;
-  if (reward.type === 'xp') {
-    addXp(reward.amount, 'Passe');
-    showToast(`🎫 +${reward.amount} XP do passe`);
-  } else if (reward.type === 'skin') {
+  s.claimed[`${tier}-${track}`] = true;
+  if (reward.type === 'coins') {
+    GameState.addCoins(reward.amount);
+    showToast(`💰 +${reward.amount} ${en ? 'coins' : 'moedas'}`);
+  } else if (reward.type === 'cosmetic') {
+    const item = getCosmetic(reward.kind, reward.id);
+    const isNew = GameState.grant(reward.kind, reward.id);
+    const rarity = item.rarity ? ` (${en ? rarityMeta(item.rarity).labelEn : rarityMeta(item.rarity).label})` : '';
+    showToast(`🎁 ${item.name}${rarity}${isNew ? '' : (en ? ' — already owned' : ' — já possuída')}`);
+  } else if (reward.type === 'legacySkin') {
     prefs.ownedSkins[reward.id] = true;
-    addXp(60, 'Passe');
-    showToast(`🎁 Skin ${getSkin(reward.id).name} desbloqueada!`);
+    showToast(`🎁 Skin ${getSkin(reward.id).name}`);
   }
-  savePrefs({ season: prefs.season, ownedSkins: prefs.ownedSkins });
+  savePrefs({ season: s, ownedSkins: prefs.ownedSkins });
   updateCareerUI();
   renderProgress();
   renderSkins();
+  if (typeof renderShop === 'function') renderShop();
 }
 
 /* ---------- Evento do dia ---------- */
@@ -2206,6 +2318,8 @@ function addXp(raw, source = 'Partida', opts = {}) {
   prefs.xp = (prefs.xp || 0) + amount;
   savePrefs({});
   const after = levelInfo();
+  // Recompensas do próprio passe não alimentam a XP do passe (sem bola de neve).
+  if (source !== 'Passe') addSeasonXp(amount * SEASON_PASS_XP_FACTOR);
   if (after.level > before.level) {
     showToast(`🎉 Nível ${after.level}! Novas recompensas liberadas`);
     SFX.playChromaCorrect();
@@ -2443,27 +2557,37 @@ function renderProgress() {
   const seasonEl = document.querySelector('[data-progress-body="season"]');
   if (seasonEl) {
     const plusOn = plusPassUnlocked();
-    const head = `<div class="season-head"><div><b>${en ? 'Season 1 · Neon Rift' : SEASON_NAME}</b><span>${en ? 'Level' : 'Nível'} ${lv.level} · ${plusOn
-      ? (en ? 'Plus Pass active' : 'Passe Plus ativo')
-      : (en ? `Plus unlocks at level ${SEASON_PLUS_LEVEL}` : `Plus libera no nível ${SEASON_PLUS_LEVEL}`)}</span></div>
-      <span class="season-badge${plusOn ? ' on' : ''}">PLUS ${plusOn ? 'ON' : 'OFF'}</span></div>`;
-    const rows = SEASON_TIERS.map(row => {
-      const unlocked = lv.level >= row.tier;
+    const s = seasonState();
+    const passLvl = seasonLevel();
+    const into = seasonInto();
+    const pct = Math.min(100, Math.round((into / SEASON_PASS_TIER_COST) * 100));
+    const head = `<div class="season-head"><div>
+      <b>${en ? 'Season 1 · Neon Rift' : SEASON_NAME}</b>
+      <span>${en
+        ? `Pass tier ${passLvl}/${SEASON_PASS_TIERS_COUNT} · ${into}/${SEASON_PASS_TIER_COST} XP to the next`
+        : `Nível ${passLvl}/${SEASON_PASS_TIERS_COUNT} · ${into}/${SEASON_PASS_TIER_COST} XP para o próximo`}</span>
+      <span>${en
+        ? `Pass XP today: ${s.dayXp}/${SEASON_PASS_DAILY_CAP} (daily cap)`
+        : `XP do passe hoje: ${s.dayXp}/${SEASON_PASS_DAILY_CAP} (teto diário)`}</span>
+      </div><span class="season-badge${plusOn ? ' on' : ''}">PLUS ${plusOn ? 'ON' : 'OFF'}</span></div>
+      <div class="prog-bar season-pass-bar"><div class="prog-bar-fill" style="width:${pct}%"></div></div>`;
+    const rows = SEASON_PASS_REWARDS.map(row => {
+      const unlocked = passLvl >= row.tier;
       const freeClaimed = seasonClaimed(row.tier, 'free');
       const plusClaimed = seasonClaimed(row.tier, 'plus');
       const rewardChip = (track, reward) => {
         const claimed = track === 'free' ? freeClaimed : plusClaimed;
         const locked = !unlocked || (track === 'plus' && !plusOn);
-        const label = reward.type === 'skin'
-          ? `🎁 ${en ? 'Skin' : 'Skin'} ${getSkin(reward.id).name}`
-          : `⭐ ${reward.amount} XP`;
-        return `<button type="button" class="season-reward${claimed ? ' claimed' : ''}${locked ? ' locked' : ''}" data-claim="${row.tier}-${track}" ${claimed ? 'disabled' : ''}>
+        const rarity = seasonRewardRarity(reward);
+        const legend = rarity === 'mythic' ? ' mythic' : (rarity === 'legendary' ? ' legend' : '');
+        const label = seasonRewardLabel(reward, en);
+        return `<button type="button" class="season-reward${claimed ? ' claimed' : ''}${locked ? ' locked' : ''}${legend}" data-claim="${row.tier}-${track}" ${claimed ? 'disabled' : ''}>
           <span class="season-track">${track === 'free' ? (en ? 'FREE' : 'GRÁTIS') : 'PLUS'}</span>
           <span class="season-label">${claimed ? (en ? '✓ Claimed' : '✓ Resgatado') : (locked ? '🔒 ' : '') + label}</span>
         </button>`;
       };
       return `<div class="season-tier${unlocked ? ' unlocked' : ''}">
-        <div class="season-tier-num">${unlocked ? row.tier : '🔒'}<span>${en ? 'Lv' : 'Nv'} ${row.tier}</span></div>
+        <div class="season-tier-num">${unlocked ? row.tier : '🔒'}<span>${en ? 'T' : 'N'} ${row.tier}</span></div>
         <div class="season-tier-rewards">${rewardChip('free', row.free)}${rewardChip('plus', row.plus)}</div>
       </div>`;
     }).join('');
@@ -3339,8 +3463,9 @@ function addFloatingLabel(text, x, y, color = '#ffffff') {
 }
 
 function spawnParticles(x, y, color, count = 10, speed = 140, life = 0.5) {
-  if (settings.reduceMotion) count = Math.min(count, 3);
-  for (let i = 0; i < count; i++) {
+  let n = Math.max(1, Math.round(count * (QUALITY.particles || 1)));
+  if (settings.reduceMotion) n = Math.min(n, 3);
+  for (let i = 0; i < n; i++) {
     const a = Math.random() * Math.PI * 2;
     const s = speed * (0.3 + Math.random() * 0.7);
     particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, color, life, maxLife: life, size: 2 + Math.random() * 3 });
@@ -7435,6 +7560,16 @@ function bindUI() {
     saveSettings();
   });
 
+  const segGraphics = document.getElementById('setGraphics');
+  if (segGraphics) segGraphics.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-graphics]');
+    if (!btn || !GRAPHICS_PRESETS[btn.dataset.graphics]) return;
+    settings.graphics = btn.dataset.graphics;
+    saveSettings();
+    applySettings();
+    syncSettingsUI();
+  });
+
   const btnResetSettings = document.getElementById('btnResetSettings');
   if (btnResetSettings) btnResetSettings.addEventListener('click', () => {
     Object.assign(settings, DEFAULT_SETTINGS);
@@ -10248,7 +10383,7 @@ function stopSpectate() {
    19. RENDERING
    ======================================================================== */
 function resize() {
-  dpr = Math.min(window.devicePixelRatio || 1, 2) * renderScale;
+  dpr = Math.min(window.devicePixelRatio || 1, QUALITY.dprCap) * Math.min(renderScale, QUALITY.scaleCap);
   viewW = window.innerWidth; viewH = window.innerHeight;
   canvas.width = Math.round(viewW * dpr); canvas.height = Math.round(viewH * dpr);
   canvas.style.width = `${viewW}px`; canvas.style.height = `${viewH}px`;
@@ -11291,6 +11426,7 @@ function drawBorderTile(x, y, c, r, theme) {
 /* Partículas ambientais por bioma (neve, brasas, pétalas, chuva, vagalumes...).
    Determinísticas por célula: não acumulam estado nem atrapalham a leitura. */
 function drawAmbience(minC, maxC, minR, maxR, theme) {
+  if (!QUALITY.ambience) return;
   const kind = theme.ambience || 'spark';
   const thresh = viewW < 520 ? 0.94 : 0.9;
   ctx.save();
@@ -11685,8 +11821,7 @@ function drawFighters() {
     // Visor com brilho
     const ang = f.facingAngle;
     ctx.save();
-    ctx.shadowColor = visorColor;
-    ctx.shadowBlur = 7;
+    if (QUALITY.glow) { ctx.shadowColor = visorColor; ctx.shadowBlur = 7; }
     ctx.beginPath();
     ctx.arc(f.x + Math.cos(ang) * 4, f.y + Math.sin(ang) * 4, 6.2, ang - 0.95, ang + 0.95);
     ctx.strokeStyle = visorColor; ctx.lineWidth = 3.2; ctx.stroke();
@@ -11724,7 +11859,7 @@ function drawFighters() {
       ctx.lineDashOffset = -nowT * 26;
       ctx.beginPath(); ctx.arc(f.x, f.y, PLAYER_RADIUS + 7, 0, Math.PI * 2); ctx.stroke();
       ctx.setLineDash([]);
-      const orbitCount = skinRank >= 5 ? 6 : 4;
+      const orbitCount = QUALITY.glow ? (skinRank >= 5 ? 6 : 4) : 0;
       for (let i = 0; i < orbitCount; i++) {
         const a = nowT * (skinRank >= 5 ? 1.6 : 1.1) + (i / orbitCount) * Math.PI * 2;
         const r = PLAYER_RADIUS + 9 + Math.sin(nowT * 2 + i) * 3;
@@ -11858,7 +11993,8 @@ function updateTrails(dt) {
       });
     }
   }
-  if (trails.length > 220) trails.splice(0, trails.length - 220);
+  const cap = QUALITY.trailCap || 220;
+  if (trails.length > cap) trails.splice(0, trails.length - cap);
 }
 
 function drawTrails() {
@@ -12068,11 +12204,11 @@ function adaptRenderScale(rawDt) {
   const avgMs = (perfAccum / perfFrames) * 1000;
   perfAccum = 0; perfFrames = 0;
   if (perfCooldown > 0) return;
-  if (avgMs > 26 && renderScale > 0.6) {
-    renderScale = Math.max(0.6, renderScale - 0.15);
+  if (avgMs > 26 && renderScale > QUALITY.scaleMin) {
+    renderScale = Math.max(QUALITY.scaleMin, renderScale - 0.15);
     resize(); perfCooldown = 2.5;
-  } else if (avgMs < 16.5 && renderScale < 1) {
-    renderScale = Math.min(1, renderScale + 0.1);
+  } else if (avgMs < 16.5 && renderScale < QUALITY.scaleCap) {
+    renderScale = Math.min(QUALITY.scaleCap, renderScale + 0.1);
     resize(); perfCooldown = 4;
   }
 }

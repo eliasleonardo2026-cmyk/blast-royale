@@ -645,6 +645,17 @@ canvas#gameCanvas {
   color: #020617;
 }
 
+.settings-seg.settings-seg-wide {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 0 0 0.6rem;
+}
+.settings-seg.settings-seg-wide button {
+  width: auto;
+  padding: 6px 0;
+  font-size: 0.62rem;
+}
+
 /* ========================================================================
    PROGRESSÃO — nível, missões, passe, ranking, skins, toasts
    ======================================================================== */
@@ -872,6 +883,16 @@ canvas#gameCanvas {
 .season-label { font-size: 0.55rem; font-weight: 700; line-height: 1.25; }
 .season-reward.claimed { opacity: 0.55; border-color: rgba(52, 211, 153, 0.4); color: #6ee7b7; }
 .season-reward.locked { opacity: 0.5; }
+.season-reward.legend {
+  border-color: rgba(251, 191, 36, 0.55);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.18) inset, 0 0 10px rgba(251, 191, 36, 0.16);
+}
+.season-reward.mythic {
+  border-color: rgba(244, 63, 94, 0.6);
+  box-shadow: 0 0 0 1px rgba(244, 63, 94, 0.2) inset, 0 0 12px rgba(244, 63, 94, 0.2);
+}
+.season-pass-bar { margin: 0.45rem 0 0.55rem; }
+.season-head > div { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 
 .rank-summary {
   display: grid;
