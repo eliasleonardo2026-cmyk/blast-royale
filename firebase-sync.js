@@ -7,7 +7,7 @@
    ========================================================================= */
 (function () {
   const firebaseConfig = {
-    apiKey: "AIzaSyCH9HIO0fvcsL5eoCBt0BBscW-cbQwF_Q9Q",
+    apiKey: "AIzaSyCH9HIOfvcsL5eoCBt0BmscW-cBQwF_Q9Q",
     authDomain: "p-key-78esg6nhyfih.firebaseapp.com",
     databaseURL: "https://p-key-78esg6nhyfih-default-rtdb.firebaseio.com",
     projectId: "p-key-78esg6nhyfih",
@@ -19,12 +19,9 @@
   const SDK_BASE = 'https://www.gstatic.com/firebasejs/10.12.2/';
   const SDK_FILES = ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-database-compat.js'];
   const LOCAL_ID_KEY = 'blast-fb-uid';
-  // O backend ainda não está configurado (auth anônimo desabilitado no projeto).
-  // Sem esta trava, cada boot dispara um signUp que retorna 400 no console.
-  // Para testar a nuvem, abra a página com ?cloud=1.
-  const CLOUD_ENABLED = (() => {
-    try { return new URLSearchParams(location.search).has('cloud'); } catch (e) { return false; }
-  })();
+  // Nuvem sempre ligada quando há internet: perfil, liga, economia e
+  // presença sincronizam sozinhos. Sem rede o jogo segue 100% local.
+  const CLOUD_ENABLED = true;
 
   const state = {
     status: 'idle',       // idle | auth | online | local
