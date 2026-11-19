@@ -32,9 +32,10 @@ O projeto já vem com `render.yaml`.
 4. O Render detecta o `render.yaml`, instala e sobe sozinho.
 5. Ao terminar, você recebe uma URL do tipo:
    ```text
-   https://blast-royale.onrender.com
+   https://blast-royale-rrb5.onrender.com
    ```
-   É esse link que você manda para os amigos.
+   É esse link que você manda para os amigos. Confira a URL exata no topo da
+   página do serviço no Render (o nome do serviço pode ganhar um sufixo).
 
 ### Atenção ao plano free
 - O serviço **dorme após ~15 minutos sem acesso**. O primeiro acesso depois disso
