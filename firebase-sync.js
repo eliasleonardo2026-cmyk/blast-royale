@@ -29,7 +29,9 @@
     uid: null,
     authError: null,
     listeners: [],
-    saveTimer: null
+    saveTimer: null,
+    lastComp: null,       // último progresso competitivo confirmado na nuvem
+    compLocked: false     // regra rejeitou: sincroniza o resto e tenta depois
   };
   let app = null, auth = null, db = null, rtdb = null;
 
@@ -84,27 +86,43 @@
     if (!(window.firebase && firebase.initializeApp)) throw new Error('sdk');
   }
 
-  function competitiveOf(p) {
-    const c = (p && p.competitive) || {};
+  function compOfRaw(c) {
+    const x = c || {};
     return {
-      leaguePoints: Math.max(0, Math.floor(Number(c.leaguePoints) || 0)),
-      rankedWins: Math.max(0, Math.floor(Number(c.rankedWins) || 0)),
-      rankedLosses: Math.max(0, Math.floor(Number(c.rankedLosses) || 0)),
-      trophies: Math.max(0, Math.floor(Number(c.trophies) || 0))
+      leaguePoints: Math.max(0, Math.floor(Number(x.leaguePoints) || 0)),
+      rankedWins: Math.max(0, Math.floor(Number(x.rankedWins) || 0)),
+      rankedLosses: Math.max(0, Math.floor(Number(x.rankedLosses) || 0)),
+      trophies: Math.max(0, Math.floor(Number(x.trophies) || 0))
     };
   }
 
-  function saveProfileNow() {
+  function competitiveOf(p) {
+    return compOfRaw(p && p.competitive);
+  }
+
+  function saveProfileNow(retrying = false) {
     if (!state.ready) return;
     const p = profile();
     const nome = String(p.nick || '').trim();
     if (!nome) return; // sem nick não há documento público
+    const competitive = competitiveOf(p);
     const payload = {
       nick: nome,
       avatar: p.avatar || '🐍',
-      competitive: competitiveOf(p),
       updatedAt: Date.now()
     };
+    // Progresso competitivo só sobe de forma validada: as regras do
+    // Firestore aceitam no máximo +3 pts, +1 vitória/derrota e exigem
+    // rankedAt == request.time, além de um intervalo mínimo entre
+    // atualizações. Se já houve rejeição, o campo fica de fora até a
+    // nova tentativa para não bloquear a economia/cosméticos.
+    const compChanged = !state.compLocked && JSON.stringify(competitive) !== JSON.stringify(state.lastComp);
+    if (compChanged) {
+      payload.competitive = competitive;
+      payload.rankedAt = firebase.firestore.FieldValue.serverTimestamp();
+    } else if (!state.compLocked) {
+      payload.competitive = competitive;
+    }
     // Economia e cosméticos viajam junto: moedas, XP, skins, efeitos,
     // contadores diários e progresso do evento do ciclo atual.
     try {
@@ -114,7 +132,26 @@
     } catch (e) {}
     try {
       const ref = db.collection('users').doc(state.uid);
-      Promise.resolve(ref.set(payload, { merge: true })).catch(err => { state.lastError = 'firestore:' + (err && err.code || ''); });
+      Promise.resolve(ref.set(payload, { merge: true })).then(() => {
+        if (compChanged) {
+          state.lastComp = competitive;
+          state.compLocked = false;
+        }
+      }).catch(err => {
+        const code = (err && err.code) || '';
+        state.lastError = 'firestore:' + code;
+        if (compChanged && code === 'permission-denied') {
+          // Regra rejeitou o avanço: mantém a economia sincronizando e
+          // tenta o competitivo mais tarde (respeitando o cooldown).
+          state.compLocked = true;
+          setTimeout(() => { if (state.ready) saveProfileNow(); }, 50);
+          setTimeout(() => {
+            if (!state.ready) return;
+            state.compLocked = false;
+            saveProfileNow();
+          }, 65000);
+        }
+      });
     } catch (e) { state.lastError = 'firestore'; }
     try {
       rtdb.ref('presence/' + state.uid).update({ nick: nome, avatar: payload.avatar, at: Date.now() })
@@ -199,7 +236,10 @@
       // Perfil remoto (se existir) antes de gravar o local por cima.
       try {
         const doc = await db.collection('users').doc(state.uid).get();
-        if (doc && doc.exists) window.GameState.mergeRemoteProfile(doc.data());
+        if (doc && doc.exists) {
+          state.lastComp = compOfRaw((doc.data() || {}).competitive);
+          window.GameState.mergeRemoteProfile(doc.data());
+        }
       } catch (err) { state.lastError = 'firestore-profile:' + (err && err.code || ''); }
       saveProfileNow();
       watchLeague();
@@ -235,6 +275,8 @@
     get status() { return state.status; },
     get authError() { return state.authError; },
     get lastError() { return state.lastError || null; },
+    get compLocked() { return !!state.compLocked; },
+    get lastComp() { return state.lastComp; },
     get leagueRows() { return window.GameState ? GameState.state.league.length : 0; },
     saveProfileNow, reportPlayer, refreshText,
     init
