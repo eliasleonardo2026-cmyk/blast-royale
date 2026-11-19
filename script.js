@@ -87,6 +87,11 @@ const I18N = {
     serverNoIce: "Sua rede bloqueou o WebRTC. Configure TURN_URL no servidor.",
     serverRelay: "Rede restrita: a partida está passando pelo servidor (latência um pouco maior).",
     serverRelayWait: "Rede bloqueou o P2P. A partida usa o servidor quando o amigo entrar.",
+    quickMatchBtn: "🔎 BUSCAR PARTIDA 1v1", quickMatchCancel: "✖ CANCELAR BUSCA",
+    quickMatchSearching: "Procurando jogador… {t}s", quickMatchFound: "Partida encontrada! Conectando…",
+    quickMatchCancelled: "Busca cancelada.", quickMatchExpired: "A busca expirou. Tente de novo.",
+    quickMatchUnavailable: "Busca rápida indisponível neste servidor.",
+    quickMatchLeaveRoom: "Saia da sala atual antes de buscar partida.",
     netRelay: "Conectado pelo servidor (relay)",
     hostRole: "Criar sala", guestRole: "Entrar na sala",
     createInvite: "1. Gerar convite", connectAnswer: "2. Conectar",
@@ -327,6 +332,11 @@ const I18N = {
     serverNoIce: "Your network blocked WebRTC. Configure TURN_URL on the server.",
     serverRelay: "Restricted network: the match is relayed through the server (slightly higher latency).",
     serverRelayWait: "Network blocked P2P. The match uses the server when your friend joins.",
+    quickMatchBtn: "🔎 QUICK MATCH 1v1", quickMatchCancel: "✖ CANCEL SEARCH",
+    quickMatchSearching: "Looking for a player… {t}s", quickMatchFound: "Match found! Connecting…",
+    quickMatchCancelled: "Search cancelled.", quickMatchExpired: "Search expired. Try again.",
+    quickMatchUnavailable: "Quick match is unavailable on this server.",
+    quickMatchLeaveRoom: "Leave the current room before searching for a match.",
     netRelay: "Connected through the server (relay)",
     hostRole: "Create room", guestRole: "Join room",
     createInvite: "1. Create invite", connectAnswer: "2. Connect",
@@ -1484,7 +1494,10 @@ const GameState = (() => {
       });
     }
     return rows
-      .sort((a, b) => b.points - a.points || b.wins - a.wins || a.losses - b.losses || (a.me ? -1 : 1))
+      // Ordem neutra e determinística (mesma para todos os jogadores):
+      // pontos → vitórias → menos derrotas → troféus → nick.
+      .sort((a, b) => b.points - a.points || b.wins - a.wins || a.losses - b.losses
+        || b.trophies - a.trophies || String(a.name).localeCompare(String(b.name)))
       .map((row, i) => ({ ...row, pos: i + 1 }));
   }
   function isOwned(kind, id) {
@@ -7658,6 +7671,7 @@ function bindUI() {
   on('netAnswerIn', 'input', scheduleAutoConnect);
   on('netOfferIn', 'input', scheduleAutoAnswer);
   on('btnServerCreate', 'click', netServerCreateRoom);
+  on('btnQuickMatch', 'click', quickMatchSearch);
   on('btnServerJoin', 'click', () => {
     const el = document.getElementById('netServerCode');
     netServerJoinRoom(el ? el.value : '');
@@ -7906,6 +7920,7 @@ const netServer = {
   })(),
   available: false, checked: false, serverless: false, code: '', token: '', role: null,
   since: 0, polling: false, pollAbort: null, busy: false, roomToken: '',
+  quick: false,
   peers: { host: false, guest: false },
   ws: null, wsWanted: false, wsTries: 0
 };
@@ -8395,6 +8410,7 @@ function netServerUI() {
   const codeOut = document.getElementById('netServerCodeOut');
   if (codeOut) codeOut.textContent = netServer.code || '----';
   if (netServer.code) netServerHint(netServer.role === 'guest' ? 'serverWaitOffer' : 'serverWaitGuest');
+  quickMatchUI();
 }
 
 async function netServerCheck(force = false) {
@@ -8784,6 +8800,8 @@ async function netServerLeave(silent = false) {
   netServer.role = null;
   netServer.since = 0;
   netServer.busy = false;
+  netServer.quick = false;
+  quickMatchStatus('');
   if (code && token) {
     try {
       await fetch(netApiUrl(`/api/rooms/${code}/leave`), {
@@ -8825,8 +8843,152 @@ function netServerToggleManual() {
   netServerUI();
 }
 
+/* ---------- Busca rápida 1v1 (fila pública do servidor) ---------- */
+const matchmaking = { ticket: '', polling: false, startedAt: 0, tick: null };
+
+function quickMatchUI() {
+  const idle = document.querySelector('#btnQuickMatch .qm-idle');
+  const busy = document.querySelector('#btnQuickMatch .qm-busy');
+  const btn = document.getElementById('btnQuickMatch');
+  if (!btn) return;
+  // Fila em memória não existe no modo serverless (Vercel).
+  btn.classList.toggle('hidden', netServer.serverless);
+  const quick = document.querySelector('.net-quick');
+  if (quick) quick.dataset.searching = matchmaking.polling ? '1' : '';
+  if (idle) idle.classList.toggle('hidden', matchmaking.polling);
+  if (busy) busy.classList.toggle('hidden', !matchmaking.polling);
+  const el = document.getElementById('quickMatchStatus');
+  if (!el) return;
+  if (matchmaking.polling) el.classList.remove('hidden');
+  else if (!el.dataset.keep) { el.classList.add('hidden'); el.textContent = ''; }
+}
+
+function quickMatchStatus(text, keep = false) {
+  const el = document.getElementById('quickMatchStatus');
+  if (!el) return;
+  if (!text) { el.classList.add('hidden'); el.textContent = ''; el.removeAttribute('data-keep'); return; }
+  el.classList.remove('hidden');
+  el.textContent = text;
+  if (keep) el.dataset.keep = '1';
+}
+
+function quickMatchStop(statusText) {
+  matchmaking.polling = false;
+  matchmaking.ticket = '';
+  clearInterval(matchmaking.tick); matchmaking.tick = null;
+  quickMatchStatus(statusText || '', !!statusText);
+  quickMatchUI();
+}
+
+async function quickMatchCancel(silent = false) {
+  const ticket = matchmaking.ticket;
+  const dict = netServerDict();
+  if (!ticket && !matchmaking.polling) return;
+  quickMatchStop('');
+  if (ticket) {
+    try {
+      await fetch(netApiUrl('/api/matchmaking/leave'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket }),
+        cache: 'no-store',
+        keepalive: true
+      });
+    } catch (e) { /* o servidor descarta o ticket ocioso */ }
+  }
+  if (!silent) showToast(dict.quickMatchCancelled || 'Busca cancelada.');
+}
+
+function quickMatchEnter(room) {
+  const dict = netServerDict();
+  quickMatchStop((dict.quickMatchFound || 'Partida encontrada! Conectando…'));
+  netServerStopPoll();
+  netServer.code = room.code;
+  netServer.token = room.token;
+  netServer.role = room.role === 'guest' ? 'guest' : 'host';
+  netServer.since = 0;
+  netServer.peers = room.peers || { host: true, guest: true };
+  netServer.quick = true;
+  net.role = netServer.role;
+  netServerUI();
+  netServerHint(netServer.role === 'guest' ? 'serverWaitOffer' : 'serverWaitGuest');
+  if (netServer.role === 'host') {
+    // O convidado já está na sala: manda a oferta e deixa o poll vigiar.
+    netBuildOfferSignal()
+      .then(signal => (signal ? netApi(`/api/rooms/${netServer.code}/signal`, { token: netServer.token, data: signal }) : null))
+      .catch(() => null)
+      .then(() => {
+        if (!netServer.code) return;
+        netServerStartPoll();
+        netScheduleRelayFallback(2500);
+      });
+  } else {
+    netServerStartPoll();
+    netScheduleRelayFallback();
+  }
+}
+
+async function quickMatchPollLoop() {
+  const dict = netServerDict();
+  while (matchmaking.polling && matchmaking.ticket) {
+    const ticket = matchmaking.ticket;
+    let data = null;
+    try {
+      data = await netApi('/api/matchmaking/poll', { ticket }, 'POST', 14000);
+    } catch (err) {
+      if (!matchmaking.polling || matchmaking.ticket !== ticket) return;
+      if (err.status === 410) {
+        quickMatchStop('');
+        showToast(dict.quickMatchExpired || 'A busca expirou. Tente de novo.');
+        return;
+      }
+      await new Promise(r => setTimeout(r, 1500));
+      continue;
+    }
+    if (!matchmaking.polling || matchmaking.ticket !== ticket) return;
+    if (data.state === 'matched' && data.room) { quickMatchEnter(data.room); return; }
+  }
+}
+
+async function quickMatchSearch() {
+  const dict = netServerDict();
+  if (matchmaking.polling) { quickMatchCancel(); return; }
+  if (!hasCompetitiveNick()) { openNickGate(quickMatchSearch); return; }
+  if (netServer.code) { showToast(dict.quickMatchLeaveRoom || ''); return; }
+  if (!(await netServerCheck())) { showToast(dict.serverErrorMsg || ''); return; }
+  if (netServer.serverless) { showToast(dict.quickMatchUnavailable || ''); return; }
+  const name = String(GameState.state.profile.nick || '').trim().slice(0, 24);
+  if (!name) return;
+  matchmaking.polling = true;
+  matchmaking.startedAt = Date.now();
+  const tickText = () => {
+    const secs = Math.round((Date.now() - matchmaking.startedAt) / 1000);
+    quickMatchStatus((dict.quickMatchSearching || 'Procurando jogador… {t}s').replace('{t}', secs));
+  };
+  tickText();
+  clearInterval(matchmaking.tick);
+  matchmaking.tick = setInterval(tickText, 1000);
+  quickMatchUI();
+  try {
+    const data = await netApi('/api/matchmaking/join', { name });
+    if (!matchmaking.polling) return;
+    matchmaking.ticket = data.ticket || '';
+    if (data.state === 'matched' && data.room) { quickMatchEnter(data.room); return; }
+    quickMatchPollLoop();
+  } catch (err) {
+    quickMatchStop('');
+    showToast(dict.serverErrorMsg || '');
+  }
+}
+
 // Fecha a sala no servidor se o jogador fechar/recarregar a aba antes da partida.
 window.addEventListener('pagehide', () => {
+  if (matchmaking.ticket) {
+    try {
+      const body = new Blob([JSON.stringify({ ticket: matchmaking.ticket })], { type: 'application/json' });
+      navigator.sendBeacon(netApiUrl('/api/matchmaking/leave'), body);
+    } catch (e) { /* o TTL do servidor limpa depois */ }
+  }
   if (!netServer.code || !netServer.token) return;
   try {
     const body = new Blob([JSON.stringify({ token: netServer.token })], { type: 'application/json' });

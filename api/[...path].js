@@ -236,6 +236,12 @@ async function handle(req, res, url) {
     return sendJson(res, 200, { iceServers: iceServers() });
   }
 
+  // A fila pública vive na memória de um processo único; no modo serverless
+  // cada requisição pode cair em uma instância diferente.
+  if (parts[1] === 'matchmaking') {
+    return sendJson(res, 501, { ok: false, error: 'matchmaking-unavailable' });
+  }
+
   if (parts[1] === 'rooms' && parts.length === 2 && req.method === 'POST') {
     const body = await readBody(req);
     let created = null;

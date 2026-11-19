@@ -243,6 +243,74 @@ function relayMessage(room, fromRole, msg, raw) {
   return seq;
 }
 
+/* ---------------------------- FILA PÚBLICA ---------------------------- */
+/* Busca rápida 1v1: dois jogadores esperando viram uma sala normal, com
+   host/convite já definidos. A partida em si segue P2P/relay como sempre. */
+const queue = new Map();
+const QUEUE_STALE_MS = 12000;
+const MATCH_TTL_MS = 60000;
+
+function queuePrune() {
+  const now = Date.now();
+  queue.forEach((entry, id) => {
+    if (entry.matched) {
+      if (now - entry.matchedAt > MATCH_TTL_MS) queue.delete(id);
+    } else if (now - entry.lastSeen > QUEUE_STALE_MS) {
+      queue.delete(id);
+    }
+  });
+}
+
+function queueWaiting() {
+  let n = 0;
+  queue.forEach(e => { if (!e.matched) n++; });
+  return n;
+}
+
+function queuePayload(entry) {
+  if (entry.matched) return { ok: true, state: 'matched', room: entry.matched };
+  return {
+    ok: true,
+    state: 'waiting',
+    waited: Math.round((Date.now() - entry.since) / 1000),
+    queued: queueWaiting()
+  };
+}
+
+function queueFlush(entry) {
+  if (!entry || !entry.waiters) return;
+  const list = Array.from(entry.waiters);
+  entry.waiters.clear();
+  list.forEach(w => {
+    if (w.done) return;
+    w.done = true;
+    clearTimeout(w.timer);
+    try { sendJson(w.res, 200, queuePayload(entry)); } catch (err) { /* cliente saiu */ }
+  });
+}
+
+/* O primeiro da fila vira host; um jogador nunca pareia consigo mesmo
+   (mesmo nick em duas abas) nem com um ticket morto. */
+function matchmake(ticket) {
+  const now = Date.now();
+  const other = Array.from(queue.values()).find(e =>
+    e !== ticket && !e.matched && now - e.lastSeen < QUEUE_STALE_MS && e.name !== ticket.name
+  );
+  if (!other) return false;
+  const room = newRoom(other.name);
+  room.peers.guest = {
+    token: crypto.randomBytes(16).toString('hex'),
+    name: ticket.name,
+    since: now
+  };
+  ticket.matched = { code: room.code, role: 'guest', token: room.peers.guest.token, peers: peersInfo(room) };
+  other.matched = { code: room.code, role: 'host', token: room.peers.host.token, peers: peersInfo(room) };
+  ticket.matchedAt = other.matchedAt = now;
+  queueFlush(other);
+  queueFlush(ticket);
+  return true;
+}
+
 /* ------------------------------- ROTAS -------------------------------- */
 async function handleApi(req, res, url) {
   const parts = url.pathname.split('/').filter(Boolean); // api, rooms, CODE, action
@@ -262,6 +330,7 @@ async function handleApi(req, res, url) {
       name: 'blast-royale-server',
       version: 1,
       rooms: rooms.size,
+      queue: queueWaiting(),
       uptime: Math.round(process.uptime()),
       iceServers: iceServers()
     });
@@ -269,6 +338,75 @@ async function handleApi(req, res, url) {
 
   if (parts[1] === 'ice' && req.method === 'GET') {
     return sendJson(res, 200, { iceServers: iceServers() });
+  }
+
+  if (parts[1] === 'matchmaking' && parts[2] === 'join' && req.method === 'POST') {
+    queuePrune();
+    const body = await readBody(req);
+    const name = String(body.name || 'Jogador').trim().slice(0, 24) || 'Jogador';
+    const ticket = {
+      id: crypto.randomBytes(12).toString('hex'),
+      name,
+      since: Date.now(),
+      lastSeen: Date.now(),
+      matched: null,
+      matchedAt: 0,
+      waiters: new Set()
+    };
+    queue.set(ticket.id, ticket);
+    matchmake(ticket);
+    return sendJson(res, 200, Object.assign({ ticket: ticket.id }, queuePayload(ticket)));
+  }
+
+  if (parts[1] === 'matchmaking' && parts[2] === 'poll' && req.method === 'POST') {
+    queuePrune();
+    const body = await readBody(req);
+    const entry = queue.get(String(body.ticket || ''));
+    if (!entry) return sendJson(res, 410, { ok: false, error: 'ticket-expired' });
+    entry.lastSeen = Date.now();
+    if (entry.matched) return sendJson(res, 200, queuePayload(entry));
+    const waiter = { res, done: false, timer: null };
+    entry.waiters.add(waiter);
+    waiter.timer = setTimeout(() => {
+      entry.waiters.delete(waiter);
+      if (waiter.done) return;
+      waiter.done = true;
+      try { sendJson(res, 200, queuePayload(entry)); } catch (err) { /* cliente saiu */ }
+    }, POLL_TIMEOUT_MS);
+    req.on('close', () => {
+      waiter.done = true;
+      clearTimeout(waiter.timer);
+      entry.waiters.delete(waiter);
+    });
+    return;
+  }
+
+  if (parts[1] === 'matchmaking' && parts[2] === 'leave' && req.method === 'POST') {
+    const body = await readBody(req);
+    const entry = queue.get(String(body.ticket || ''));
+    if (entry) {
+      // Se a pessoa cancelou já pareada, a sala não pode ficar esperando
+      // um convidado que nunca vai chegar (o host começaria sozinho).
+      if (entry.matched) {
+        const room = rooms.get(entry.matched.code);
+        const role = peerRole(room, entry.matched.token);
+        if (room && !room.closed && role) {
+          room.peers[role] = null;
+          room.updated = Date.now();
+          broadcastSockets(room, { peers: peersInfo(room) });
+          if (role === 'host') closeRoom(room, 'host-left');
+          else { flushPolls(room, 'host'); if (!room.peers.host) closeRoom(room, 'empty'); }
+        }
+      }
+      entry.waiters.forEach(waiter => {
+        if (waiter.done) return;
+        waiter.done = true;
+        clearTimeout(waiter.timer);
+        try { sendJson(waiter.res, 200, { ok: true, state: 'left' }); } catch (err) { /* ignore */ }
+      });
+      queue.delete(entry.id);
+    }
+    return sendJson(res, 200, { ok: true });
   }
 
   if (parts[1] === 'rooms' && parts.length === 2 && req.method === 'POST') {
@@ -494,6 +632,7 @@ setInterval(() => {
   rooms.forEach(room => {
     if (now - room.updated > ROOM_TTL_MS) closeRoom(room, 'expired');
   });
+  queuePrune();
 }, 60 * 1000).unref();
 
 server.listen(PORT, HOST, () => {

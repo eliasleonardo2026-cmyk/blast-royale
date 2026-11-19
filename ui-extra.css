@@ -767,6 +767,11 @@ body.rotate-locked { overflow: hidden; }
 .net-server-actions { display: flex; gap: 0.4rem; }
 .net-server-actions .net-server-btn { flex: 1; }
 .net-server-hint { font-size: 0.64rem; font-weight: 600; color: #cbd5e1; line-height: 1.35; min-height: 0.9rem; }
+.net-quick { display: flex; flex-direction: column; gap: 0.3rem; flex: 1 1 100%; }
+.net-quick .net-server-btn { width: 100%; }
+.net-quick .qm-busy.hidden, .net-quick .qm-idle.hidden { display: none; }
+.net-quick[data-searching="1"] .net-server-btn { border-color: rgba(251, 191, 36, 0.55); background: rgba(245, 158, 11, 0.16); color: #fcd34d; }
+#quickMatchStatus { text-align: center; }
 .net-manual-toggle {
   align-self: flex-start; padding: 0.2rem 0.1rem; background: none; border: 0;
   color: #7dd3fc; font-family: inherit; font-size: 0.62rem; font-weight: 700;

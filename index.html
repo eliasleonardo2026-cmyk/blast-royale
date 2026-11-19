@@ -700,6 +700,13 @@
           <span id="netServerState" class="net-server-state" data-i18n="serverChecking">verificando…</span>
         </div>
         <div id="netServerLobby" class="net-server-lobby">
+          <div class="net-quick">
+            <button id="btnQuickMatch" type="button" class="net-server-btn primary">
+              <span class="qm-idle" data-i18n="quickMatchBtn">🔎 BUSCAR PARTIDA 1v1</span>
+              <span class="qm-busy hidden" data-i18n="quickMatchCancel">✖ CANCELAR BUSCA</span>
+            </button>
+            <p id="quickMatchStatus" class="net-server-hint hidden"></p>
+          </div>
           <button id="btnServerCreate" type="button" class="net-server-btn primary" data-i18n="serverCreate">➕ Criar sala</button>
           <div class="net-server-join">
             <input id="netServerCode" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="CÓDIGO" aria-label="Código da sala" />
