@@ -324,6 +324,75 @@ const bracketWeeks = new Map();   // week -> { created, seeds, frozenAt, winners
 const BRACKET_RESULT_TTL_MS = 60 * 60 * 1000;
 const BRACKET_WEEK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
 
+/* Estado da chave em disco: seeds congeladas e vencedores sobrevivem a um
+   restart do processo. O disco do Render é efêmero (some a cada deploy),
+   mas o placar da semana não se perde num crash ou reinício simples. */
+const BRACKET_DISK_FILE = path.join(ROOT, 'data', 'bracket-state.json');
+let bracketSaveTimer = null;
+
+function bracketDiskLoad() {
+  try {
+    const data = JSON.parse(fs.readFileSync(BRACKET_DISK_FILE, 'utf8'));
+    (Array.isArray(data.weeks) ? data.weeks : []).forEach(pair => {
+      const week = String((pair && pair[0]) || '');
+      const st = pair && pair[1];
+      if (!week || !st) return;
+      bracketWeeks.set(week, {
+        created: Number(st.created) || Date.now(),
+        seeds: Array.isArray(st.seeds) ? st.seeds.map(String).slice(0, 8) : null,
+        frozenAt: Number(st.frozenAt) || 0,
+        winners: st.winners && typeof st.winners === 'object' ? st.winners : {}
+      });
+    });
+    (Array.isArray(data.results) ? data.results : []).forEach(pair => {
+      const code = String((pair && pair[0]) || '');
+      const entry = pair && pair[1];
+      if (!code || !entry) return;
+      bracketResults.set(code, {
+        slot: String(entry.slot || ''),
+        reports: {},
+        confirmed: !!entry.confirmed,
+        winner: entry.winner || null,
+        source: String(entry.source || ''),
+        created: Number(entry.created) || Date.now()
+      });
+    });
+  } catch (err) {
+    // Primeiro boot ou arquivo corrompido: começa vazio.
+  }
+}
+
+function bracketDiskWrite() {
+  try {
+    fs.mkdirSync(path.dirname(BRACKET_DISK_FILE), { recursive: true });
+    const tmp = BRACKET_DISK_FILE + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify({
+      weeks: Array.from(bracketWeeks.entries()),
+      results: Array.from(bracketResults.entries())
+    }));
+    fs.renameSync(tmp, BRACKET_DISK_FILE);
+  } catch (err) {
+    console.warn('mata-mata: falha ao gravar estado em disco:', err.message);
+  }
+}
+
+function bracketDiskSave() {
+  if (bracketSaveTimer) return;
+  bracketSaveTimer = setTimeout(() => {
+    bracketSaveTimer = null;
+    bracketDiskWrite();
+  }, 300);
+  if (bracketSaveTimer.unref) bracketSaveTimer.unref();
+}
+
+function bracketDiskFlush() {
+  if (bracketSaveTimer) {
+    clearTimeout(bracketSaveTimer);
+    bracketSaveTimer = null;
+  }
+  bracketDiskWrite();
+}
+
 /* Semana da chave ancorada na segunda-feira (UTC). É o servidor que manda:
    o cliente adota a semana devolvida em vez de calcular a sua. */
 function bracketWeekKey(d = new Date()) {
@@ -346,13 +415,16 @@ function bracketWeekStore(week) {
 
 function bracketWeekPrune() {
   const now = Date.now();
+  let removed = false;
   bracketWeeks.forEach((st, week) => {
-    if (now - st.created > BRACKET_WEEK_TTL_MS) bracketWeeks.delete(week);
+    if (now - st.created > BRACKET_WEEK_TTL_MS) { bracketWeeks.delete(week); removed = true; }
   });
+  return removed;
 }
 
 function bracketPrune() {
   const now = Date.now();
+  let persisted = false;
   bracketQueue.forEach((entry, id) => {
     if (entry.matched) {
       if (now - entry.matchedAt > MATCH_TTL_MS) bracketQueue.delete(id);
@@ -364,9 +436,10 @@ function bracketPrune() {
     if (now - entry.created > BRACKET_RESULT_TTL_MS) bracketRooms.delete(code);
   });
   bracketResults.forEach((entry, code) => {
-    if (now - entry.created > BRACKET_RESULT_TTL_MS) bracketResults.delete(code);
+    if (now - entry.created > BRACKET_RESULT_TTL_MS) { bracketResults.delete(code); persisted = true; }
   });
-  bracketWeekPrune();
+  if (bracketWeekPrune()) persisted = true;
+  if (persisted) bracketDiskSave();
 }
 
 function bracketPayload(entry) {
@@ -481,6 +554,7 @@ function bracketObserveRelay(room, fromRole, msg) {
     const st = bracketWeekStore(info.week || bracketWeekKey());
     const name = info.names && info.names[winner];
     if (name && !st.winners[info.slot]) st.winners[info.slot] = String(name);
+    bracketDiskSave();
     return;
   }
 }
@@ -603,6 +677,7 @@ async function handleApi(req, res, url) {
       if (list.length >= 2) {
         st.seeds = list.slice(0, 8);
         st.frozenAt = Date.now();
+        bracketDiskSave();
       }
     }
     return sendJson(res, 200, {
@@ -622,6 +697,15 @@ async function handleApi(req, res, url) {
     const name = String(body.name || '').trim().slice(0, 24) || 'Jogador';
     const opponent = String(body.opponent || '').trim().slice(0, 24);
     if (!opponent) return sendJson(res, 400, { ok: false, error: 'missing-opponent' });
+    // Só quem está no Top 8 congelado desta semana entra no mata-mata. O
+    // servidor não confia na checagem do cliente: sem seeds congeladas ou
+    // com o nome fora delas, o ticket não abre.
+    const weekSt = bracketWeeks.get(bracketWeekKey());
+    const seeds = weekSt && Array.isArray(weekSt.seeds) ? weekSt.seeds : null;
+    if (!seeds || seeds.length < 2) return sendJson(res, 409, { ok: false, error: 'seeds-not-frozen' });
+    if (!seeds.some(s => String(s).trim().toLowerCase() === name.trim().toLowerCase())) {
+      return sendJson(res, 403, { ok: false, error: 'not-qualified' });
+    }
     const ticket = {
       id: crypto.randomBytes(12).toString('hex'),
       slot,
@@ -936,6 +1020,9 @@ setInterval(() => {
   bracketPrune();
 }, 60 * 1000).unref();
 
+bracketDiskLoad();
+bracketPrune();
+
 server.listen(PORT, HOST, () => {
   const shown = HOST === '0.0.0.0' ? 'localhost' : HOST;
   console.log(`\n  Blast Royale server`);
@@ -946,5 +1033,12 @@ server.listen(PORT, HOST, () => {
 
 process.on('SIGINT', () => {
   rooms.forEach(room => closeRoom(room, 'shutdown'));
+  bracketDiskFlush();
   server.close(() => process.exit(0));
+});
+
+process.on('SIGTERM', () => {
+  bracketDiskFlush();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 1500).unref();
 });

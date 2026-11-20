@@ -177,6 +177,10 @@ const I18N = {
     weeklyPhase1: "FASE 1 • LIGA (SEG–QUI)", weeklyPhase2: "FASE 2 • MATA-MATA ONLINE (SEX–SÁB)",
     weeklyPhaseClosed: "FASE ENCERRADA • COPA HOJE",
     weeklyPhase1Hint: "Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.",
+    bracketTieRule: "Desempate do G8: pontos → vitórias → menos derrotas → troféus → nick.",
+    bracketSeedsPending: "⏳ A chave está fechando o Top 8. Tente de novo em instantes.",
+    bracketNotQualified: "🔒 Só o Top 8 congelado desta semana pode jogar o mata-mata.",
+    bracketNeedEight: "🔒 O mata-mata fecha quando a Liga tiver 8 jogadores ranqueados nesta semana.",
     weeklyPhase2Qualified: "Você está no G8. Chave eliminatória PvP contra os 7 melhores.",
     weeklyPhase2NoQual: "Somente o Top 8 da Liga joga o mata-mata desta semana.",
     weeklyClosedHint: "O Campeonato Semanal reabre na segunda. Domingo é dia de Copa Relâmpago.",
@@ -437,6 +441,10 @@ const I18N = {
     weeklyPhase1: "PHASE 1 • LEAGUE (MON–THU)", weeklyPhase2: "PHASE 2 • ONLINE KNOCKOUT (FRI–SAT)",
     weeklyPhaseClosed: "PHASE CLOSED • CUP TODAY",
     weeklyPhase1Hint: "ONLINE points league: +3 PTS per win. The top 8 advance.",
+    bracketTieRule: "G8 tie-break: points → wins → fewer losses → trophies → nick.",
+    bracketSeedsPending: "⏳ The bracket is still locking the Top 8. Try again in a moment.",
+    bracketNotQualified: "🔒 Only this week's locked Top 8 can play the knockout.",
+    bracketNeedEight: "🔒 The knockout locks once the League has 8 ranked players this week.",
     weeklyPhase2Qualified: "You are in the G8. PvP knockout against the top 7.",
     weeklyPhase2NoQual: "Only the League Top 8 play this week's knockout.",
     weeklyClosedHint: "The Weekly Championship reopens on Monday. Sunday is Flash Cup day.",
@@ -6111,17 +6119,21 @@ function applyBracketServerState(data) {
 // congelar vira a referência no servidor; ninguém mais muda a lista na semana.
 function bracketLockSeeds() {
   if (weeklyPhase() !== 'knockout') return;
-  if (GameState.getWeeklySeeds().length >= 2) return;
+  const local = GameState.getWeeklySeeds();
+  // Servidor já tem a lista oficial: não há o que publicar.
+  if (bracketServer.seeds && bracketServer.seeds.length >= 2) return;
   const tbd = (I18N[currentLang] || {}).bracketTbd || 'A definir';
-  const names = GameState.leagueTable()
+  const names = local.length >= 2 ? local : GameState.leagueTable()
     .slice(0, 8)
     .map(r => String(r.name || '').trim())
     .filter(n => n && n !== tbd);
   // Só congela o G8 completo: tabela ainda carregando (nuvem lenta) não pode
   // virar lista oficial pela metade.
   if (names.length < 8) return;
-  GameState.setWeeklySeeds(names);
-  renderBracket();
+  if (local.length < 2) {
+    GameState.setWeeklySeeds(names);
+    renderBracket();
+  }
   if (!bracketServerLive()) return;
   netApi('/api/bracket/state', { seeds: names }, 'POST', 6000)
     .then(data => { if (applyBracketServerState(data)) renderBracket(); })
@@ -6348,7 +6360,7 @@ function renderBracket() {
     const idx = bracketSeedNames().findIndex(n => bracketSame(n, nick));
     const g8 = `G8: ${idx >= 0 ? idx + 1 : '—'}º`;
     hintEl.textContent = phase === 'qualifying'
-      ? `${dict.weeklyPhase1Hint || 'Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.'} • ${g8}`
+      ? `${dict.weeklyPhase1Hint || 'Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.'} • ${g8} • ${dict.bracketTieRule || 'Desempate do G8: pontos → vitórias → menos derrotas → troféus → nick.'}`
       : phase === 'knockout'
         ? (qualified
           ? (dict.weeklyPhase2Qualified || 'Você está no G8. Chave eliminatória PvP contra os 7 melhores.')
@@ -9272,7 +9284,19 @@ async function bracketDuelSearch(slot, rival) {
   bracketDuelTick();
   showToast((dict.bracketWaitRival || '⏳ {rival} também precisa tocar em Jogar a Chave.').replace('{rival}', rival));
   try {
-    const data = await netApi('/api/bracket/join', { slot, name, opponent: rival });
+    const join = () => netApi('/api/bracket/join', { slot, name, opponent: rival });
+    let data;
+    try {
+      data = await join();
+    } catch (err) {
+      // Top 8 ainda não chegou ao servidor (ex.: primeiro boot da semana):
+      // publica a lista congelada deste aparelho e tenta mais uma vez.
+      if (err.status !== 409) throw err;
+      showToast(dict.bracketSeedsPending || '⏳ A chave está fechando o Top 8. Tente de novo em instantes.');
+      bracketLockSeeds();
+      await new Promise(r => setTimeout(r, 1200));
+      data = await join();
+    }
     if (!bracketDuel.polling || bracketDuel.slot !== slot) return;
     bracketDuel.ticket = data.ticket || '';
     if (data.state === 'matched' && data.room) { bracketDuelEnter(data.room); return; }
@@ -9280,7 +9304,9 @@ async function bracketDuelSearch(slot, rival) {
   } catch (err) {
     bracketDuelStop();
     renderBracket();
-    showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.');
+    if (err.status === 403) showToast(dict.bracketNotQualified || '🔒 Só o Top 8 congelado desta semana pode jogar o mata-mata.');
+    else if (err.status === 409) showToast(dict.bracketNeedEight || '🔒 O mata-mata fecha quando a Liga tiver 8 jogadores ranqueados nesta semana.');
+    else showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.');
   }
 }
 
