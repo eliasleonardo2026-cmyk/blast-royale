@@ -229,6 +229,7 @@ function broadcastSockets(room, payload) {
    senão fila do long-poll. Sempre com seq para nunca duplicar.
    `msg` pode ser null (sinal antigo em base64): aí vai como está. */
 function relayMessage(room, fromRole, msg, raw) {
+  if (msg && typeof msg === 'object') bracketObserveRelay(room, fromRole, msg);
   const target = fromRole === 'host' ? 'guest' : 'host';
   room.seq += 1;
   const seq = room.seq;
@@ -317,9 +318,38 @@ function matchmake(ticket) {
    declarar o primeiro. O resultado só é oficial quando os dois lados
    reportam, e lados opostos confirmam o vencedor. */
 const bracketQueue = new Map();   // ticket id -> entrada da fila do mata-mata
-const bracketRooms = new Map();   // code -> { slot, tokens: {host, guest}, created }
+const bracketRooms = new Map();   // code -> { slot, tokens, names, week, created }
 const bracketResults = new Map(); // code -> { slot, reports, confirmed, winner, created }
+const bracketWeeks = new Map();   // week -> { created, seeds, frozenAt, winners }
 const BRACKET_RESULT_TTL_MS = 60 * 60 * 1000;
+const BRACKET_WEEK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
+/* Semana da chave ancorada na segunda-feira (UTC). É o servidor que manda:
+   o cliente adota a semana devolvida em vez de calcular a sua. */
+function bracketWeekKey(d = new Date()) {
+  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dow = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - dow);
+  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(date.getUTCDate()).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${mm}-${dd}`;
+}
+
+function bracketWeekStore(week) {
+  let st = bracketWeeks.get(week);
+  if (!st) {
+    st = { created: Date.now(), seeds: null, frozenAt: 0, winners: {} };
+    bracketWeeks.set(week, st);
+  }
+  return st;
+}
+
+function bracketWeekPrune() {
+  const now = Date.now();
+  bracketWeeks.forEach((st, week) => {
+    if (now - st.created > BRACKET_WEEK_TTL_MS) bracketWeeks.delete(week);
+  });
+}
 
 function bracketPrune() {
   const now = Date.now();
@@ -336,6 +366,7 @@ function bracketPrune() {
   bracketResults.forEach((entry, code) => {
     if (now - entry.created > BRACKET_RESULT_TTL_MS) bracketResults.delete(code);
   });
+  bracketWeekPrune();
 }
 
 function bracketPayload(entry) {
@@ -382,6 +413,8 @@ function bracketMatchmake(ticket) {
   bracketRooms.set(room.code, {
     slot: ticket.slot,
     tokens: { host: room.peers.host.token, guest: room.peers.guest.token },
+    names: { host: room.peers.host.name, guest: room.peers.guest.name },
+    week: bracketWeekKey(),
     created: now
   });
   ticket.matched = { code: room.code, role: 'guest', token: room.peers.guest.token, peers: peersInfo(room), slot: ticket.slot };
@@ -394,11 +427,12 @@ function bracketMatchmake(ticket) {
 
 function bracketResultPayload(code) {
   const entry = bracketResults.get(code);
-  if (!entry) return { ok: true, confirmed: false, winner: null, reports: { host: null, guest: null } };
+  if (!entry) return { ok: true, confirmed: false, winner: null, source: '', reports: { host: null, guest: null } };
   return {
     ok: true,
     confirmed: !!entry.confirmed,
     winner: entry.winner || null,
+    source: entry.source || '',
     slot: entry.slot,
     reports: {
       host: entry.reports.host ? !!entry.reports.host.won : null,
@@ -415,6 +449,40 @@ function bracketRoleOf(code, token) {
   if (info.tokens.host === token) return 'host';
   if (info.tokens.guest === token) return 'guest';
   return null;
+}
+
+/* Resultado automático do mata-mata: ninguém declara vitória/derrota.
+   A partida da chave passa toda pelo servidor (relay), e o servidor lê o
+   estado final autoritativo (snapshot do host) para saber quem sobrou vivo.
+   Só o host simula a partida, então snapshots do convidado são ignorados. */
+function bracketObserveRelay(room, fromRole, msg) {
+  if (!room || fromRole !== 'host' || !msg || typeof msg !== 'object') return;
+  const info = bracketRooms.get(room.code);
+  if (!info) return;
+  const batch = msg.t === 'rb' && Array.isArray(msg.m) ? msg.m : [msg];
+  for (const m of batch) {
+    if (!m || typeof m !== 'object' || m.t !== 's' || !m.e) continue;
+    const list = Array.isArray(m.f) ? m.f : [];
+    const alive = list.filter(f => f && f.al);
+    // Exatamente um de pé = vencedor. Empate (dois ou nenhum) não avança.
+    if (alive.length !== 1) continue;
+    const dev = alive[0].d;
+    const winner = dev === 'p1' ? 'host' : dev === 'p2' ? 'guest' : null;
+    if (!winner) continue;
+    let entry = bracketResults.get(room.code);
+    if (!entry) {
+      entry = { slot: info.slot, reports: {}, confirmed: false, winner: null, source: '', created: Date.now() };
+      bracketResults.set(room.code, entry);
+    }
+    if (entry.confirmed) return;
+    entry.confirmed = true;
+    entry.winner = winner;
+    entry.source = 'match';
+    const st = bracketWeekStore(info.week || bracketWeekKey());
+    const name = info.names && info.names[winner];
+    if (name && !st.winners[info.slot]) st.winners[info.slot] = String(name);
+    return;
+  }
 }
 
 /* ------------------------------- ROTAS -------------------------------- */
@@ -515,6 +583,37 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
 
+  if (parts[1] === 'bracket' && parts[2] === 'state' && req.method === 'POST') {
+    bracketPrune();
+    const body = await readBody(req);
+    const week = bracketWeekKey();
+    const st = bracketWeekStore(week);
+    // O Top 8 é congelado pelo PRIMEIRO envio da semana; envios seguintes
+    // recebem a lista já congelada e não podem alterá-la.
+    if (!st.seeds && Array.isArray(body.seeds)) {
+      const seen = new Set();
+      const list = [];
+      body.seeds.forEach(raw => {
+        const name = String(raw || '').trim().slice(0, 24);
+        const key = name.toLowerCase();
+        if (!name || seen.has(key)) return;
+        seen.add(key);
+        list.push(name);
+      });
+      if (list.length >= 2) {
+        st.seeds = list.slice(0, 8);
+        st.frozenAt = Date.now();
+      }
+    }
+    return sendJson(res, 200, {
+      ok: true,
+      week,
+      seeds: st.seeds,
+      frozenAt: st.frozenAt,
+      winners: st.winners
+    });
+  }
+
   if (parts[1] === 'bracket' && parts[2] === 'join' && req.method === 'POST') {
     bracketPrune();
     const body = await readBody(req);
@@ -588,24 +687,14 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { ok: true });
   }
 
+  // O resultado NÃO vem do jogador. Esta rota existe só para clientes antigos:
+  // ela devolve o que o servidor já deduziu do estado final da partida.
   if (parts[1] === 'bracket' && parts[2] === 'report' && req.method === 'POST') {
     bracketPrune();
     const body = await readBody(req);
     const code = String(body.code || '').toUpperCase();
-    const role = bracketRoleOf(code, String(body.token || ''));
-    if (!role) return sendJson(res, 404, { ok: false, error: 'match-not-found' });
-    let entry = bracketResults.get(code);
-    if (!entry) {
-      entry = { slot: bracketRooms.get(code).slot, reports: {}, confirmed: false, winner: null, created: Date.now() };
-      bracketResults.set(code, entry);
-    }
-    entry.reports[role] = { won: !!body.won, ts: Date.now() };
-    if (!entry.confirmed && entry.reports.host && entry.reports.guest) {
-      const h = !!entry.reports.host.won;
-      const g = !!entry.reports.guest.won;
-      entry.confirmed = true;
-      // Resultados iguais (os dois dizem que venceram) anulam o confronto.
-      entry.winner = h === g ? null : (h ? 'host' : 'guest');
+    if (!bracketRoleOf(code, String(body.token || ''))) {
+      return sendJson(res, 404, { ok: false, error: 'match-not-found' });
     }
     return sendJson(res, 200, bracketResultPayload(code));
   }

@@ -102,11 +102,11 @@ const I18N = {
     bracketExpired: "A busca da chave expirou. Tente de novo.",
     bracketLeaveRoom: "Saia da sala atual antes de jogar a chave.",
     bracketUnavailable: "A chave online precisa do servidor de salas (indisponível aqui).",
-    bracketWaitConfirm: "⏳ Confirmando o resultado com o adversário…",
-    bracketConfirmedWin: "✅ Resultado confirmado: você avançou na chave!",
-    bracketConfirmedLoss: "❌ Resultado confirmado: você foi eliminado.",
-    bracketVoid: "⚠️ Resultados divergentes. O confronto foi anulado.",
-    bracketNoConfirm: "⚠️ O adversário não confirmou. A chave não avançou.",
+    bracketWaitConfirm: "⏳ Registrando o resultado no servidor…",
+    bracketConfirmedWin: "✅ Resultado oficial: você avançou na chave!",
+    bracketConfirmedLoss: "❌ Resultado oficial: você foi eliminado.",
+    bracketVoid: "⚠️ Resultado inconclusivo. O confronto não avançou.",
+    bracketNoConfirm: "⚠️ Resultado não registrado pelo servidor. A chave não avançou.",
     netRelay: "Conectado pelo servidor (relay)",
     hostRole: "Criar sala", guestRole: "Entrar na sala",
     createInvite: "1. Gerar convite", connectAnswer: "2. Conectar",
@@ -362,11 +362,11 @@ const I18N = {
     bracketExpired: "Bracket search expired. Try again.",
     bracketLeaveRoom: "Leave the current room before playing the bracket.",
     bracketUnavailable: "The online bracket needs the room server (unavailable here).",
-    bracketWaitConfirm: "⏳ Confirming the result with your opponent…",
-    bracketConfirmedWin: "✅ Result confirmed: you advanced in the bracket!",
-    bracketConfirmedLoss: "❌ Result confirmed: you were eliminated.",
-    bracketVoid: "⚠️ Conflicting results. The match was voided.",
-    bracketNoConfirm: "⚠️ Your opponent did not confirm. The bracket did not advance.",
+    bracketWaitConfirm: "⏳ Registering the result on the server…",
+    bracketConfirmedWin: "✅ Official result: you advanced in the bracket!",
+    bracketConfirmedLoss: "❌ Official result: you were eliminated.",
+    bracketVoid: "⚠️ Inconclusive result. The match did not advance.",
+    bracketNoConfirm: "⚠️ The server did not register the result. The bracket did not advance.",
     netRelay: "Connected through the server (relay)",
     hostRole: "Create room", guestRole: "Join room",
     createInvite: "1. Create invite", connectAnswer: "2. Connect",
@@ -1192,6 +1192,7 @@ const GameState = (() => {
     },
     league: [],
     bracket: { schedules: {}, live: {}, results: {}, week: '' },
+    weeklySeeds: { week: '', seeds: [] },
     copa: { week: '', field: [], round: 0, status: 'active', rewardClaimed: false },
     meta: { lastDaily: '' }
   };
@@ -1304,6 +1305,9 @@ const GameState = (() => {
       state.bracket.schedules = {};
     }
     state.bracket.week = wk;
+    if (!state.weeklySeeds || typeof state.weeklySeeds !== 'object') state.weeklySeeds = { week: '', seeds: [] };
+    if (state.weeklySeeds.week !== wk) state.weeklySeeds = { week: wk, seeds: [] };
+    if (!Array.isArray(state.weeklySeeds.seeds)) state.weeklySeeds.seeds = [];
     if (!state.copa || typeof state.copa !== 'object') state.copa = { week: '', field: [], round: 0, status: 'active', rewardClaimed: false };
     if (!Array.isArray(state.copa.field)) state.copa.field = [];
     if (!Number.isFinite(Number(state.copa.round))) state.copa.round = 0;
@@ -1688,6 +1692,21 @@ const GameState = (() => {
   function isLive(id) { return !!state.bracket.live[id]; }
   function setLive(id, on) { if (on) state.bracket.live[id] = true; else delete state.bracket.live[id]; save(); }
   function getBracketResult(id) { return (state.bracket.results && state.bracket.results[id]) || null; }
+  // Top 8 congelado da semana: vale a lista do servidor ou, sem servidor, a
+  // primeira lista gravada localmente ao abrir a fase de mata-mata.
+  function getWeeklySeeds() {
+    if (!state.weeklySeeds || state.weeklySeeds.week !== weekKey()) return [];
+    return Array.isArray(state.weeklySeeds.seeds) ? state.weeklySeeds.seeds.slice() : [];
+  }
+  function setWeeklySeeds(names) {
+    const list = (Array.isArray(names) ? names : [])
+      .map(n => String(n || '').trim().slice(0, 24))
+      .filter(Boolean)
+      .slice(0, 8);
+    state.weeklySeeds = { week: weekKey(), seeds: list };
+    save();
+    return list;
+  }
   function setBracketResult(id, res) {
     if (!id) return null;
     if (res === 'won' || res === 'lost') state.bracket.results[id] = res;
@@ -1745,6 +1764,7 @@ const GameState = (() => {
     claimDaily, getSchedule, proposeSchedule, acceptSchedule, nextOccurrence,
     isLive, setLive, countdownText,
     getBracketResult, setBracketResult,
+    getWeeklySeeds, setWeeklySeeds,
     canWatchAd, registerAd, adStatus, registerEventWin, eventProgress, goldCrateReward, goldLeft,
     rollEconomyDay
   };
@@ -5039,10 +5059,10 @@ function endMatch(win, isTeamMode = false, opts = {}) {
       GameState.setBracketResult(duel.bracketId, ownerWon ? 'won' : 'lost');
       duel.bracketId = null;
     }
-    // Mata-mata online: quem decide é o servidor, com confirmação dos dois
-    // jogadores. Até lá a chave local não avança.
+    // Mata-mata online: o resultado é decidido pelo servidor a partir do
+    // estado final da partida. Até o registro oficial, a chave local não avança.
     if (match.mode === 'ONLINE' && match.bracketSlot) {
-      bracketReportResult(match.bracketSlot, ownerWon);
+      bracketReportResult(match.bracketSlot);
     }
   }
   // Evento rotativo: 2 vitórias no mesmo ciclo de 3h pagam +35 moedas e
@@ -5772,7 +5792,7 @@ function setLobbySection(tab) {
   if (lobbyTab === 'hero') renderSkins();
   if (lobbyTab === 'profile') renderProfile();
   if (lobbyTab === 'league') renderLeague();
-  if (lobbyTab === 'bracket') { renderBracket(); renderCopa(); }
+  if (lobbyTab === 'bracket') { renderBracket(); renderCopa(); refreshBracketServerState(); }
   if (lobbyTab === 'shop') renderShop();
   if (lobbyTab === 'event') renderEventLobby();
   if (lobbyTab === 'online') {
@@ -6050,10 +6070,89 @@ function closePlayerStatsModal() {
   if (modal) modal.classList.add('hidden');
 }
 
+/* ---------- Estado da chave no servidor (Top 8 congelado + vencedores) ---------- */
+const bracketServer = { week: '', seeds: null, winners: {}, loadedAt: 0, loading: false, tickAt: 0, sig: '' };
+
+function bracketNick() { return String((GameState.state.profile && GameState.state.profile.nick) || '').trim(); }
+function bracketSame(a, b) {
+  return !!a && !!b && String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
+}
+function bracketServerLive() { return (netServer.available || netServer.base) && !netServer.serverless; }
+function bracketServerWinner(id) {
+  const w = bracketServer.winners ? bracketServer.winners[id] : null;
+  return typeof w === 'string' ? w : (w && typeof w.name === 'string' ? w.name : '');
+}
+// Ordem das sementes: servidor > lista congelada local > tabela ao vivo.
+function bracketSeedNames() {
+  if (bracketServer.seeds && bracketServer.seeds.length >= 2) return bracketServer.seeds.slice(0, 8);
+  const local = GameState.getWeeklySeeds();
+  if (local.length >= 2) return local.slice(0, 8);
+  return GameState.leagueTable().slice(0, 8).map(r => r.name);
+}
+function applyBracketServerState(data) {
+  if (!data || !data.ok) return false;
+  bracketServer.week = data.week || bracketServer.week;
+  if (Array.isArray(data.seeds) && data.seeds.length >= 2) bracketServer.seeds = data.seeds.slice(0, 8);
+  bracketServer.winners = data.winners && typeof data.winners === 'object' ? data.winners : {};
+  bracketServer.loadedAt = Date.now();
+  if (bracketServer.seeds) {
+    const cur = GameState.getWeeklySeeds();
+    const same = cur.length === bracketServer.seeds.length
+      && cur.every((n, i) => bracketSame(n, bracketServer.seeds[i]));
+    if (!same) GameState.setWeeklySeeds(bracketServer.seeds);
+  }
+  // Só pede nova renderização quando o estado oficial realmente mudou.
+  const sig = JSON.stringify({ s: bracketServer.seeds, w: bracketServer.winners });
+  const changed = sig !== bracketServer.sig;
+  bracketServer.sig = sig;
+  return changed;
+}
+// Congela o Top 8 assim que a fase de mata-mata abre. O primeiro aparelho a
+// congelar vira a referência no servidor; ninguém mais muda a lista na semana.
+function bracketLockSeeds() {
+  if (weeklyPhase() !== 'knockout') return;
+  if (GameState.getWeeklySeeds().length >= 2) return;
+  const tbd = (I18N[currentLang] || {}).bracketTbd || 'A definir';
+  const names = GameState.leagueTable()
+    .slice(0, 8)
+    .map(r => String(r.name || '').trim())
+    .filter(n => n && n !== tbd);
+  // Só congela o G8 completo: tabela ainda carregando (nuvem lenta) não pode
+  // virar lista oficial pela metade.
+  if (names.length < 8) return;
+  GameState.setWeeklySeeds(names);
+  renderBracket();
+  if (!bracketServerLive()) return;
+  netApi('/api/bracket/state', { seeds: names }, 'POST', 6000)
+    .then(data => { if (applyBracketServerState(data)) renderBracket(); })
+    .catch(() => { /* offline: a lista local congela a semana */ });
+}
+async function refreshBracketServerState(force = false) {
+  if (!bracketServerLive()) return;
+  if (bracketServer.loading) return;
+  if (!force && Date.now() - bracketServer.loadedAt < 15000) return;
+  bracketServer.loading = true;
+  try {
+    const data = await netApi('/api/bracket/state', {}, 'POST', 6000);
+    if (applyBracketServerState(data)) {
+      if (weeklyPhase() === 'knockout' && !bracketServer.seeds) bracketLockSeeds();
+      renderBracket();
+    }
+  } catch (e) { /* offline: a chave local continua valendo */ } finally {
+    bracketServer.loading = false;
+  }}
+
 function bracketMatches() {
   const dict = I18N[currentLang] || {};
   const tbd = dict.bracketTbd || 'A definir';
-  const seeds = GameState.leagueTable().slice(0, 8);
+  const nick = bracketNick();
+  const table = GameState.leagueTable();
+  // Sementes congeladas na semana: a classificação não muda mais no meio do
+  // mata-mata. Antes do congelamento, usa a tabela ao vivo.
+  const seeds = bracketSeedNames().map(name => {
+    const row = table.find(r => bracketSame(r.name, name));
+    return { name, me: !!(row && row.me) || (!!nick && bracketSame(name, nick)) };
+  });
   const seedEntry = (pos) => (seeds[pos]
     ? { name: seeds[pos].name, me: !!seeds[pos].me }
     : { name: tbd, me: false });
@@ -6066,9 +6165,16 @@ function bracketMatches() {
       label: `${a + 1}º × ${b + 1}º`
     };
   });
-  // Vencedor só existe com resultado validado; sem isso o confronto fica aberto.
+  // Vencedor confirmado no servidor (vale para confrontos de terceiros também);
+  // sem servidor, só o resultado local do próprio jogador conta.
+  const serverWinnerFor = (m) => {
+    const n = m ? bracketServerWinner(m.id) : '';
+    return n && (bracketSame(n, m.a) || bracketSame(n, m.b)) ? n : '';
+  };
   const winnerOf = (m) => {
     if (!m) return null;
+    const server = serverWinnerFor(m);
+    if (server) return { name: server, me: !!nick && bracketSame(server, nick) };
     const res = GameState.getBracketResult(m.id);
     if (!res || !(m.aMe || m.bMe)) return null;
     if (res === 'won') return { name: m.aMe ? m.a : m.b, me: true };
@@ -6085,6 +6191,21 @@ function bracketMatches() {
   };
   const playedQf = qf.map(winnerOf);
   const myQfIdx = qf.findIndex(m => m.aMe || m.bMe);
+  const mySlots = new Set();
+  if (myQfIdx >= 0) {
+    mySlots.add(`qf${myQfIdx + 1}`);
+    mySlots.add(myQfIdx < 2 ? 'sf1' : 'sf2');
+    mySlots.add('f1');
+  }
+  // Resultado oficial do confronto: o servidor confirmado manda; o local é
+  // reserva (partida confirmada também sobrevive a limpar o navegador).
+  const outcomeOf = (id) => {
+    if (mySlots.has(id)) {
+      const server = bracketServerWinner(id);
+      if (server) return bracketSame(server, nick) ? 'won' : 'lost';
+    }
+    return GameState.getBracketResult(id);
+  };
   // Trilha do jogador: conta vitórias consecutivas desde as quartas.
   const pathIds = myQfIdx < 0 ? [] : [myQfIdx < 2 ? 'sf1' : 'sf2', 'f1'];
   let stage = 0;
@@ -6092,7 +6213,7 @@ function bracketMatches() {
   if (myQfIdx >= 0) {
     const ids = [`qf${myQfIdx + 1}`, ...pathIds];
     for (const id of ids) {
-      const res = GameState.getBracketResult(id);
+      const res = outcomeOf(id);
       if (res === 'won') stage++;
       else { lostRun = res === 'lost'; break; }
     }
@@ -6122,7 +6243,12 @@ function bracketMatches() {
     // nunca pode virar card/banner ao vivo.
     const tbdName = !m.a || !m.b || m.a === tbd || m.b === tbd;
     m.live = !tbdName && GameState.isLive(m.id);
-    m.result = GameState.getBracketResult(m.id);
+    // Resultado do confronto: vencedor confirmado no servidor manda; o local
+    // é a reserva quando ainda não há registro central.
+    const mine = !!(m.aMe || m.bMe);
+    const server = serverWinnerFor(m);
+    const local = GameState.getBracketResult(m.id);
+    m.result = mine ? (server ? (bracketSame(server, nick) ? 'won' : 'lost') : local) : null;
     const sched = GameState.getSchedule(m.id);
     m.sched = sched;
     if (!tbdName && sched && sched.ts && Date.now() >= sched.ts) m.live = true;
@@ -6207,7 +6333,6 @@ function renderBracket() {
   if (!board) return;
   const phase = weeklyPhase();
   const qualified = weeklyQualified();
-  const meRow = GameState.leagueTable().find(row => row.me);
   const phaseEl = document.getElementById('weeklyPhase');
   if (phaseEl) {
     phaseEl.className = `champ-phase ${phase}`;
@@ -6219,7 +6344,9 @@ function renderBracket() {
   }
   const hintEl = document.getElementById('weeklyPhaseHint');
   if (hintEl) {
-    const g8 = `G8: ${meRow ? meRow.pos : '—'}º`;
+    const nick = bracketNick();
+    const idx = bracketSeedNames().findIndex(n => bracketSame(n, nick));
+    const g8 = `G8: ${idx >= 0 ? idx + 1 : '—'}º`;
     hintEl.textContent = phase === 'qualifying'
       ? `${dict.weeklyPhase1Hint || 'Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.'} • ${g8}`
       : phase === 'knockout'
@@ -6245,6 +6372,14 @@ function bracketTick() {
     el.textContent = (dict.bracketCountdown || '⏳ {t}').replace('{t}', GameState.countdownText(ts));
   });
   renderLobbyLiveBanner();
+  // Com a aba da chave aberta, busca o estado oficial (sementes e vencedores)
+  // a cada 20 s; também tenta congelar o Top 8 se ainda não houver sementes.
+  const board = document.getElementById('bracketBoard');
+  if (board && board.offsetParent !== null && Date.now() - bracketServer.tickAt > 20000) {
+    bracketServer.tickAt = Date.now();
+    bracketLockSeeds();
+    refreshBracketServerState();
+  }
 }
 
 function lobbyLiveMatch() {
@@ -6326,10 +6461,16 @@ function copaReady() {
   return GameState.leagueTable().filter(r => !r.me).length >= 7 && c.field.length >= 7;
 }
 function weeklyQualified() {
+  // Vaga no mata-mata: sementes congeladas da semana ou, antes do congelamento,
+  // o Top 8 ao vivo da Liga.
+  const nick = bracketNick();
+  const seeds = bracketSeedNames();
+  if (nick && seeds.some(n => bracketSame(n, nick))) return true;
   return GameState.leagueTable().slice(0, 8).some(row => row.me);
 }
 function setChampTab(tab) {
   champTab = tab === 'copa' ? 'copa' : 'weekly';
+  if (champTab === 'weekly') refreshBracketServerState();
   document.querySelectorAll('[data-champ]').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.champ === champTab);
   });
@@ -8964,6 +9105,14 @@ function quickMatchEnter(room, meta = {}) {
   net.role = netServer.role;
   netServerUI();
   netServerHint(netServer.role === 'guest' ? 'serverWaitOffer' : 'serverWaitGuest');
+  if (netServer.bracketSlot) {
+    // Confronto do mata-mata: a partida inteira passa pelo servidor (relay).
+    // Assim o servidor vê o estado final e decide o vencedor sozinho — o
+    // jogador não declara vitória/derrota.
+    netServerStartPoll();
+    netEnterRelay({ quiet: true });
+    return;
+  }
   if (netServer.role === 'host') {
     // O convidado já está na sala: manda a oferta e deixa o poll vigiar.
     netBuildOfferSignal()
@@ -9137,7 +9286,7 @@ async function bracketDuelSearch(slot, rival) {
 
 /* Publica o resultado da partida e espera a confirmação do adversário.
    Só grava a vitória/derrota da chave quando o servidor confirma. */
-async function bracketReportResult(slot, won) {
+async function bracketReportResult(slot) {
   const dict = netServerDict();
   const note = document.getElementById('endBracketLine');
   const mark = (text, tone) => {
@@ -9150,30 +9299,32 @@ async function bracketReportResult(slot, won) {
   const token = netServer.token;
   const role = netServer.role || net.role;
   if (!code || !token || !role) {
-    mark(dict.bracketNoConfirm || '⚠️ O adversário não confirmou. A chave não avançou.', 'warn');
+    mark(dict.bracketNoConfirm || '⚠️ Resultado não registrado pelo servidor.', 'warn');
     return;
   }
-  mark(dict.bracketWaitConfirm || '⏳ Confirmando o resultado com o adversário…', 'wait');
-  try {
-    await netApi('/api/bracket/report', { code, token, won: !!won }, 'POST', 8000);
-  } catch (err) { /* a consulta abaixo ainda pode encontrar o resultado */ }
-  for (let i = 0; i < 10; i++) {
+  // O jogador não declara nada: a chave inteira passa pelo servidor, que lê
+  // o estado final transmitido pela partida e decide o vencedor sozinho.
+  // Aqui só esperamos essa decisão aparecer.
+  mark(dict.bracketWaitConfirm || '⏳ Registrando o resultado no servidor…', 'wait');
+  for (let i = 0; i < 12; i++) {
     let data = null;
     try { data = await netApi('/api/bracket/result', { code, token }, 'POST', 8000); } catch (err) { data = null; }
     if (data && data.confirmed) {
-      if (!data.winner) { mark(dict.bracketVoid || '⚠️ Resultados divergentes. O confronto foi anulado.', 'warn'); return; }
+      if (!data.winner) { mark(dict.bracketVoid || '⚠️ Resultado inconclusivo. O confronto não avançou.', 'warn'); return; }
       const advanced = data.winner === role;
       GameState.setBracketResult(slot, advanced ? 'won' : 'lost');
       mark(advanced
-        ? (dict.bracketConfirmedWin || '✅ Resultado confirmado: você avançou na chave!')
-        : (dict.bracketConfirmedLoss || '❌ Resultado confirmado: você foi eliminado.'),
+        ? (dict.bracketConfirmedWin || '✅ Resultado oficial: você avançou na chave!')
+        : (dict.bracketConfirmedLoss || '❌ Resultado oficial: você foi eliminado.'),
         advanced ? 'win' : 'loss');
       renderBracket();
+      refreshBracketServerState(true);
       return;
     }
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise(r => setTimeout(r, 1000));
   }
-  mark(dict.bracketNoConfirm || '⚠️ O adversário não confirmou. A chave não avançou.', 'warn');
+  mark(dict.bracketNoConfirm || '⚠️ Resultado não registrado pelo servidor.', 'warn');
+  refreshBracketServerState(true);
 }
 
 // Fecha a sala no servidor se o jogador fechar/recarregar a aba antes da partida.
@@ -12679,6 +12830,13 @@ window.onload = function () {
     GameState.subscribe(onGameStateChanged);
     loadBiomeTextures();
     setInterval(bracketTick, 1000);
+    // Liga vem da nuvem depois do boot: com a fase 2 aberta, espera a tabela
+    // encher antes de congelar o Top 8 e depois alinha com o servidor.
+    setTimeout(() => {
+      if (weeklyPhase() !== 'knockout') return;
+      bracketLockSeeds();
+      refreshBracketServerState(true);
+    }, 8000);
     initArena(true, selectedMode, selectedMap);
     updateHUD();
     MUSIC.play('menu');
