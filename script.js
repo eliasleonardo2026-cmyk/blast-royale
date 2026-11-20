@@ -171,23 +171,23 @@ const I18N = {
     leaguePts: "Pts", leagueW: "V", leagueL: "D", leagueYou: "VOCÊ",
     leagueNote: "Só partidas ONLINE PvP pontuam. Treinos contra bots não alteram esta tabela.",
     leagueOnlineHint: "🌐 Só partidas ONLINE PvP pontuam na Liga.",
-    tabBracket: "TORNEIOS", tabBracketSub: "Semanal + Copa de domingo",
-    bracketHint: "Fase 1 (seg–qui): Liga ONLINE vale G8. Fase 2 (sex–sáb): mata-mata PvP ONLINE só para o Top 8.",
-    champWeekly: "CAMPEONATO SEMANAL", champCopa: "COPA RELÂMPAGO",
-    weeklyPhase1: "FASE 1 • LIGA (SEG–QUI)", weeklyPhase2: "FASE 2 • MATA-MATA ONLINE (SEX–SÁB)",
-    weeklyPhaseClosed: "FASE ENCERRADA • COPA HOJE",
-    weeklyPhase1Hint: "Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.",
+    tabBracket: "TORNEIOS", tabBracketSub: "Mensal + Copa de domingo",
+    bracketHint: "Fase 1 (dia 1–24): Liga ONLINE vale o G8 do mês. Fase 2 (dia 25–27): mata-mata PvP ONLINE só para o Top 8.",
+    champWeekly: "CAMPEONATO DO MÊS", champCopa: "COPA RELÂMPAGO",
+    champPhase1: "FASE 1 • LIGA (DIA 1–24)", champPhase2: "FASE 2 • MATA-MATA ONLINE (DIA 25–27)",
+    champPhaseClosed: "FASE ENCERRADA",
+    champPhase1Hint: "Liga ONLINE de pontos corridos: +3 PTS por vitória. O Top 8 do dia 24 avança.",
     bracketTieRule: "Desempate do G8: pontos → vitórias → menos derrotas → troféus → nick.",
     bracketSeedsPending: "⏳ A chave está fechando o Top 8. Tente de novo em instantes.",
-    bracketNotQualified: "🔒 Só o Top 8 congelado desta semana pode jogar o mata-mata.",
-    bracketNeedEight: "🔒 O mata-mata fecha quando a Liga tiver 8 jogadores ranqueados nesta semana.",
-    weeklyPhase2Qualified: "Você está no G8. Chave eliminatória PvP contra os 7 melhores.",
-    weeklyPhase2NoQual: "Somente o Top 8 da Liga joga o mata-mata desta semana.",
-    weeklyClosedHint: "O Campeonato Semanal reabre na segunda. Domingo é dia de Copa Relâmpago.",
-    weeklyPhase1Lock: "🔒 FASE 1 • LIGA", weeklyClosedLock: "🔒 FASE ENCERRADA",
-    weeklyPhase2Lock: "🔒 AGUARDE A FASE 2",
-    weeklyLocked: "🔒 O mata-mata abre sexta-feira.",
-    weeklyNotQualified: "Você ainda não está no G8 da Liga.",
+    bracketNotQualified: "🔒 Só o Top 8 congelado do mês pode jogar o mata-mata.",
+    bracketNeedEight: "🔒 O mata-mata fecha quando a Liga tiver 8 jogadores ranqueados no mês.",
+    champPhase2Qualified: "Você está no G8 do mês. Chave eliminatória PvP contra os 7 melhores.",
+    champPhase2NoQual: "Somente o Top 8 da Liga joga o mata-mata do mês.",
+    champClosedHint: "O Campeonato do Mês reabre no dia 1. A Copa Relâmpago acontece aos domingos.",
+    champPhase1Lock: "🔒 FASE 1 • LIGA", champClosedLock: "🔒 FASE ENCERRADA",
+    champPhase2Lock: "🔒 AGUARDE A FASE 2",
+    champLocked: "🔒 O mata-mata abre no dia 25.",
+    champNotQualified: "Você ainda não está no G8 da Liga.",
     copaPlay: "⚡ JOGAR COPA", copaWon: "CLASSIFICADO", copaLost: "ELIMINADO", copaChampion: "CAMPEÃO",
     copaProjected: "PROJETADO", copaAdvanced: "⚡ Classificado na Copa Relâmpago!",
     copaClosed: "⚡ A Copa Relâmpago acontece no domingo.", copaFinished: "Sua campanha na Copa já terminou.",
@@ -201,7 +201,7 @@ const I18N = {
     copaReward: "🏆 Campeão: +300 💰 e +40 🏆 • vice e semifinalistas levam troféus de partida",
     copaWinTitle: "CAMPEÃO DA COPA!", copaWinSub: "Você venceu as três partidas da Copa Relâmpago!",
     bracketQuarters: "QUARTOS DE FINAL", bracketSemis: "MEIAS-FINAIS", bracketFinal: "GRANDE FINAL",
-    bracketFinalTime: "Sábado • 19h30", bracketSchedule: "📅 AGENDAR", bracketWatch: "🔴 ASSISTIR AO VIVO",
+    bracketFinalTime: "Dia 27 • 19h30", bracketSchedule: "📅 AGENDAR", bracketWatch: "🔴 ASSISTIR AO VIVO",
     bracketScheduleTitle: "AGENDAR PARTIDA", bracketDay: "Dia", bracketTime: "Horário",
     bracketPropose: "PROPOR HORÁRIO", bracketAccept: "ACEITAR PROPOSTA",
     bracketSet: "📅 {d} • {t}", bracketTbd: "A definir", bracketProposed: "Proposta enviada: {d} às {t}",
@@ -435,23 +435,23 @@ const I18N = {
     leaguePts: "Pts", leagueW: "W", leagueL: "L", leagueYou: "YOU",
     leagueNote: "Only ONLINE PvP matches score. Practice against bots never changes this table.",
     leagueOnlineHint: "🌐 Only ONLINE PvP matches score in the League.",
-    tabBracket: "TOURNAMENTS", tabBracketSub: "Weekly + Sunday Cup",
-    bracketHint: "Phase 1 (Mon–Thu): ONLINE league ranks the G8. Phase 2 (Fri–Sat): ONLINE PvP knockout for the Top 8 only.",
-    champWeekly: "WEEKLY CHAMPIONSHIP", champCopa: "FLASH CUP",
-    weeklyPhase1: "PHASE 1 • LEAGUE (MON–THU)", weeklyPhase2: "PHASE 2 • ONLINE KNOCKOUT (FRI–SAT)",
-    weeklyPhaseClosed: "PHASE CLOSED • CUP TODAY",
-    weeklyPhase1Hint: "ONLINE points league: +3 PTS per win. The top 8 advance.",
+    tabBracket: "TOURNAMENTS", tabBracketSub: "Monthly + Sunday Cup",
+    bracketHint: "Phase 1 (day 1–24): ONLINE league ranks the month's G8. Phase 2 (day 25–27): ONLINE PvP knockout for the Top 8 only.",
+    champWeekly: "MONTHLY CHAMPIONSHIP", champCopa: "FLASH CUP",
+    champPhase1: "PHASE 1 • LEAGUE (DAY 1–24)", champPhase2: "PHASE 2 • ONLINE KNOCKOUT (DAY 25–27)",
+    champPhaseClosed: "PHASE CLOSED",
+    champPhase1Hint: "ONLINE points league: +3 PTS per win. The day-24 top 8 advance.",
     bracketTieRule: "G8 tie-break: points → wins → fewer losses → trophies → nick.",
     bracketSeedsPending: "⏳ The bracket is still locking the Top 8. Try again in a moment.",
-    bracketNotQualified: "🔒 Only this week's locked Top 8 can play the knockout.",
-    bracketNeedEight: "🔒 The knockout locks once the League has 8 ranked players this week.",
-    weeklyPhase2Qualified: "You are in the G8. PvP knockout against the top 7.",
-    weeklyPhase2NoQual: "Only the League Top 8 play this week's knockout.",
-    weeklyClosedHint: "The Weekly Championship reopens on Monday. Sunday is Flash Cup day.",
-    weeklyPhase1Lock: "🔒 PHASE 1 • LEAGUE", weeklyClosedLock: "🔒 PHASE CLOSED",
-    weeklyPhase2Lock: "🔒 WAIT FOR PHASE 2",
-    weeklyLocked: "🔒 The knockout opens on Friday.",
-    weeklyNotQualified: "You are not in the League G8 yet.",
+    bracketNotQualified: "🔒 Only the month's locked Top 8 can play the knockout.",
+    bracketNeedEight: "🔒 The knockout locks once the League has 8 ranked players this month.",
+    champPhase2Qualified: "You are in the month's G8. PvP knockout against the top 7.",
+    champPhase2NoQual: "Only the League Top 8 play the month's knockout.",
+    champClosedHint: "The Monthly Championship reopens on day 1. The Flash Cup runs on Sundays.",
+    champPhase1Lock: "🔒 PHASE 1 • LEAGUE", champClosedLock: "🔒 PHASE CLOSED",
+    champPhase2Lock: "🔒 WAIT FOR PHASE 2",
+    champLocked: "🔒 The knockout opens on day 25.",
+    champNotQualified: "You are not in the League G8 yet.",
     copaPlay: "⚡ PLAY CUP", copaWon: "ADVANCED", copaLost: "ELIMINATED", copaChampion: "CHAMPION",
     copaProjected: "PROJECTED", copaAdvanced: "⚡ Advanced in the Flash Cup!",
     copaClosed: "⚡ The Flash Cup runs on Sunday.", copaFinished: "Your Cup run is already over.",
@@ -465,7 +465,7 @@ const I18N = {
     copaReward: "🏆 Champion: +300 💰 and +40 🏆 • runner-up and semifinalists earn match trophies",
     copaWinTitle: "FLASH CUP CHAMPION!", copaWinSub: "You won all three Flash Cup matches!",
     bracketQuarters: "QUARTER-FINALS", bracketSemis: "SEMI-FINALS", bracketFinal: "GRAND FINAL",
-    bracketFinalTime: "Saturday • 7:30 PM", bracketSchedule: "📅 SCHEDULE", bracketWatch: "🔴 WATCH LIVE",
+    bracketFinalTime: "Day 27 • 7:30 PM", bracketSchedule: "📅 SCHEDULE", bracketWatch: "🔴 WATCH LIVE",
     bracketScheduleTitle: "SCHEDULE MATCH", bracketDay: "Day", bracketTime: "Time",
     bracketPropose: "PROPOSE TIME", bracketAccept: "ACCEPT PROPOSAL",
     bracketSet: "📅 {d} • {t}", bracketTbd: "TBD", bracketProposed: "Proposal sent: {d} at {t}",
@@ -1199,8 +1199,8 @@ const GameState = (() => {
       goldSlot: null, goldCoins: 0
     },
     league: [],
-    bracket: { schedules: {}, live: {}, results: {}, week: '' },
-    weeklySeeds: { week: '', seeds: [] },
+    bracket: { schedules: {}, live: {}, results: {}, month: '' },
+    champSeeds: { month: '', seeds: [] },
     copa: { week: '', field: [], round: 0, status: 'active', rewardClaimed: false },
     meta: { lastDaily: '' }
   };
@@ -1305,17 +1305,17 @@ const GameState = (() => {
     if (!state.bracket.schedules) state.bracket.schedules = {};
     if (!state.bracket.live) state.bracket.live = {};
     if (!state.bracket.results || typeof state.bracket.results !== 'object') state.bracket.results = {};
-    // O mata-mata é semanal: resultados e horários da semana anterior
-    // não podem travar (nem liberar) os confrontos da semana atual.
-    const wk = weekKey();
-    if (state.bracket.week && state.bracket.week !== wk) {
+    // O mata-mata é mensal: resultados e horários do mês anterior
+    // não podem travar (nem liberar) os confrontos do mês atual.
+    const mk = monthKey();
+    if (state.bracket.month !== mk) {
       state.bracket.results = {};
       state.bracket.schedules = {};
     }
-    state.bracket.week = wk;
-    if (!state.weeklySeeds || typeof state.weeklySeeds !== 'object') state.weeklySeeds = { week: '', seeds: [] };
-    if (state.weeklySeeds.week !== wk) state.weeklySeeds = { week: wk, seeds: [] };
-    if (!Array.isArray(state.weeklySeeds.seeds)) state.weeklySeeds.seeds = [];
+    state.bracket.month = mk;
+    if (!state.champSeeds || typeof state.champSeeds !== 'object') state.champSeeds = { month: '', seeds: [] };
+    if (state.champSeeds.month !== mk) state.champSeeds = { month: mk, seeds: [] };
+    if (!Array.isArray(state.champSeeds.seeds)) state.champSeeds.seeds = [];
     if (!state.copa || typeof state.copa !== 'object') state.copa = { week: '', field: [], round: 0, status: 'active', rewardClaimed: false };
     if (!Array.isArray(state.copa.field)) state.copa.field = [];
     if (!Number.isFinite(Number(state.copa.round))) state.copa.round = 0;
@@ -1700,18 +1700,18 @@ const GameState = (() => {
   function isLive(id) { return !!state.bracket.live[id]; }
   function setLive(id, on) { if (on) state.bracket.live[id] = true; else delete state.bracket.live[id]; save(); }
   function getBracketResult(id) { return (state.bracket.results && state.bracket.results[id]) || null; }
-  // Top 8 congelado da semana: vale a lista do servidor ou, sem servidor, a
+  // Top 8 congelado do mês: vale a lista do servidor ou, sem servidor, a
   // primeira lista gravada localmente ao abrir a fase de mata-mata.
-  function getWeeklySeeds() {
-    if (!state.weeklySeeds || state.weeklySeeds.week !== weekKey()) return [];
-    return Array.isArray(state.weeklySeeds.seeds) ? state.weeklySeeds.seeds.slice() : [];
+  function getChampSeeds() {
+    if (!state.champSeeds || state.champSeeds.month !== monthKey()) return [];
+    return Array.isArray(state.champSeeds.seeds) ? state.champSeeds.seeds.slice() : [];
   }
-  function setWeeklySeeds(names) {
+  function setChampSeeds(names) {
     const list = (Array.isArray(names) ? names : [])
       .map(n => String(n || '').trim().slice(0, 24))
       .filter(Boolean)
       .slice(0, 8);
-    state.weeklySeeds = { week: weekKey(), seeds: list };
+    state.champSeeds = { month: monthKey(), seeds: list };
     save();
     return list;
   }
@@ -1738,6 +1738,10 @@ const GameState = (() => {
     const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
     return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  }
+  // Chave do campeonato mensal. A Copa continua semanal e usa weekKey.
+  function monthKey(d = new Date()) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   }
   const COPA_SIZE = 8;
   function ensureCopa() {
@@ -1768,11 +1772,11 @@ const GameState = (() => {
     hydrate(data) { if (!data || typeof data !== 'object') return state; Object.assign(state, data); sanitize(); save(); return state; },
     addCoins, setProfile, addResult, leagueTable, isOwned, buy, equip, grant, equipped, defaultIdFor,
     validateNick, setLeague, mergeRemoteProfile, cloudPayload,
-    trophyRank, ensureCopa, claimCopaReward, weekKey,
+    trophyRank, ensureCopa, claimCopaReward, weekKey, monthKey,
     claimDaily, getSchedule, proposeSchedule, acceptSchedule, nextOccurrence,
     isLive, setLive, countdownText,
     getBracketResult, setBracketResult,
-    getWeeklySeeds, setWeeklySeeds,
+    getChampSeeds, setChampSeeds,
     canWatchAd, registerAd, adStatus, registerEventWin, eventProgress, goldCrateReward, goldLeft,
     rollEconomyDay
   };
@@ -2588,9 +2592,9 @@ function renderProgress() {
   const lvlBar = document.getElementById('levelXpBar');
   const seasonName = document.getElementById('seasonName');
   const eventLine = document.getElementById('eventLine');
-  const evIcon = document.getElementById('eventIcon');
-  const evName = document.getElementById('eventName');
-  const evDesc = document.getElementById('eventDesc');
+  const evIcon = document.getElementById('progEventIcon');
+  const evName = document.getElementById('progEventName');
+  const evDesc = document.getElementById('progEventDesc');
   if (lvlNum) lvlNum.textContent = lv.level;
   if (lvlBadge) lvlBadge.textContent = lv.level;
   if (lvlText) lvlText.textContent = lv.maxed
@@ -6079,7 +6083,7 @@ function closePlayerStatsModal() {
 }
 
 /* ---------- Estado da chave no servidor (Top 8 congelado + vencedores) ---------- */
-const bracketServer = { week: '', seeds: null, winners: {}, loadedAt: 0, loading: false, tickAt: 0, sig: '' };
+const bracketServer = { period: '', seeds: null, winners: {}, loadedAt: 0, loading: false, tickAt: 0, sig: '' };
 
 function bracketNick() { return String((GameState.state.profile && GameState.state.profile.nick) || '').trim(); }
 function bracketSame(a, b) {
@@ -6093,21 +6097,27 @@ function bracketServerWinner(id) {
 // Ordem das sementes: servidor > lista congelada local > tabela ao vivo.
 function bracketSeedNames() {
   if (bracketServer.seeds && bracketServer.seeds.length >= 2) return bracketServer.seeds.slice(0, 8);
-  const local = GameState.getWeeklySeeds();
+  const local = GameState.getChampSeeds();
   if (local.length >= 2) return local.slice(0, 8);
   return GameState.leagueTable().slice(0, 8).map(r => r.name);
 }
 function applyBracketServerState(data) {
   if (!data || !data.ok) return false;
-  bracketServer.week = data.week || bracketServer.week;
+  const period = data.period || bracketServer.period;
+  // Virada de mês: sementes e vencedores do mês anterior não valem na chave nova.
+  if (period !== bracketServer.period) {
+    bracketServer.seeds = null;
+    bracketServer.winners = {};
+  }
+  bracketServer.period = period;
   if (Array.isArray(data.seeds) && data.seeds.length >= 2) bracketServer.seeds = data.seeds.slice(0, 8);
   bracketServer.winners = data.winners && typeof data.winners === 'object' ? data.winners : {};
   bracketServer.loadedAt = Date.now();
   if (bracketServer.seeds) {
-    const cur = GameState.getWeeklySeeds();
+    const cur = GameState.getChampSeeds();
     const same = cur.length === bracketServer.seeds.length
       && cur.every((n, i) => bracketSame(n, bracketServer.seeds[i]));
-    if (!same) GameState.setWeeklySeeds(bracketServer.seeds);
+    if (!same) GameState.setChampSeeds(bracketServer.seeds);
   }
   // Só pede nova renderização quando o estado oficial realmente mudou.
   const sig = JSON.stringify({ s: bracketServer.seeds, w: bracketServer.winners });
@@ -6116,10 +6126,10 @@ function applyBracketServerState(data) {
   return changed;
 }
 // Congela o Top 8 assim que a fase de mata-mata abre. O primeiro aparelho a
-// congelar vira a referência no servidor; ninguém mais muda a lista na semana.
+// congelar vira a referência no servidor; ninguém mais muda a lista no mês.
 function bracketLockSeeds() {
-  if (weeklyPhase() !== 'knockout') return;
-  const local = GameState.getWeeklySeeds();
+  if (champPhase() !== 'knockout') return;
+  const local = GameState.getChampSeeds();
   // Servidor já tem a lista oficial: não há o que publicar.
   if (bracketServer.seeds && bracketServer.seeds.length >= 2) return;
   const tbd = (I18N[currentLang] || {}).bracketTbd || 'A definir';
@@ -6131,13 +6141,13 @@ function bracketLockSeeds() {
   // virar lista oficial pela metade.
   if (names.length < 8) return;
   if (local.length < 2) {
-    GameState.setWeeklySeeds(names);
+    GameState.setChampSeeds(names);
     renderBracket();
   }
   if (!bracketServerLive()) return;
   netApi('/api/bracket/state', { seeds: names }, 'POST', 6000)
     .then(data => { if (applyBracketServerState(data)) renderBracket(); })
-    .catch(() => { /* offline: a lista local congela a semana */ });
+    .catch(() => { /* offline: a lista local congela o mês */ });
 }
 async function refreshBracketServerState(force = false) {
   if (!bracketServerLive()) return;
@@ -6147,7 +6157,7 @@ async function refreshBracketServerState(force = false) {
   try {
     const data = await netApi('/api/bracket/state', {}, 'POST', 6000);
     if (applyBracketServerState(data)) {
-      if (weeklyPhase() === 'knockout' && !bracketServer.seeds) bracketLockSeeds();
+      if (champPhase() === 'knockout' && !bracketServer.seeds) bracketLockSeeds();
       renderBracket();
     }
   } catch (e) { /* offline: a chave local continua valendo */ } finally {
@@ -6159,7 +6169,7 @@ function bracketMatches() {
   const tbd = dict.bracketTbd || 'A definir';
   const nick = bracketNick();
   const table = GameState.leagueTable();
-  // Sementes congeladas na semana: a classificação não muda mais no meio do
+  // Sementes congeladas no mês: a classificação não muda mais no meio do
   // mata-mata. Antes do congelamento, usa a tabela ao vivo.
   const seeds = bracketSeedNames().map(name => {
     const row = table.find(r => bracketSame(r.name, name));
@@ -6247,7 +6257,7 @@ function bracketMatches() {
   const finB = revealFin ? (playedSf[1] || project(qfPairs[2][0], qfPairs[3][0])) : tbdEntry;
   const fin = {
     id: 'f1', a: finA.name, b: finB.name, aMe: finA.me, bMe: finB.me,
-    label: dict.bracketFinalTime || 'Sábado • 19h30'
+    label: dict.bracketFinalTime || 'Dia 27 • 19h30'
   };
   const all = [...qf, ...sf, fin];
   all.forEach(m => {
@@ -6285,11 +6295,11 @@ function bracketPlayerHtml(name, own = false) {
 function bracketCardHtml(m) {
   const dict = I18N[currentLang] || {};
   const mine = !!(m.aMe || m.bMe);
-  const phase = weeklyPhase();
+  const phase = champPhase();
   const result = m.result || null;
   const rivalName = m.aMe ? m.b : m.bMe ? m.a : '';
   const rivalTbd = !rivalName || rivalName === (dict.bracketTbd || 'A definir');
-  const canPlay = mine && !rivalTbd && !result && phase === 'knockout' && weeklyQualified();
+  const canPlay = mine && !rivalTbd && !result && phase === 'knockout' && champQualified();
   const when = m.sched ? fmtSchedule(m.sched) : (m.id === 'f1' ? (dict.bracketFinalTime || '') : '');
   const count = m.sched && m.sched.ts
     ? `<span class="bracket-count" data-ts="${m.sched.ts}">${(dict.bracketCountdown || '⏳ {t}').replace('{t}', GameState.countdownText(m.sched.ts))}</span>`
@@ -6313,13 +6323,13 @@ function bracketCardHtml(m) {
       action = `<button type="button" class="bracket-btn play" data-bracket-play="${m.id}">${dict.bracketPlayCta || '⚔️ JOGAR A CHAVE (ONLINE)'}</button>
        <button type="button" class="bracket-btn" data-schedule="${m.id}">${dict.bracketSchedule || '📅 AGENDAR'}</button>`;
     } else {
-      const lockText = rivalTbd && phase === 'knockout' && weeklyQualified()
+      const lockText = rivalTbd && phase === 'knockout' && champQualified()
         ? (dict.bracketAwaitRival || '⏳ AGUARDANDO ADVERSÁRIO')
         : phase === 'qualifying'
-          ? (dict.weeklyPhase1Lock || '🔒 FASE 1 • LIGA')
+          ? (dict.champPhase1Lock || '🔒 FASE 1 • LIGA')
           : phase === 'closed'
-            ? (dict.weeklyClosedLock || '🔒 FASE ENCERRADA')
-            : (dict.weeklyPhase2Lock || '🔒 AGUARDE A FASE 2');
+            ? (dict.champClosedLock || '🔒 FASE ENCERRADA')
+            : (dict.champPhase2Lock || '🔒 AGUARDE A FASE 2');
       action = `<span class="bracket-locked">${lockText}</span>${phase === 'knockout' ? `<button type="button" class="bracket-btn" data-schedule="${m.id}">${dict.bracketSchedule || '📅 AGENDAR'}</button>` : ''}`;
     }
   } else {
@@ -6343,29 +6353,29 @@ function renderBracket() {
   const dict = I18N[currentLang] || {};
   const board = document.getElementById('bracketBoard');
   if (!board) return;
-  const phase = weeklyPhase();
-  const qualified = weeklyQualified();
-  const phaseEl = document.getElementById('weeklyPhase');
+  const phase = champPhase();
+  const qualified = champQualified();
+  const phaseEl = document.getElementById('champPhase');
   if (phaseEl) {
     phaseEl.className = `champ-phase ${phase}`;
     phaseEl.textContent = phase === 'qualifying'
-      ? (dict.weeklyPhase1 || 'FASE 1 • LIGA (SEG–QUI)')
+      ? (dict.champPhase1 || 'FASE 1 • LIGA (DIA 1–24)')
       : phase === 'knockout'
-        ? (dict.weeklyPhase2 || 'FASE 2 • MATA-MATA ONLINE (SEX–SÁB)')
-        : (dict.weeklyPhaseClosed || 'FASE ENCERRADA • COPA HOJE');
+        ? (dict.champPhase2 || 'FASE 2 • MATA-MATA ONLINE (DIA 25–27)')
+        : (dict.champPhaseClosed || 'FASE ENCERRADA');
   }
-  const hintEl = document.getElementById('weeklyPhaseHint');
+  const hintEl = document.getElementById('champPhaseHint');
   if (hintEl) {
     const nick = bracketNick();
     const idx = bracketSeedNames().findIndex(n => bracketSame(n, nick));
     const g8 = `G8: ${idx >= 0 ? idx + 1 : '—'}º`;
     hintEl.textContent = phase === 'qualifying'
-      ? `${dict.weeklyPhase1Hint || 'Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.'} • ${g8} • ${dict.bracketTieRule || 'Desempate do G8: pontos → vitórias → menos derrotas → troféus → nick.'}`
+      ? `${dict.champPhase1Hint || 'Liga ONLINE de pontos corridos: +3 PTS por vitória. O Top 8 do dia 24 avança.'} • ${g8} • ${dict.bracketTieRule || 'Desempate do G8: pontos → vitórias → menos derrotas → troféus → nick.'}`
       : phase === 'knockout'
         ? (qualified
-          ? (dict.weeklyPhase2Qualified || 'Você está no G8. Chave eliminatória PvP contra os 7 melhores.')
-          : (dict.weeklyPhase2NoQual || 'Somente o Top 8 da Liga joga o mata-mata desta semana.')) + ` • ${g8}`
-        : (dict.weeklyClosedHint || 'O Campeonato Semanal reabre na segunda. Domingo é dia de Copa Relâmpago.');
+          ? (dict.champPhase2Qualified || 'Você está no G8 do mês. Chave eliminatória PvP contra os 7 melhores.')
+          : (dict.champPhase2NoQual || 'Somente o Top 8 da Liga joga o mata-mata do mês.')) + ` • ${g8}`
+        : (dict.champClosedHint || 'O Campeonato do Mês reabre no dia 1. A Copa Relâmpago acontece aos domingos.');
   }
   const { qf, sf, fin } = bracketMatches();
   const hasSeeds = GameState.leagueTable().length > 0;
@@ -6373,7 +6383,7 @@ function renderBracket() {
     ${hasSeeds ? '' : `<div class="bracket-empty-note">${escapeHtml(dict.bracketEmpty || 'Nenhum jogador ranqueado ainda. A Liga ONLINE alimenta o mata-mata.')}</div>`}
     <div class="bracket-col"><div class="bracket-col-title">${dict.bracketQuarters || 'QUARTOS DE FINAL'}</div>${qf.map(bracketCardHtml).join('')}</div>
     <div class="bracket-col"><div class="bracket-col-title">${dict.bracketSemis || 'MEIAS-FINAIS'}</div>${sf.map(bracketCardHtml).join('')}</div>
-    <div class="bracket-col"><div class="bracket-col-title">${dict.bracketFinal || 'GRANDE FINAL'}</div>${bracketCardHtml(fin)}<div class="bracket-final">${dict.bracketFinalTime || 'Sábado • 19h30'}</div></div>`;
+    <div class="bracket-col"><div class="bracket-col-title">${dict.bracketFinal || 'GRANDE FINAL'}</div>${bracketCardHtml(fin)}<div class="bracket-final">${dict.bracketFinalTime || 'Dia 27 • 19h30'}</div></div>`;
 }
 
 function bracketTick() {
@@ -6437,12 +6447,12 @@ async function startBracketMatch(id) {
   const dict = I18N[currentLang] || {};
   if (!hasCompetitiveNick()) { openNickGate(() => startBracketMatch(id)); return; }
   if (bracketDuel.polling) return;
-  if (weeklyPhase() !== 'knockout') {
-    showToast(dict.weeklyLocked || '🔒 O mata-mata abre sexta-feira.');
+  if (champPhase() !== 'knockout') {
+    showToast(dict.champLocked || '🔒 O mata-mata abre no dia 25.');
     return;
   }
-  if (!weeklyQualified()) {
-    showToast(dict.weeklyNotQualified || 'Você ainda não está no G8 da Liga.');
+  if (!champQualified()) {
+    showToast(dict.champNotQualified || 'Você ainda não está no G8 da Liga.');
     return;
   }
   if (netServer.code) { showToast(dict.bracketLeaveRoom || 'Saia da sala atual antes de jogar a chave.'); return; }
@@ -6461,10 +6471,12 @@ async function startBracketMatch(id) {
 
 let champTab = 'weekly';
 function championshipNow() { return new Date(); }
-function weeklyPhase(date = championshipNow()) {
-  const d = date.getDay();
-  if (d >= 1 && d <= 4) return 'qualifying';
-  if (d === 5 || d === 6) return 'knockout';
+// Calendário do Campeonato do Mês: dias 1–24 pontos na Liga, 25–27 mata-mata,
+// 28 até o fim do mês encerrado. A Copa Relâmpago continua aos domingos.
+function champPhase(date = championshipNow()) {
+  const day = date.getDate();
+  if (day <= 24) return 'qualifying';
+  if (day <= 27) return 'knockout';
   return 'closed';
 }
 function copaOpen(date = championshipNow()) { return date.getDay() === 0; }
@@ -6472,8 +6484,8 @@ function copaReady() {
   const c = GameState.ensureCopa();
   return GameState.leagueTable().filter(r => !r.me).length >= 7 && c.field.length >= 7;
 }
-function weeklyQualified() {
-  // Vaga no mata-mata: sementes congeladas da semana ou, antes do congelamento,
+function champQualified() {
+  // Vaga no mata-mata: sementes congeladas do mês ou, antes do congelamento,
   // o Top 8 ao vivo da Liga.
   const nick = bracketNick();
   const seeds = bracketSeedNames();
@@ -9195,7 +9207,7 @@ async function quickMatchSearch() {
   }
 }
 
-/* ---------- Mata-mata semanal: PvP online com resultado confirmado ---------- */
+/* ---------- Mata-mata do mês: PvP online com resultado confirmado ---------- */
 /* O pareamento acontece por confronto da chave (qf1..f1) e o servidor só
    junta os dois jogadores se cada um declarar o outro como adversário.
    O confronto só avança quando OS DOIS lados reportam o resultado. */
@@ -9289,7 +9301,7 @@ async function bracketDuelSearch(slot, rival) {
     try {
       data = await join();
     } catch (err) {
-      // Top 8 ainda não chegou ao servidor (ex.: primeiro boot da semana):
+      // Top 8 ainda não chegou ao servidor (ex.: primeiro boot do mês):
       // publica a lista congelada deste aparelho e tenta mais uma vez.
       if (err.status !== 409) throw err;
       showToast(dict.bracketSeedsPending || '⏳ A chave está fechando o Top 8. Tente de novo em instantes.');
@@ -9304,8 +9316,8 @@ async function bracketDuelSearch(slot, rival) {
   } catch (err) {
     bracketDuelStop();
     renderBracket();
-    if (err.status === 403) showToast(dict.bracketNotQualified || '🔒 Só o Top 8 congelado desta semana pode jogar o mata-mata.');
-    else if (err.status === 409) showToast(dict.bracketNeedEight || '🔒 O mata-mata fecha quando a Liga tiver 8 jogadores ranqueados nesta semana.');
+    if (err.status === 403) showToast(dict.bracketNotQualified || '🔒 Só o Top 8 congelado do mês pode jogar o mata-mata.');
+    else if (err.status === 409) showToast(dict.bracketNeedEight || '🔒 O mata-mata fecha quando a Liga tiver 8 jogadores ranqueados no mês.');
     else showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.');
   }
 }
@@ -12757,44 +12769,57 @@ function adaptRenderScale(rawDt) {
   }
 }
 
-function loop(ts) {
-  const seconds = ts / 1000;
-  if (!lastTime) lastTime = seconds;
-  const rawDt = Math.max(0, seconds - lastTime);
-  const dt = Math.min(0.05, rawDt);
-  lastTime = seconds;
-  nowT = seconds;
-  adaptRenderScale(rawDt);
-  if (match.hitFlash > 0) match.hitFlash = Math.max(0, match.hitFlash - dt);
-  pollGamepads();
+let loopLastErrorAt = -Infinity;
 
-  fpsAccum += dt; fpsFrames++;
-  if (fpsAccum >= 0.5) {
-    const fpsEl = document.getElementById('fpsCounter');
-    const visible = settings.showFps && !chroma.active && match.running && !match.paused && UI.startScreen.classList.contains('hidden');
-    if (fpsEl) {
-      fpsEl.classList.toggle('hidden', !visible);
-      if (visible) fpsEl.textContent = `${Math.round(fpsFrames / fpsAccum)} FPS`;
+function loop(ts) {
+  // Um erro em um único frame não pode matar o requestAnimationFrame. Sem esta
+  // proteção, qualquer exceção em update()/render()/netTick() interrompia a
+  // função antes do reagendamento e congelava o jogo até recarregar a página.
+  try {
+    const seconds = ts / 1000;
+    if (!lastTime) lastTime = seconds;
+    const rawDt = Math.max(0, seconds - lastTime);
+    const dt = Math.min(0.05, rawDt);
+    lastTime = seconds;
+    nowT = seconds;
+    adaptRenderScale(rawDt);
+    if (match.hitFlash > 0) match.hitFlash = Math.max(0, match.hitFlash - dt);
+    pollGamepads();
+
+    fpsAccum += dt; fpsFrames++;
+    if (fpsAccum >= 0.5) {
+      const fpsEl = document.getElementById('fpsCounter');
+      const visible = settings.showFps && !chroma.active && match.running && !match.paused && UI.startScreen.classList.contains('hidden');
+      if (fpsEl) {
+        fpsEl.classList.toggle('hidden', !visible);
+        if (visible) fpsEl.textContent = `${Math.round(fpsFrames / fpsAccum)} FPS`;
+      }
+      fpsAccum = 0; fpsFrames = 0;
     }
-    fpsAccum = 0; fpsFrames = 0;
-  }
-  
-  // 🎨 Chroma Drop OU jogo principal
-  if (chroma.active) {
-    if (!chroma.paused) updateChromaDrop(dt);
-    drawChromaDrop();
-  } else {
-    // No lobby a partida-demo fica congelada: nada de bombas, som ou ação
-    // atrás do painel. O fundo do menu é um cenário próprio, sem gameplay.
-    const lobbyOpen = !UI.startScreen.classList.contains('hidden');
-    if (lobbyOpen && match.demoMode) {
-      drawLobbyBackdrop();
+    
+    // 🎨 Chroma Drop OU jogo principal
+    if (chroma.active) {
+      if (!chroma.paused) updateChromaDrop(dt);
+      drawChromaDrop();
     } else {
-      if (match.running && !match.paused && !net.hold) update(dt);
-      render();
+      // No lobby a partida-demo fica congelada: nada de bombas, som ou ação
+      // atrás do painel. O fundo do menu é um cenário próprio, sem gameplay.
+      const lobbyOpen = !UI.startScreen.classList.contains('hidden');
+      if (lobbyOpen && match.demoMode) {
+        drawLobbyBackdrop();
+      } else {
+        if (match.running && !match.paused && !net.hold) update(dt);
+        render();
+      }
+      if (!match.paused && !net.hold) netTick(dt);
+      if (tutorial.active) updateTutorialUI();
     }
-    if (!match.paused && !net.hold) netTick(dt);
-    if (tutorial.active) updateTutorialUI();
+  } catch (err) {
+    // Loga no máximo uma vez a cada 5 s para não inundar o console.
+    if (nowT - loopLastErrorAt > 5) {
+      loopLastErrorAt = nowT;
+      console.error('Erro no loop do jogo (frame ignorado, loop mantido):', err);
+    }
   }
   
   requestAnimationFrame(loop);
@@ -12859,7 +12884,7 @@ window.onload = function () {
     // Liga vem da nuvem depois do boot: com a fase 2 aberta, espera a tabela
     // encher antes de congelar o Top 8 e depois alinha com o servidor.
     setTimeout(() => {
-      if (weeklyPhase() !== 'knockout') return;
+      if (champPhase() !== 'knockout') return;
       bracketLockSeeds();
       refreshBracketServerState(true);
     }, 8000);

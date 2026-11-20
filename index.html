@@ -30,7 +30,7 @@
 <body class="relative w-full h-full text-slate-100">
 
 <!-- ================= CANVAS PRINCIPAL ================= -->
-<canvas id="gameCanvas"></canvas>
+<canvas id="gameCanvas" role="img" aria-label="Arena de jogo do Blast Royale" tabindex="-1">Arena de jogo do Blast Royale. Este jogo precisa de tela e controles gráficos.</canvas>
 
 <!-- ================= JOYSTICK VIRTUAL ================= -->
 <div id="floatingJoystickContainer" class="hidden pointer-events-none fixed inset-0 z-20">
@@ -562,24 +562,24 @@
         <span class="lobby-section-emoji">🏟️</span>
         <span class="lobby-section-text">
           <span class="lobby-section-title" data-i18n="tabBracket">TORNEIOS</span>
-          <span class="lobby-section-sub" data-i18n="tabBracketSub">Semanal + Copa de domingo</span>
+          <span class="lobby-section-sub" data-i18n="tabBracketSub">Mensal + Copa de domingo</span>
         </span>
         <span class="lobby-chevron">▾</span>
       </button>
       <div class="lobby-section-body hidden" data-lobby-body="bracket">
         <div class="champ-switch" id="champSwitch">
           <button type="button" class="champ-tab active" data-champ="weekly">
-            🏆 <span data-i18n="champWeekly">CAMPEONATO SEMANAL</span>
+            🏆 <span data-i18n="champWeekly">CAMPEONATO DO MÊS</span>
           </button>
           <button type="button" class="champ-tab" data-champ="copa">
             ⚡ <span data-i18n="champCopa">COPA RELÂMPAGO</span>
           </button>
         </div>
         <div id="champWeekly">
-          <div id="weeklyPhase" class="champ-phase"></div>
-          <p id="weeklyPhaseHint" class="champ-hint"></p>
+          <div id="champPhase" class="champ-phase"></div>
+          <p id="champPhaseHint" class="champ-hint"></p>
           <div class="bracket-panel">
-            <p class="bracket-hint" data-i18n="bracketHint">Fase 1 (seg–qui): Liga ONLINE vale G8. Fase 2 (sex–sáb): mata-mata MD3 só para o Top 8.</p>
+            <p class="bracket-hint" data-i18n="bracketHint">Fase 1 (dia 1–24): Liga ONLINE vale o G8 do mês. Fase 2 (dia 25–27): mata-mata PvP só para o Top 8.</p>
             <div id="bracketBoard" class="bracket-board"></div>
           </div>
         </div>
@@ -834,8 +834,8 @@
             </div>
           </div>
           <div class="prog-event">
-            <span id="eventIcon">✨</span>
-            <div><b id="eventName">Evento do dia</b><span id="eventDesc"></span></div>
+            <span id="progEventIcon">✨</span>
+            <div><b id="progEventName">Evento do dia</b><span id="progEventDesc"></span></div>
           </div>
           <div class="prog-tabs">
             <button type="button" data-progress-tab="missions" class="prog-tab active" data-i18n="progMissions">🎯 Missões</button>

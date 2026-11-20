@@ -27,6 +27,68 @@ const MAX_BODY = 256 * 1024;
 const MAX_QUEUE = 240;
 const POLL_TIMEOUT_MS = 12000;
 
+/* ----------------------------- SEGURANÇA ------------------------------- */
+/* Cabeçalhos aplicados a todo conteúdo servido. A CSP libera só o que o jogo
+   realmente usa: o SDK do Firebase (www.gstatic.com) e as fontes do Google;
+   permite estilos/handlers inline (há style= e um script inline de flag no
+   index.html) e conexões https/wss (sinalização do próprio host, um servidor
+   alternativo via ?server= e o Realtime Database do Firebase). */
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'SAMEORIGIN',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Content-Security-Policy':
+    "default-src 'self'; " +
+    "script-src 'self' 'unsafe-inline' https://www.gstatic.com; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src 'self' data: https://fonts.gstatic.com; " +
+    "img-src 'self' data: blob:; " +
+    "media-src 'self' data: blob:; " +
+    "connect-src 'self' https: wss: ws: blob:; " +
+    "worker-src 'self' blob:; " +
+    "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+};
+
+/* Rate limit simples por IP, em janela fixa. Não é para punir jogo normal
+   (o relay HTTP manda ~15 requisições por segundo por jogador): os limites
+   amplos servem de trava contra flood, e os apertados protegem as rotas
+   caras (criar sala, entrar na fila). */
+const rateBuckets = new Map();
+
+function clientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (typeof fwd === 'string' && fwd) return fwd.split(',')[0].trim();
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
+function rateLimit(bucket, limit, windowMs) {
+  const now = Date.now();
+  let entry = rateBuckets.get(bucket);
+  if (!entry || now >= entry.reset) {
+    entry = { count: 0, reset: now + windowMs };
+    rateBuckets.set(bucket, entry);
+  }
+  entry.count += 1;
+  return entry.count <= limit;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  rateBuckets.forEach((entry, key) => { if (now >= entry.reset) rateBuckets.delete(key); });
+}, 60000).unref();
+
+/* O nick chega do cliente e é repassado ao oponente (e aparece no painel do
+   servidor): tira caracteres de controle e de marcação, colapsa espaços e
+   limita o tamanho. */
+function sanitizeName(raw, fallback) {
+  const cleaned = String(raw == null ? '' : raw)
+    .replace(/[\u0000-\u001f\u007f<>]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 24);
+  return cleaned || fallback;
+}
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -94,12 +156,13 @@ function newRoom(name) {
     updated: Date.now(),
     seq: 0,
     peers: {
-      host: { token: crypto.randomBytes(16).toString('hex'), name: String(name || 'Host').slice(0, 24), since: Date.now() },
+      host: { token: crypto.randomBytes(16).toString('hex'), name: sanitizeName(name, 'Host'), since: Date.now() },
       guest: null
     },
     messages: { host: [], guest: [] },
     polls: { host: new Set(), guest: new Set() },
     sockets: { host: new Set(), guest: new Set() },
+    goneTimers: { host: null, guest: null },
     closed: false
   };
   rooms.set(code, room);
@@ -123,7 +186,9 @@ function sendJson(res, status, body) {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(data),
     'Cache-Control': 'no-store',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN'
   });
   res.end(data);
 }
@@ -181,6 +246,8 @@ function respondPoll(room, role, entry) {
 
 function closeRoom(room, reason) {
   if (!room) return;
+  cancelPeerGone(room, 'host');
+  cancelPeerGone(room, 'guest');
   room.closed = true;
   room.updated = Date.now();
   broadcastSockets(room, { closed: true, peers: peersInfo(room), reason: reason || 'left' });
@@ -201,6 +268,44 @@ function closeRoom(room, reason) {
     });
   });
   rooms.delete(room.code);
+}
+
+/* Um jogador pode sumir sem mandar /leave: aba morta, navegador travado,
+   queda de rede. Sem isso o adversário ficaria preso para sempre — a sala
+   não expira porque ele continua enviando snapshots e renovando o TTL.
+   Aqui a ausência de transporte (socket E long-poll) por alguns segundos
+   conta como saída, igual ao /leave. O valor fica acima da janela de
+   reconexão do cliente (NET_GRACE_MS = 12s) para não encerrar uma partida
+   que o próprio jogo ainda está tentando salvar. */
+const PEER_GONE_MS = 15000;
+
+function peerHasTransport(room, role) {
+  if (room.sockets[role] && room.sockets[role].size) return true;
+  if (room.polls[role] && room.polls[role].size) return true;
+  return false;
+}
+
+function cancelPeerGone(room, role) {
+  const timer = room && room.goneTimers && room.goneTimers[role];
+  if (timer) { clearTimeout(timer); room.goneTimers[role] = null; }
+}
+
+function schedulePeerCheck(room, role) {
+  if (!room || room.closed) return;
+  cancelPeerGone(room, role);
+  const timer = setTimeout(() => {
+    room.goneTimers[role] = null;
+    if (room.closed) return;
+    if (!room.peers[role]) return;            // já saiu via /leave
+    if (peerHasTransport(room, role)) return; // reconectou dentro da janela
+    room.peers[role] = null;
+    room.updated = Date.now();
+    broadcastSockets(room, { peers: peersInfo(room) });
+    if (role === 'host') closeRoom(room, 'host-gone');
+    else { flushPolls(room, 'host'); if (!room.peers.host) closeRoom(room, 'empty'); }
+  }, PEER_GONE_MS);
+  if (timer.unref) timer.unref();
+  room.goneTimers[role] = timer;
 }
 
 /* ------------------------------ WEBSOCKET ------------------------------- */
@@ -312,32 +417,32 @@ function matchmake(ticket) {
   return true;
 }
 
-/* --------------------- MATA-MATA SEMANAL (PvP ONLINE) ------------------ */
+/* --------------------- MATA-MATA DO MÊS (PvP ONLINE) ------------------- */
 /* Cada confronto da chave tem um slot (qf1..f1). O pareamento só acontece
    com os dois nomes da chave: um ticket declara o rival e o outro precisa
    declarar o primeiro. O resultado só é oficial quando os dois lados
    reportam, e lados opostos confirmam o vencedor. */
 const bracketQueue = new Map();   // ticket id -> entrada da fila do mata-mata
-const bracketRooms = new Map();   // code -> { slot, tokens, names, week, created }
+const bracketRooms = new Map();   // code -> { slot, tokens, names, period, created }
 const bracketResults = new Map(); // code -> { slot, reports, confirmed, winner, created }
-const bracketWeeks = new Map();   // week -> { created, seeds, frozenAt, winners }
+const bracketPeriods = new Map(); // mês "YYYY-MM" -> { created, seeds, frozenAt, winners }
 const BRACKET_RESULT_TTL_MS = 60 * 60 * 1000;
-const BRACKET_WEEK_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const BRACKET_PERIOD_TTL_MS = 60 * 24 * 60 * 60 * 1000;
 
 /* Estado da chave em disco: seeds congeladas e vencedores sobrevivem a um
    restart do processo. O disco do Render é efêmero (some a cada deploy),
-   mas o placar da semana não se perde num crash ou reinício simples. */
+   mas o placar do mês não se perde num crash ou reinício simples. */
 const BRACKET_DISK_FILE = path.join(ROOT, 'data', 'bracket-state.json');
 let bracketSaveTimer = null;
 
 function bracketDiskLoad() {
   try {
     const data = JSON.parse(fs.readFileSync(BRACKET_DISK_FILE, 'utf8'));
-    (Array.isArray(data.weeks) ? data.weeks : []).forEach(pair => {
-      const week = String((pair && pair[0]) || '');
+    (Array.isArray(data.periods) ? data.periods : []).forEach(pair => {
+      const period = String((pair && pair[0]) || '');
       const st = pair && pair[1];
-      if (!week || !st) return;
-      bracketWeeks.set(week, {
+      if (!period || !st) return;
+      bracketPeriods.set(period, {
         created: Number(st.created) || Date.now(),
         seeds: Array.isArray(st.seeds) ? st.seeds.map(String).slice(0, 8) : null,
         frozenAt: Number(st.frozenAt) || 0,
@@ -367,7 +472,7 @@ function bracketDiskWrite() {
     fs.mkdirSync(path.dirname(BRACKET_DISK_FILE), { recursive: true });
     const tmp = BRACKET_DISK_FILE + '.tmp';
     fs.writeFileSync(tmp, JSON.stringify({
-      weeks: Array.from(bracketWeeks.entries()),
+      periods: Array.from(bracketPeriods.entries()),
       results: Array.from(bracketResults.entries())
     }));
     fs.renameSync(tmp, BRACKET_DISK_FILE);
@@ -393,31 +498,28 @@ function bracketDiskFlush() {
   bracketDiskWrite();
 }
 
-/* Semana da chave ancorada na segunda-feira (UTC). É o servidor que manda:
-   o cliente adota a semana devolvida em vez de calcular a sua. */
-function bracketWeekKey(d = new Date()) {
-  const date = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const dow = (date.getUTCDay() + 6) % 7;
-  date.setUTCDate(date.getUTCDate() - dow);
-  const mm = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const dd = String(date.getUTCDate()).padStart(2, '0');
-  return `${date.getUTCFullYear()}-${mm}-${dd}`;
+/* Mês da chave no horário de Brasília (UTC-3). É o servidor que manda:
+   o cliente adota o mês devolvido em vez de calcular o seu. */
+function bracketPeriodKey(d = new Date()) {
+  const brt = new Date(d.getTime() - 3 * 60 * 60 * 1000);
+  const mm = String(brt.getUTCMonth() + 1).padStart(2, '0');
+  return `${brt.getUTCFullYear()}-${mm}`;
 }
 
-function bracketWeekStore(week) {
-  let st = bracketWeeks.get(week);
+function bracketPeriodStore(period) {
+  let st = bracketPeriods.get(period);
   if (!st) {
     st = { created: Date.now(), seeds: null, frozenAt: 0, winners: {} };
-    bracketWeeks.set(week, st);
+    bracketPeriods.set(period, st);
   }
   return st;
 }
 
-function bracketWeekPrune() {
+function bracketPeriodPrune() {
   const now = Date.now();
   let removed = false;
-  bracketWeeks.forEach((st, week) => {
-    if (now - st.created > BRACKET_WEEK_TTL_MS) { bracketWeeks.delete(week); removed = true; }
+  bracketPeriods.forEach((st, period) => {
+    if (now - st.created > BRACKET_PERIOD_TTL_MS) { bracketPeriods.delete(period); removed = true; }
   });
   return removed;
 }
@@ -438,7 +540,7 @@ function bracketPrune() {
   bracketResults.forEach((entry, code) => {
     if (now - entry.created > BRACKET_RESULT_TTL_MS) { bracketResults.delete(code); persisted = true; }
   });
-  if (bracketWeekPrune()) persisted = true;
+  if (bracketPeriodPrune()) persisted = true;
   if (persisted) bracketDiskSave();
 }
 
@@ -487,7 +589,7 @@ function bracketMatchmake(ticket) {
     slot: ticket.slot,
     tokens: { host: room.peers.host.token, guest: room.peers.guest.token },
     names: { host: room.peers.host.name, guest: room.peers.guest.name },
-    week: bracketWeekKey(),
+    period: bracketPeriodKey(),
     created: now
   });
   ticket.matched = { code: room.code, role: 'guest', token: room.peers.guest.token, peers: peersInfo(room), slot: ticket.slot };
@@ -551,7 +653,7 @@ function bracketObserveRelay(room, fromRole, msg) {
     entry.confirmed = true;
     entry.winner = winner;
     entry.source = 'match';
-    const st = bracketWeekStore(info.week || bracketWeekKey());
+    const st = bracketPeriodStore(info.period || bracketPeriodKey());
     const name = info.names && info.names[winner];
     if (name && !st.winners[info.slot]) st.winners[info.slot] = String(name);
     bracketDiskSave();
@@ -572,6 +674,14 @@ async function handleApi(req, res, url) {
     return res.end();
   }
 
+  // Trava global por IP contra flood. O limite é folgado de propósito: o
+  // relay HTTP pode mandar ~15 requisições por segundo por jogador. As rotas
+  // caras (criar sala, entrar na fila) têm limites apertados próprios.
+  const ip = clientIp(req);
+  if (!rateLimit('api:' + ip, 3000, 60000)) {
+    return sendJson(res, 429, { ok: false, error: 'rate-limited' });
+  }
+
   if (parts[1] === 'health' && req.method === 'GET') {
     return sendJson(res, 200, {
       ok: true,
@@ -589,9 +699,10 @@ async function handleApi(req, res, url) {
   }
 
   if (parts[1] === 'matchmaking' && parts[2] === 'join' && req.method === 'POST') {
+    if (!rateLimit('queue:' + ip, 20, 60000)) return sendJson(res, 429, { ok: false, error: 'rate-limited' });
     queuePrune();
     const body = await readBody(req);
-    const name = String(body.name || 'Jogador').trim().slice(0, 24) || 'Jogador';
+    const name = sanitizeName(body.name, 'Jogador');
     const ticket = {
       id: crypto.randomBytes(12).toString('hex'),
       name,
@@ -639,6 +750,7 @@ async function handleApi(req, res, url) {
         const room = rooms.get(entry.matched.code);
         const role = peerRole(room, entry.matched.token);
         if (room && !room.closed && role) {
+          cancelPeerGone(room, role);
           room.peers[role] = null;
           room.updated = Date.now();
           broadcastSockets(room, { peers: peersInfo(room) });
@@ -660,9 +772,9 @@ async function handleApi(req, res, url) {
   if (parts[1] === 'bracket' && parts[2] === 'state' && req.method === 'POST') {
     bracketPrune();
     const body = await readBody(req);
-    const week = bracketWeekKey();
-    const st = bracketWeekStore(week);
-    // O Top 8 é congelado pelo PRIMEIRO envio da semana; envios seguintes
+    const period = bracketPeriodKey();
+    const st = bracketPeriodStore(period);
+    // O Top 8 do mês é congelado pelo PRIMEIRO envio; envios seguintes
     // recebem a lista já congelada e não podem alterá-la.
     if (!st.seeds && Array.isArray(body.seeds)) {
       const seen = new Set();
@@ -682,7 +794,7 @@ async function handleApi(req, res, url) {
     }
     return sendJson(res, 200, {
       ok: true,
-      week,
+      period,
       seeds: st.seeds,
       frozenAt: st.frozenAt,
       winners: st.winners
@@ -690,6 +802,7 @@ async function handleApi(req, res, url) {
   }
 
   if (parts[1] === 'bracket' && parts[2] === 'join' && req.method === 'POST') {
+    if (!rateLimit('bracket:' + ip, 20, 60000)) return sendJson(res, 429, { ok: false, error: 'rate-limited' });
     bracketPrune();
     const body = await readBody(req);
     const slot = String(body.slot || '').trim().toLowerCase().slice(0, 8);
@@ -697,11 +810,11 @@ async function handleApi(req, res, url) {
     const name = String(body.name || '').trim().slice(0, 24) || 'Jogador';
     const opponent = String(body.opponent || '').trim().slice(0, 24);
     if (!opponent) return sendJson(res, 400, { ok: false, error: 'missing-opponent' });
-    // Só quem está no Top 8 congelado desta semana entra no mata-mata. O
+    // Só quem está no Top 8 congelado deste mês entra no mata-mata. O
     // servidor não confia na checagem do cliente: sem seeds congeladas ou
     // com o nome fora delas, o ticket não abre.
-    const weekSt = bracketWeeks.get(bracketWeekKey());
-    const seeds = weekSt && Array.isArray(weekSt.seeds) ? weekSt.seeds : null;
+    const periodSt = bracketPeriods.get(bracketPeriodKey());
+    const seeds = periodSt && Array.isArray(periodSt.seeds) ? periodSt.seeds : null;
     if (!seeds || seeds.length < 2) return sendJson(res, 409, { ok: false, error: 'seeds-not-frozen' });
     if (!seeds.some(s => String(s).trim().toLowerCase() === name.trim().toLowerCase())) {
       return sendJson(res, 403, { ok: false, error: 'not-qualified' });
@@ -753,6 +866,7 @@ async function handleApi(req, res, url) {
         const room = rooms.get(entry.matched.code);
         const role = peerRole(room, entry.matched.token);
         if (room && !room.closed && role) {
+          cancelPeerGone(room, role);
           room.peers[role] = null;
           room.updated = Date.now();
           broadcastSockets(room, { peers: peersInfo(room) });
@@ -794,6 +908,7 @@ async function handleApi(req, res, url) {
   }
 
   if (parts[1] === 'rooms' && parts.length === 2 && req.method === 'POST') {
+    if (!rateLimit('rooms:' + ip, 12, 60000)) return sendJson(res, 429, { ok: false, error: 'rate-limited' });
     const body = await readBody(req);
     const room = newRoom(body.name);
     return sendJson(res, 201, {
@@ -812,10 +927,11 @@ async function handleApi(req, res, url) {
     const body = await readBody(req);
     room.peers.guest = {
       token: crypto.randomBytes(16).toString('hex'),
-      name: String(body.name || 'Guest').slice(0, 24),
+      name: sanitizeName(body.name, 'Guest'),
       since: Date.now()
     };
     room.updated = Date.now();
+    cancelPeerGone(room, 'guest');
     flushPolls(room, 'host');
     broadcastSockets(room, { peers: peersInfo(room) });
     return sendJson(res, 200, {
@@ -829,6 +945,7 @@ async function handleApi(req, res, url) {
     const body = await readBody(req);
     const role = peerRole(room, body.token);
     if (!role) return sendJson(res, 403, { ok: false, error: 'invalid-token' });
+    cancelPeerGone(room, role);
     if (typeof body.data !== 'string' || !body.data) return sendJson(res, 400, { ok: false, error: 'missing-data' });
     // Oferta/resposta antigas viajam em base64 puro; o relay usa JSON.
     let msg = null;
@@ -843,6 +960,7 @@ async function handleApi(req, res, url) {
     const token = url.searchParams.get('token') || '';
     const role = peerRole(room, token);
     if (!role) return sendJson(res, 403, { ok: false, error: 'invalid-token' });
+    cancelPeerGone(room, role);
     const since = Number(url.searchParams.get('since') || 0) || 0;
     const entry = { res, role, since, done: false, timer: null };
     const pending = (room.messages[role] || []).some(m => m.seq > since);
@@ -866,6 +984,7 @@ async function handleApi(req, res, url) {
     const body = await readBody(req);
     const role = peerRole(room, body.token);
     if (!role) return sendJson(res, 403, { ok: false, error: 'invalid-token' });
+    cancelPeerGone(room, role);
     room.peers[role] = null;
     room.updated = Date.now();
     broadcastSockets(room, { peers: peersInfo(room) });
@@ -909,8 +1028,7 @@ function serveStatic(req, res, url) {
     const headers = {
       'Content-Type': type,
       'Cache-Control': cacheControl,
-      'X-Content-Type-Options': 'nosniff',
-      'Referrer-Policy': 'strict-origin-when-cross-origin'
+      ...SECURITY_HEADERS
     };
     // Marca no HTML que este host tem o servidor de salas. Em hospedagem
     // estática o cliente não tenta /api e cai direto nos códigos manuais.
@@ -982,6 +1100,7 @@ if (WebSocketServer) {
     wss.handleUpgrade(req, socket, head, ws => {
       room.sockets[role].add(ws);
       room.updated = Date.now();
+      cancelPeerGone(room, role);
       ws.isAlive = true;
       try { ws.send(JSON.stringify({ peers: peersInfo(room), role })); } catch (err) { /* ignore */ }
       drainQueue(room, role, ws);
@@ -995,6 +1114,8 @@ if (WebSocketServer) {
       ws.on('close', () => {
         room.sockets[role].delete(ws);
         room.updated = Date.now();
+        // Socket caiu: se o long-poll também não voltar, o jogador saiu.
+        schedulePeerCheck(room, role);
       });
       ws.on('error', () => {
         room.sockets[role].delete(ws);

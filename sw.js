@@ -1,4 +1,4 @@
-const CACHE = 'blast-royale-v1.18.4';
+const CACHE = 'blast-royale-v1.18.8';
 const APP_SHELL = [
   './',
   './index.html',
@@ -100,13 +100,21 @@ self.addEventListener('fetch', event => {
     return;
   }
 
+  // Terceiros: hoje só as fontes do Google. Só esses hosts são cacheados —
+  // e apenas quando a resposta é válida. Um servidor de sinalização em outro
+  // domínio (via ?server=) responde como CORS e nunca pode vir do cache, senão
+  // o multiplayer quebra; e uma página/bundle de erro nunca deve ser guardada.
+  const CROSS_ORIGIN_CACHE_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+  const cacheable = res => !!res && CROSS_ORIGIN_CACHE_HOSTS.includes(url.hostname) &&
+    (res.ok || res.type === 'opaque');
+
   event.respondWith(
     caches.match(req).then(hit => {
       const network = fetch(req)
         .then(res => {
-          if (res) {
+          if (cacheable(res)) {
             const copy = res.clone();
-            caches.open(CACHE).then(cache => cache.put(req, copy));
+            caches.open(CACHE).then(cache => cache.put(req, copy)).catch(() => {});
           }
           return res;
         })

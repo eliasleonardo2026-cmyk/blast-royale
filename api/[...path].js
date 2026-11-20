@@ -12,6 +12,14 @@ const ROOM_TTL = Number(process.env.ROOM_TTL_MINUTES || 120) * 60;
 // A fila guarda lotes de relay (~até 24 mensagens cada).
 const MAX_QUEUE = 240;
 const MAX_BODY = 256 * 1024;
+// Um jogador pode sumir sem mandar /leave (aba morta, crash, rede caindo).
+// No serverless não existe WebSocket para avisar da queda, então a liveness
+// vem das próprias requisições: cada /poll marca o papel como "visto" e, ao
+// atender um papel, o outro é considerado saído se ficou sem dar sinal por
+// PEER_GONE_MS. O valor fica acima da janela de reconexão do cliente
+// (NET_GRACE_MS = 12s) para não encerrar partida que o jogo ainda tenta salvar.
+const PEER_GONE_MS = 15000;
+const PEER_SEEN_TTL = 60;
 
 /* ------------------------------ armazenamento --------------------------- */
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || '').replace(/\/+$/, '');
@@ -82,6 +90,12 @@ async function delKeys(keys) {
   else keys.forEach(key => mem.delete(key));
 }
 
+async function getRaw(key) {
+  const raw = USE_REDIS ? await redis(['GET', key]) : memGet(key);
+  if (raw == null || raw === '') return null;
+  return String(raw);
+}
+
 async function nextSeq(code) {
   const key = 'br:s:' + code;
   if (USE_REDIS) {
@@ -129,6 +143,38 @@ async function listMessages(code, role) {
 /* --------------------------------- salas -------------------------------- */
 function metaKey(code) { return 'br:m:' + code; }
 function guestLockKey(code) { return 'br:g:' + code; }
+function seenKey(code, role) { return 'br:p:' + code + ':' + role; }
+
+async function touchSeen(code, role) {
+  try { await setRaw(seenKey(code, role), Date.now(), PEER_SEEN_TTL); }
+  catch (err) { /* liveness é best-effort: nunca derruba a requisição */ }
+}
+
+/* Dá por saído o outro papel se ele parou de dar sinal. Devolve true quando
+   houve mudança, para a resposta já refletir o novo estado. */
+async function reapStalePeer(code, room, selfRole) {
+  const other = selfRole === 'host' ? 'guest' : 'host';
+  if (!room.peers[other]) return false;
+  let seen = null;
+  try { seen = await getRaw(seenKey(code, other)); }
+  catch (err) { return false; }
+  const age = Date.now() - Number(seen);
+  if (Number.isFinite(age) && age < PEER_GONE_MS) return false;
+  room.peers[other] = null;
+  room.updated = Date.now();
+  if (other === 'host') {
+    room.closed = true;
+    await delKeys([
+      'br:q:' + code + ':host', 'br:q:' + code + ':guest',
+      guestLockKey(code), seenKey(code, 'host'), seenKey(code, 'guest')
+    ]);
+    await setJson(metaKey(code), room, 300);
+  } else {
+    await delKeys([guestLockKey(code), seenKey(code, 'guest')]);
+    await setJson(metaKey(code), room, ROOM_TTL);
+  }
+  return true;
+}
 
 function roomCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -265,6 +311,7 @@ async function handle(req, res, url) {
       };
       if (await setJson(metaKey(code), room, ROOM_TTL, true)) {
         await setRaw('br:s:' + code, 0, ROOM_TTL);
+        await touchSeen(code, 'host');
         created = room;
       }
     }
@@ -291,6 +338,7 @@ async function handle(req, res, url) {
     room.peers.guest = { token, name: String(body.name || 'Guest').slice(0, 24), since: Date.now() };
     room.updated = Date.now();
     await setJson(metaKey(code), room, ROOM_TTL);
+    await touchSeen(code, 'guest');
     return sendJson(res, 200, {
       ok: true, code, role: 'guest', token, peers: peersInfo(room)
     });
@@ -319,6 +367,10 @@ async function handle(req, res, url) {
     const token = url.searchParams.get('token') || '';
     const role = peerRole(room, token);
     if (!role) return sendJson(res, 403, { ok: false, error: 'invalid-token' });
+    await touchSeen(code, role);
+    // Se o outro lado sumiu sem /leave, a partida encerra aqui em vez de
+    // ficar travada para sempre esperando alguém que não volta.
+    await reapStalePeer(code, room, role);
     const since = Number(url.searchParams.get('since') || 0) || 0;
     const messages = (await listMessages(code, role)).filter(item => item.seq > since);
     const lastSeq = messages.length ? messages[messages.length - 1].seq : since;
@@ -343,11 +395,11 @@ async function handle(req, res, url) {
     if (role === 'host') {
       room.closed = true;
       room.peers.host = null;
-      await delKeys(['br:q:' + code + ':host', 'br:q:' + code + ':guest', guestLockKey(code)]);
+      await delKeys(['br:q:' + code + ':host', 'br:q:' + code + ':guest', guestLockKey(code), seenKey(code, 'host'), seenKey(code, 'guest')]);
       await setJson(metaKey(code), room, 300);
     } else {
       room.peers.guest = null;
-      await delKeys([guestLockKey(code)]);
+      await delKeys([guestLockKey(code), seenKey(code, 'guest')]);
       await setJson(metaKey(code), room, ROOM_TTL);
     }
     return sendJson(res, 200, { ok: true, other: role === 'host' ? 'guest' : 'host' });

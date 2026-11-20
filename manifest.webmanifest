@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Blast Royale — Tactical Bomb Arena",
   "short_name": "Blast Royale",
-  "description": "Battle royale tático de bombas: 12 lutadores, modos em equipe, multiplayer local e online, Chroma Drop e conquistas.",
+  "description": "Battle royale tático de bombas: 16 lutadores, modos em equipe, multiplayer local e online, Chroma Drop e conquistas.",
   "lang": "pt-BR",
   "dir": "ltr",
   "start_url": "./index.html",
