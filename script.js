@@ -92,6 +92,21 @@ const I18N = {
     quickMatchCancelled: "Busca cancelada.", quickMatchExpired: "A busca expirou. Tente de novo.",
     quickMatchUnavailable: "Busca rápida indisponível neste servidor.",
     quickMatchLeaveRoom: "Saia da sala atual antes de buscar partida.",
+    bracketInQuick: "Cancele a busca rápida antes de jogar a chave.",
+    quickMatchInBracket: "Você está na busca da chave. Cancele antes de buscar partida.",
+    bracketWaitRival: "⏳ {rival} também precisa tocar em Jogar a Chave.",
+    bracketSearching: "🔎 Procurando {rival}… {t}s",
+    bracketCancelSearch: "✖ CANCELAR BUSCA",
+    bracketFound: "⚔️ Adversário da chave encontrado! Conectando…",
+    bracketCancelled: "Busca da chave cancelada.",
+    bracketExpired: "A busca da chave expirou. Tente de novo.",
+    bracketLeaveRoom: "Saia da sala atual antes de jogar a chave.",
+    bracketUnavailable: "A chave online precisa do servidor de salas (indisponível aqui).",
+    bracketWaitConfirm: "⏳ Confirmando o resultado com o adversário…",
+    bracketConfirmedWin: "✅ Resultado confirmado: você avançou na chave!",
+    bracketConfirmedLoss: "❌ Resultado confirmado: você foi eliminado.",
+    bracketVoid: "⚠️ Resultados divergentes. O confronto foi anulado.",
+    bracketNoConfirm: "⚠️ O adversário não confirmou. A chave não avançou.",
     netRelay: "Conectado pelo servidor (relay)",
     hostRole: "Criar sala", guestRole: "Entrar na sala",
     createInvite: "1. Gerar convite", connectAnswer: "2. Conectar",
@@ -157,12 +172,12 @@ const I18N = {
     leagueNote: "Só partidas ONLINE PvP pontuam. Treinos contra bots não alteram esta tabela.",
     leagueOnlineHint: "🌐 Só partidas ONLINE PvP pontuam na Liga.",
     tabBracket: "TORNEIOS", tabBracketSub: "Semanal + Copa de domingo",
-    bracketHint: "Fase 1 (seg–qui): Liga ONLINE vale G8. Fase 2 (sex–sáb): mata-mata MD3 só para o Top 8.",
+    bracketHint: "Fase 1 (seg–qui): Liga ONLINE vale G8. Fase 2 (sex–sáb): mata-mata PvP ONLINE só para o Top 8.",
     champWeekly: "CAMPEONATO SEMANAL", champCopa: "COPA RELÂMPAGO",
-    weeklyPhase1: "FASE 1 • LIGA (SEG–QUI)", weeklyPhase2: "FASE 2 • MATA-MATA MD3 (SEX–SÁB)",
+    weeklyPhase1: "FASE 1 • LIGA (SEG–QUI)", weeklyPhase2: "FASE 2 • MATA-MATA ONLINE (SEX–SÁB)",
     weeklyPhaseClosed: "FASE ENCERRADA • COPA HOJE",
     weeklyPhase1Hint: "Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.",
-    weeklyPhase2Qualified: "Você está no G8. Chave eliminatória MD3 contra os 7 melhores.",
+    weeklyPhase2Qualified: "Você está no G8. Chave eliminatória PvP contra os 7 melhores.",
     weeklyPhase2NoQual: "Somente o Top 8 da Liga joga o mata-mata desta semana.",
     weeklyClosedHint: "O Campeonato Semanal reabre na segunda. Domingo é dia de Copa Relâmpago.",
     weeklyPhase1Lock: "🔒 FASE 1 • LIGA", weeklyClosedLock: "🔒 FASE ENCERRADA",
@@ -188,7 +203,7 @@ const I18N = {
     bracketSet: "📅 {d} • {t}", bracketTbd: "A definir", bracketProposed: "Proposta enviada: {d} às {t}",
     bracketAccepted: "Horário aceito! Confronto marcado.", bracketWaitingAccept: "Aguardando o adversário aceitar...",
     bracketCountdown: "⏳ {t}",
-    bracketPlayCta: "⚔️ JOGAR / ENTRAR NA SALA",
+    bracketPlayCta: "⚔️ JOGAR A CHAVE (ONLINE)",
     bracketWonLock: "✅ VITÓRIA • AGUARDE A PRÓXIMA FASE",
     bracketLostLock: "❌ ELIMINADO NESTA FASE",
     bracketAwaitRival: "⏳ AGUARDANDO ADVERSÁRIO",
@@ -337,6 +352,21 @@ const I18N = {
     quickMatchCancelled: "Search cancelled.", quickMatchExpired: "Search expired. Try again.",
     quickMatchUnavailable: "Quick match is unavailable on this server.",
     quickMatchLeaveRoom: "Leave the current room before searching for a match.",
+    bracketInQuick: "Cancel the quick match search before playing the bracket.",
+    quickMatchInBracket: "You are searching the bracket. Cancel it before searching a match.",
+    bracketWaitRival: "⏳ {rival} must also tap Play Bracket.",
+    bracketSearching: "🔎 Looking for {rival}… {t}s",
+    bracketCancelSearch: "✖ CANCEL SEARCH",
+    bracketFound: "⚔️ Bracket opponent found! Connecting…",
+    bracketCancelled: "Bracket search cancelled.",
+    bracketExpired: "Bracket search expired. Try again.",
+    bracketLeaveRoom: "Leave the current room before playing the bracket.",
+    bracketUnavailable: "The online bracket needs the room server (unavailable here).",
+    bracketWaitConfirm: "⏳ Confirming the result with your opponent…",
+    bracketConfirmedWin: "✅ Result confirmed: you advanced in the bracket!",
+    bracketConfirmedLoss: "❌ Result confirmed: you were eliminated.",
+    bracketVoid: "⚠️ Conflicting results. The match was voided.",
+    bracketNoConfirm: "⚠️ Your opponent did not confirm. The bracket did not advance.",
     netRelay: "Connected through the server (relay)",
     hostRole: "Create room", guestRole: "Join room",
     createInvite: "1. Create invite", connectAnswer: "2. Connect",
@@ -402,12 +432,12 @@ const I18N = {
     leagueNote: "Only ONLINE PvP matches score. Practice against bots never changes this table.",
     leagueOnlineHint: "🌐 Only ONLINE PvP matches score in the League.",
     tabBracket: "TOURNAMENTS", tabBracketSub: "Weekly + Sunday Cup",
-    bracketHint: "Phase 1 (Mon–Thu): ONLINE league ranks the G8. Phase 2 (Fri–Sat): MD3 knockout for the Top 8 only.",
+    bracketHint: "Phase 1 (Mon–Thu): ONLINE league ranks the G8. Phase 2 (Fri–Sat): ONLINE PvP knockout for the Top 8 only.",
     champWeekly: "WEEKLY CHAMPIONSHIP", champCopa: "FLASH CUP",
-    weeklyPhase1: "PHASE 1 • LEAGUE (MON–THU)", weeklyPhase2: "PHASE 2 • MD3 KNOCKOUT (FRI–SAT)",
+    weeklyPhase1: "PHASE 1 • LEAGUE (MON–THU)", weeklyPhase2: "PHASE 2 • ONLINE KNOCKOUT (FRI–SAT)",
     weeklyPhaseClosed: "PHASE CLOSED • CUP TODAY",
     weeklyPhase1Hint: "ONLINE points league: +3 PTS per win. The top 8 advance.",
-    weeklyPhase2Qualified: "You are in the G8. MD3 knockout against the top 7.",
+    weeklyPhase2Qualified: "You are in the G8. PvP knockout against the top 7.",
     weeklyPhase2NoQual: "Only the League Top 8 play this week's knockout.",
     weeklyClosedHint: "The Weekly Championship reopens on Monday. Sunday is Flash Cup day.",
     weeklyPhase1Lock: "🔒 PHASE 1 • LEAGUE", weeklyClosedLock: "🔒 PHASE CLOSED",
@@ -433,7 +463,7 @@ const I18N = {
     bracketSet: "📅 {d} • {t}", bracketTbd: "TBD", bracketProposed: "Proposal sent: {d} at {t}",
     bracketAccepted: "Time accepted! Match scheduled.", bracketWaitingAccept: "Waiting for the opponent to accept...",
     bracketCountdown: "⏳ {t}",
-    bracketPlayCta: "⚔️ PLAY / JOIN ROOM",
+    bracketPlayCta: "⚔️ PLAY BRACKET (ONLINE)",
     bracketWonLock: "✅ WIN • WAITING FOR NEXT ROUND",
     bracketLostLock: "❌ ELIMINATED THIS ROUND",
     bracketAwaitRival: "⏳ WAITING FOR OPPONENT",
@@ -3126,6 +3156,7 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   match.humanHeartsTaken = 0; match.selfKillEarly = false;
   match.localControls = (cfg.humans >= 2 && cfg.id !== 'ONLINE') ? ['p1', 'p2'] : ['p1'];
   match.myControl = 'p1';
+  match.bracketSlot = ''; match.bracketRival = '';
   if (cfg.id !== 'ONLINE') match.netRole = null;
   
   bombs = []; explosions = []; powerups = []; particles = []; floatingLabels = [];
@@ -4891,6 +4922,8 @@ function endMatch(win, isTeamMode = false, opts = {}) {
   if (endDoubleBtn) endDoubleBtn.classList.add('hidden');
   const endEventEl = document.getElementById('endEventLine');
   if (endEventEl) { endEventEl.textContent = ''; endEventEl.classList.add('hidden'); }
+  const endBracketEl = document.getElementById('endBracketLine');
+  if (endBracketEl) { endBracketEl.textContent = ''; endBracketEl.className = 'end-bracket hidden'; }
   const human = getHuman();
   const winner = fighters.find(f => f.alive) || null;
   const total = fighters.length;
@@ -4902,7 +4935,9 @@ function endMatch(win, isTeamMode = false, opts = {}) {
     ? !!win
     : (isTeamMode ? !!win : (!!winner && winner === human));
   const competitive = isCompetitiveEnd();
-  const league = match.mode === 'ONLINE' && (!!match.netRole || !!net.role);
+  // Confronto da chave não soma pontos de Liga: a tabela já definiu o G8 e
+  // o mata-mata é eliminatório (só troféus/estatísticas contam).
+  const league = match.mode === 'ONLINE' && (!!match.netRole || !!net.role) && !match.bracketSlot;
   const effort = competitive ? {
     roundsWon: match.mode === 'DUEL' ? (duel.wins[0] || 0) : 0,
     heartsTaken: match.mode === 'DUEL' ? (duel.heartsTaken || 0) : (match.humanHeartsTaken || 0),
@@ -5004,6 +5039,11 @@ function endMatch(win, isTeamMode = false, opts = {}) {
       GameState.setBracketResult(duel.bracketId, ownerWon ? 'won' : 'lost');
       duel.bracketId = null;
     }
+    // Mata-mata online: quem decide é o servidor, com confirmação dos dois
+    // jogadores. Até lá a chave local não avança.
+    if (match.mode === 'ONLINE' && match.bracketSlot) {
+      bracketReportResult(match.bracketSlot, ownerWon);
+    }
   }
   // Evento rotativo: 2 vitórias no mesmo ciclo de 3h pagam +35 moedas e
   // +25 XP (+50 na Hora do Passe). XP é fixo, sem multiplicador de missão.
@@ -5029,7 +5069,9 @@ function endMatch(win, isTeamMode = false, opts = {}) {
     updateEndXpLine();
   }
   updateEndLeagueLine(leagueSummary);
-  applyEndButtons(competitive, competitive && match.mode === 'ONLINE' && !!net.role);
+  // Revanche não existe em confronto eliminatório: repetir a partida não
+  // pode reabrir a chave já confirmada.
+  applyEndButtons(competitive, competitive && match.mode === 'ONLINE' && !!net.role && !match.bracketSlot);
   // Dobrar a recompensa: só vitória ONLINE 1v1 válida, 2x por dia.
   if (endDoubleBtn && shouldRecord && ownerWon && match.mode === 'ONLINE' && league) {
     const st = GameState.adStatus('double');
@@ -6121,13 +6163,16 @@ function bracketCardHtml(m) {
     : '';
   let action;
   if (mine) {
-    if (result === 'won') {
+    if (bracketDuel.polling && bracketDuel.slot === m.id) {
+      action = `<span class="bracket-locked" id="bracketDuelStatus"></span>
+       <button type="button" class="bracket-btn" data-bracket-cancel="${m.id}">${dict.bracketCancelSearch || '✖ CANCELAR BUSCA'}</button>`;
+    } else if (result === 'won') {
       action = `<span class="bracket-locked">${dict.bracketWonLock || '✅ VITÓRIA • AGUARDE A PRÓXIMA FASE'}</span>
        <button type="button" class="bracket-btn" data-schedule="${m.id}">${dict.bracketSchedule || '📅 AGENDAR'}</button>`;
     } else if (result === 'lost') {
       action = `<span class="bracket-locked">${dict.bracketLostLock || '❌ ELIMINADO NESTA FASE'}</span>`;
     } else if (canPlay) {
-      action = `<button type="button" class="bracket-btn play" data-bracket-play="${m.id}">${dict.bracketPlayCta || '⚔️ JOGAR / ENTRAR NA SALA'}</button>
+      action = `<button type="button" class="bracket-btn play" data-bracket-play="${m.id}">${dict.bracketPlayCta || '⚔️ JOGAR A CHAVE (ONLINE)'}</button>
        <button type="button" class="bracket-btn" data-schedule="${m.id}">${dict.bracketSchedule || '📅 AGENDAR'}</button>`;
     } else {
       const lockText = rivalTbd && phase === 'knockout' && weeklyQualified()
@@ -6169,7 +6214,7 @@ function renderBracket() {
     phaseEl.textContent = phase === 'qualifying'
       ? (dict.weeklyPhase1 || 'FASE 1 • LIGA (SEG–QUI)')
       : phase === 'knockout'
-        ? (dict.weeklyPhase2 || 'FASE 2 • MATA-MATA MD3 (SEX–SÁB)')
+        ? (dict.weeklyPhase2 || 'FASE 2 • MATA-MATA ONLINE (SEX–SÁB)')
         : (dict.weeklyPhaseClosed || 'FASE ENCERRADA • COPA HOJE');
   }
   const hintEl = document.getElementById('weeklyPhaseHint');
@@ -6179,7 +6224,7 @@ function renderBracket() {
       ? `${dict.weeklyPhase1Hint || 'Liga ONLINE de pontos corridos: +3 PTS por vitória. Os 8 primeiros avançam.'} • ${g8}`
       : phase === 'knockout'
         ? (qualified
-          ? (dict.weeklyPhase2Qualified || 'Você está no G8. Chave eliminatória MD3 contra os 7 melhores.')
+          ? (dict.weeklyPhase2Qualified || 'Você está no G8. Chave eliminatória PvP contra os 7 melhores.')
           : (dict.weeklyPhase2NoQual || 'Somente o Top 8 da Liga joga o mata-mata desta semana.')) + ` • ${g8}`
         : (dict.weeklyClosedHint || 'O Campeonato Semanal reabre na segunda. Domingo é dia de Copa Relâmpago.');
   }
@@ -6241,9 +6286,10 @@ function refreshLobbyHeader() {
   renderLobbyLiveBanner();
 }
 
-function startBracketMatch(id) {
+async function startBracketMatch(id) {
   const dict = I18N[currentLang] || {};
   if (!hasCompetitiveNick()) { openNickGate(() => startBracketMatch(id)); return; }
+  if (bracketDuel.polling) return;
   if (weeklyPhase() !== 'knockout') {
     showToast(dict.weeklyLocked || '🔒 O mata-mata abre sexta-feira.');
     return;
@@ -6252,19 +6298,18 @@ function startBracketMatch(id) {
     showToast(dict.weeklyNotQualified || 'Você ainda não está no G8 da Liga.');
     return;
   }
+  if (netServer.code) { showToast(dict.bracketLeaveRoom || 'Saia da sala atual antes de jogar a chave.'); return; }
+  if (matchmaking.polling) { showToast(dict.bracketInQuick || 'Cancele a busca rápida antes de jogar a chave.'); return; }
   const m = bracketList().find(x => x.id === id);
-  if (!m || !(m.aMe || m.bMe)) return;
+  if (!m || !(m.aMe || m.bMe) || m.result) return;
   const rival = m.aMe ? m.b : m.a;
-  SFX.init();
-  UI.startScreen.classList.add('hidden');
-  UI.hud.classList.remove('hidden');
-  setSelectedMode('DUEL');
-  duel.forcedOpponent = rival || null;
-  startDuelSeries(3, 'bracket');
-  // Guarda o confronto para registrar vitória/derrota e impedir que o
-  // mesmo jogo do mata-mata seja rejogado infinitas vezes.
-  duel.bracketId = id;
-  showToast(`⚔️ ${GameState.state.profile.nick || 'P1'} × ${rival}`);
+  const tbd = dict.bracketTbd || 'A definir';
+  if (!rival || rival === tbd) return;
+  if (!(await netServerCheck())) { showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.'); return; }
+  if (netServer.serverless) { showToast(dict.bracketUnavailable || 'A chave online precisa do servidor de salas.'); return; }
+  // O confronto é PvP online de verdade: pareia com o adversário da chave e
+  // só avança quando o resultado é confirmado pelos dois lados.
+  bracketDuelSearch(id, rival);
 }
 
 let champTab = 'weekly';
@@ -7275,6 +7320,8 @@ function bindUI() {
     if (who) { openPlayerStatsModal(who.dataset.player); return; }
     const play = e.target.closest('[data-bracket-play]');
     if (play) { startBracketMatch(play.dataset.bracketPlay); return; }
+    const cancelBracket = e.target.closest('[data-bracket-cancel]');
+    if (cancelBracket) { bracketDuelCancel(); return; }
     const watch = e.target.closest('[data-watch]');
     if (watch) {
       const m = bracketList().find(x => x.id === watch.dataset.watch);
@@ -7921,6 +7968,7 @@ const netServer = {
   available: false, checked: false, serverless: false, code: '', token: '', role: null,
   since: 0, polling: false, pollAbort: null, busy: false, roomToken: '',
   quick: false,
+  bracketSlot: '', bracketRival: '',
   peers: { host: false, guest: false },
   ws: null, wsWanted: false, wsTries: 0
 };
@@ -8801,6 +8849,8 @@ async function netServerLeave(silent = false) {
   netServer.since = 0;
   netServer.busy = false;
   netServer.quick = false;
+  netServer.bracketSlot = '';
+  netServer.bracketRival = '';
   quickMatchStatus('');
   if (code && token) {
     try {
@@ -8899,16 +8949,18 @@ async function quickMatchCancel(silent = false) {
   if (!silent) showToast(dict.quickMatchCancelled || 'Busca cancelada.');
 }
 
-function quickMatchEnter(room) {
+function quickMatchEnter(room, meta = {}) {
   const dict = netServerDict();
-  quickMatchStop((dict.quickMatchFound || 'Partida encontrada! Conectando…'));
+  quickMatchStop(meta.foundText || (dict.quickMatchFound || 'Partida encontrada! Conectando…'));
   netServerStopPoll();
   netServer.code = room.code;
   netServer.token = room.token;
   netServer.role = room.role === 'guest' ? 'guest' : 'host';
   netServer.since = 0;
   netServer.peers = room.peers || { host: true, guest: true };
-  netServer.quick = true;
+  netServer.quick = !meta.slot;
+  netServer.bracketSlot = meta.slot || '';
+  netServer.bracketRival = meta.rival || '';
   net.role = netServer.role;
   netServerUI();
   netServerHint(netServer.role === 'guest' ? 'serverWaitOffer' : 'serverWaitGuest');
@@ -8954,6 +9006,7 @@ async function quickMatchSearch() {
   const dict = netServerDict();
   if (matchmaking.polling) { quickMatchCancel(); return; }
   if (!hasCompetitiveNick()) { openNickGate(quickMatchSearch); return; }
+  if (bracketDuel.polling) { showToast(dict.quickMatchInBracket || 'Você está na busca da chave. Cancele antes de buscar partida.'); return; }
   if (netServer.code) { showToast(dict.quickMatchLeaveRoom || ''); return; }
   if (!(await netServerCheck())) { showToast(dict.serverErrorMsg || ''); return; }
   if (netServer.serverless) { showToast(dict.quickMatchUnavailable || ''); return; }
@@ -8981,12 +9034,160 @@ async function quickMatchSearch() {
   }
 }
 
+/* ---------- Mata-mata semanal: PvP online com resultado confirmado ---------- */
+/* O pareamento acontece por confronto da chave (qf1..f1) e o servidor só
+   junta os dois jogadores se cada um declarar o outro como adversário.
+   O confronto só avança quando OS DOIS lados reportam o resultado. */
+const bracketDuel = { ticket: '', polling: false, slot: '', rival: '', startedAt: 0, tick: null };
+
+function bracketDuelTick() {
+  const el = document.getElementById('bracketDuelStatus');
+  if (!el || !bracketDuel.polling) return;
+  const dict = netServerDict();
+  const secs = Math.round((Date.now() - bracketDuel.startedAt) / 1000);
+  el.textContent = (dict.bracketSearching || '🔎 Procurando {rival}… {t}s')
+    .replace('{rival}', bracketDuel.rival || '?').replace('{t}', secs);
+}
+
+function bracketDuelStop() {
+  bracketDuel.polling = false;
+  bracketDuel.ticket = '';
+  bracketDuel.slot = '';
+  bracketDuel.rival = '';
+  clearInterval(bracketDuel.tick);
+  bracketDuel.tick = null;
+}
+
+async function bracketDuelCancel(silent = false) {
+  const ticket = bracketDuel.ticket;
+  const dict = netServerDict();
+  if (!ticket && !bracketDuel.polling) return;
+  bracketDuelStop();
+  renderBracket();
+  if (ticket) {
+    try {
+      await fetch(netApiUrl('/api/bracket/leave'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticket }),
+        cache: 'no-store',
+        keepalive: true
+      });
+    } catch (e) { /* o servidor descarta o ticket ocioso */ }
+  }
+  if (!silent) showToast(dict.bracketCancelled || 'Busca da chave cancelada.');
+}
+
+function bracketDuelEnter(room) {
+  const dict = netServerDict();
+  const slot = bracketDuel.slot;
+  const rival = bracketDuel.rival;
+  bracketDuelStop();
+  renderBracket();
+  quickMatchEnter(room, { slot, rival, foundText: dict.bracketFound || '⚔️ Adversário da chave encontrado! Conectando…' });
+}
+
+async function bracketDuelPollLoop() {
+  const dict = netServerDict();
+  while (bracketDuel.polling && bracketDuel.ticket) {
+    const ticket = bracketDuel.ticket;
+    let data = null;
+    try {
+      data = await netApi('/api/bracket/poll', { ticket }, 'POST', 14000);
+    } catch (err) {
+      if (!bracketDuel.polling || bracketDuel.ticket !== ticket) return;
+      if (err.status === 410) {
+        bracketDuelStop();
+        renderBracket();
+        showToast(dict.bracketExpired || 'A busca da chave expirou. Tente de novo.');
+        return;
+      }
+      await new Promise(r => setTimeout(r, 1500));
+      continue;
+    }
+    if (!bracketDuel.polling || bracketDuel.ticket !== ticket) return;
+    if (data.state === 'matched' && data.room) { bracketDuelEnter(data.room); return; }
+  }
+}
+
+async function bracketDuelSearch(slot, rival) {
+  const dict = netServerDict();
+  const name = String(GameState.state.profile.nick || '').trim().slice(0, 24);
+  bracketDuel.polling = true;
+  bracketDuel.slot = slot;
+  bracketDuel.rival = rival;
+  bracketDuel.startedAt = Date.now();
+  clearInterval(bracketDuel.tick);
+  bracketDuel.tick = setInterval(bracketDuelTick, 1000);
+  renderBracket();
+  bracketDuelTick();
+  showToast((dict.bracketWaitRival || '⏳ {rival} também precisa tocar em Jogar a Chave.').replace('{rival}', rival));
+  try {
+    const data = await netApi('/api/bracket/join', { slot, name, opponent: rival });
+    if (!bracketDuel.polling || bracketDuel.slot !== slot) return;
+    bracketDuel.ticket = data.ticket || '';
+    if (data.state === 'matched' && data.room) { bracketDuelEnter(data.room); return; }
+    bracketDuelPollLoop();
+  } catch (err) {
+    bracketDuelStop();
+    renderBracket();
+    showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.');
+  }
+}
+
+/* Publica o resultado da partida e espera a confirmação do adversário.
+   Só grava a vitória/derrota da chave quando o servidor confirma. */
+async function bracketReportResult(slot, won) {
+  const dict = netServerDict();
+  const note = document.getElementById('endBracketLine');
+  const mark = (text, tone) => {
+    if (!note) return;
+    note.textContent = text;
+    note.className = `end-bracket ${tone || ''}`.trim();
+    note.classList.remove('hidden');
+  };
+  const code = netServer.code;
+  const token = netServer.token;
+  const role = netServer.role || net.role;
+  if (!code || !token || !role) {
+    mark(dict.bracketNoConfirm || '⚠️ O adversário não confirmou. A chave não avançou.', 'warn');
+    return;
+  }
+  mark(dict.bracketWaitConfirm || '⏳ Confirmando o resultado com o adversário…', 'wait');
+  try {
+    await netApi('/api/bracket/report', { code, token, won: !!won }, 'POST', 8000);
+  } catch (err) { /* a consulta abaixo ainda pode encontrar o resultado */ }
+  for (let i = 0; i < 10; i++) {
+    let data = null;
+    try { data = await netApi('/api/bracket/result', { code, token }, 'POST', 8000); } catch (err) { data = null; }
+    if (data && data.confirmed) {
+      if (!data.winner) { mark(dict.bracketVoid || '⚠️ Resultados divergentes. O confronto foi anulado.', 'warn'); return; }
+      const advanced = data.winner === role;
+      GameState.setBracketResult(slot, advanced ? 'won' : 'lost');
+      mark(advanced
+        ? (dict.bracketConfirmedWin || '✅ Resultado confirmado: você avançou na chave!')
+        : (dict.bracketConfirmedLoss || '❌ Resultado confirmado: você foi eliminado.'),
+        advanced ? 'win' : 'loss');
+      renderBracket();
+      return;
+    }
+    await new Promise(r => setTimeout(r, 1500));
+  }
+  mark(dict.bracketNoConfirm || '⚠️ O adversário não confirmou. A chave não avançou.', 'warn');
+}
+
 // Fecha a sala no servidor se o jogador fechar/recarregar a aba antes da partida.
 window.addEventListener('pagehide', () => {
   if (matchmaking.ticket) {
     try {
       const body = new Blob([JSON.stringify({ ticket: matchmaking.ticket })], { type: 'application/json' });
       navigator.sendBeacon(netApiUrl('/api/matchmaking/leave'), body);
+    } catch (e) { /* o TTL do servidor limpa depois */ }
+  }
+  if (bracketDuel.ticket) {
+    try {
+      const body = new Blob([JSON.stringify({ ticket: bracketDuel.ticket })], { type: 'application/json' });
+      navigator.sendBeacon(netApiUrl('/api/bracket/leave'), body);
     } catch (e) { /* o TTL do servidor limpa depois */ }
   }
   if (!netServer.code || !netServer.token) return;
@@ -9278,6 +9479,8 @@ function netStartHostMatch() {
   net.lastReceive = performance.now();
   initArena(false, 'ONLINE', selectedMap);
   match.netRole = 'host'; match.myControl = 'p1'; match.localControls = ['p1'];
+  match.bracketSlot = netServer.bracketSlot || '';
+  match.bracketRival = netServer.bracketRival || '';
   netUpdateBadge();
 }
 
@@ -9290,6 +9493,8 @@ function netStartGuestMatch() {
   net.lastReceive = performance.now();
   initArena(false, 'ONLINE', selectedMap);
   match.netRole = 'guest'; match.myControl = 'p1'; match.localControls = ['p1'];
+  match.bracketSlot = netServer.bracketSlot || '';
+  match.bracketRival = netServer.bracketRival || '';
   netUpdateBadge();
 }
 

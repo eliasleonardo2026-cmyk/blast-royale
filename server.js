@@ -311,6 +311,112 @@ function matchmake(ticket) {
   return true;
 }
 
+/* --------------------- MATA-MATA SEMANAL (PvP ONLINE) ------------------ */
+/* Cada confronto da chave tem um slot (qf1..f1). O pareamento só acontece
+   com os dois nomes da chave: um ticket declara o rival e o outro precisa
+   declarar o primeiro. O resultado só é oficial quando os dois lados
+   reportam, e lados opostos confirmam o vencedor. */
+const bracketQueue = new Map();   // ticket id -> entrada da fila do mata-mata
+const bracketRooms = new Map();   // code -> { slot, tokens: {host, guest}, created }
+const bracketResults = new Map(); // code -> { slot, reports, confirmed, winner, created }
+const BRACKET_RESULT_TTL_MS = 60 * 60 * 1000;
+
+function bracketPrune() {
+  const now = Date.now();
+  bracketQueue.forEach((entry, id) => {
+    if (entry.matched) {
+      if (now - entry.matchedAt > MATCH_TTL_MS) bracketQueue.delete(id);
+    } else if (now - entry.lastSeen > QUEUE_STALE_MS) {
+      bracketQueue.delete(id);
+    }
+  });
+  bracketRooms.forEach((entry, code) => {
+    if (now - entry.created > BRACKET_RESULT_TTL_MS) bracketRooms.delete(code);
+  });
+  bracketResults.forEach((entry, code) => {
+    if (now - entry.created > BRACKET_RESULT_TTL_MS) bracketResults.delete(code);
+  });
+}
+
+function bracketPayload(entry) {
+  if (entry.matched) return { ok: true, state: 'matched', room: entry.matched };
+  return {
+    ok: true,
+    state: 'waiting',
+    slot: entry.slot,
+    waited: Math.round((Date.now() - entry.since) / 1000)
+  };
+}
+
+function bracketFlush(entry) {
+  if (!entry || !entry.waiters) return;
+  const list = Array.from(entry.waiters);
+  entry.waiters.clear();
+  list.forEach(w => {
+    if (w.done) return;
+    w.done = true;
+    clearTimeout(w.timer);
+    try { sendJson(w.res, 200, bracketPayload(entry)); } catch (err) { /* cliente saiu */ }
+  });
+}
+
+function bracketMatchmake(ticket) {
+  const now = Date.now();
+  const mine = ticket.name.toLowerCase();
+  const rival = String(ticket.opponent || '').toLowerCase();
+  if (!rival || rival === mine) return false;
+  const other = Array.from(bracketQueue.values()).find(e =>
+    e !== ticket && !e.matched && e.slot === ticket.slot &&
+    now - e.lastSeen < QUEUE_STALE_MS &&
+    e.name.toLowerCase() === rival &&
+    String(e.opponent || '').toLowerCase() === mine
+  );
+  if (!other) return false;
+  const room = newRoom(other.name);
+  room.bracketSlot = ticket.slot;
+  room.peers.guest = {
+    token: crypto.randomBytes(16).toString('hex'),
+    name: ticket.name,
+    since: now
+  };
+  bracketRooms.set(room.code, {
+    slot: ticket.slot,
+    tokens: { host: room.peers.host.token, guest: room.peers.guest.token },
+    created: now
+  });
+  ticket.matched = { code: room.code, role: 'guest', token: room.peers.guest.token, peers: peersInfo(room), slot: ticket.slot };
+  other.matched = { code: room.code, role: 'host', token: room.peers.host.token, peers: peersInfo(room), slot: ticket.slot };
+  ticket.matchedAt = other.matchedAt = now;
+  bracketFlush(other);
+  bracketFlush(ticket);
+  return true;
+}
+
+function bracketResultPayload(code) {
+  const entry = bracketResults.get(code);
+  if (!entry) return { ok: true, confirmed: false, winner: null, reports: { host: null, guest: null } };
+  return {
+    ok: true,
+    confirmed: !!entry.confirmed,
+    winner: entry.winner || null,
+    slot: entry.slot,
+    reports: {
+      host: entry.reports.host ? !!entry.reports.host.won : null,
+      guest: entry.reports.guest ? !!entry.reports.guest.won : null
+    }
+  };
+}
+
+/* Devolve o papel (host/guest) de quem está chamando, mesmo que a sala já
+   tenha sido fechada (o resultado não pode se perder por causa disso). */
+function bracketRoleOf(code, token) {
+  const info = bracketRooms.get(code);
+  if (!info || !token) return null;
+  if (info.tokens.host === token) return 'host';
+  if (info.tokens.guest === token) return 'guest';
+  return null;
+}
+
 /* ------------------------------- ROTAS -------------------------------- */
 async function handleApi(req, res, url) {
   const parts = url.pathname.split('/').filter(Boolean); // api, rooms, CODE, action
@@ -407,6 +513,111 @@ async function handleApi(req, res, url) {
       queue.delete(entry.id);
     }
     return sendJson(res, 200, { ok: true });
+  }
+
+  if (parts[1] === 'bracket' && parts[2] === 'join' && req.method === 'POST') {
+    bracketPrune();
+    const body = await readBody(req);
+    const slot = String(body.slot || '').trim().toLowerCase().slice(0, 8);
+    if (!/^[a-z0-9]{2,8}$/.test(slot)) return sendJson(res, 400, { ok: false, error: 'bad-slot' });
+    const name = String(body.name || '').trim().slice(0, 24) || 'Jogador';
+    const opponent = String(body.opponent || '').trim().slice(0, 24);
+    if (!opponent) return sendJson(res, 400, { ok: false, error: 'missing-opponent' });
+    const ticket = {
+      id: crypto.randomBytes(12).toString('hex'),
+      slot,
+      name,
+      opponent,
+      since: Date.now(),
+      lastSeen: Date.now(),
+      matched: null,
+      matchedAt: 0,
+      waiters: new Set()
+    };
+    bracketQueue.set(ticket.id, ticket);
+    bracketMatchmake(ticket);
+    return sendJson(res, 200, Object.assign({ ticket: ticket.id }, bracketPayload(ticket)));
+  }
+
+  if (parts[1] === 'bracket' && parts[2] === 'poll' && req.method === 'POST') {
+    bracketPrune();
+    const body = await readBody(req);
+    const entry = bracketQueue.get(String(body.ticket || ''));
+    if (!entry) return sendJson(res, 410, { ok: false, error: 'ticket-expired' });
+    entry.lastSeen = Date.now();
+    if (entry.matched) return sendJson(res, 200, bracketPayload(entry));
+    const waiter = { res, done: false, timer: null };
+    entry.waiters.add(waiter);
+    waiter.timer = setTimeout(() => {
+      entry.waiters.delete(waiter);
+      if (waiter.done) return;
+      waiter.done = true;
+      try { sendJson(res, 200, bracketPayload(entry)); } catch (err) { /* cliente saiu */ }
+    }, POLL_TIMEOUT_MS);
+    req.on('close', () => {
+      waiter.done = true;
+      clearTimeout(waiter.timer);
+      entry.waiters.delete(waiter);
+    });
+    return;
+  }
+
+  if (parts[1] === 'bracket' && parts[2] === 'leave' && req.method === 'POST') {
+    const body = await readBody(req);
+    const entry = bracketQueue.get(String(body.ticket || ''));
+    if (entry) {
+      if (entry.matched) {
+        const room = rooms.get(entry.matched.code);
+        const role = peerRole(room, entry.matched.token);
+        if (room && !room.closed && role) {
+          room.peers[role] = null;
+          room.updated = Date.now();
+          broadcastSockets(room, { peers: peersInfo(room) });
+          if (role === 'host') closeRoom(room, 'host-left');
+          else { flushPolls(room, 'host'); if (!room.peers.host) closeRoom(room, 'empty'); }
+        }
+      }
+      entry.waiters.forEach(waiter => {
+        if (waiter.done) return;
+        waiter.done = true;
+        clearTimeout(waiter.timer);
+        try { sendJson(waiter.res, 200, { ok: true, state: 'left' }); } catch (err) { /* ignore */ }
+      });
+      bracketQueue.delete(entry.id);
+    }
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (parts[1] === 'bracket' && parts[2] === 'report' && req.method === 'POST') {
+    bracketPrune();
+    const body = await readBody(req);
+    const code = String(body.code || '').toUpperCase();
+    const role = bracketRoleOf(code, String(body.token || ''));
+    if (!role) return sendJson(res, 404, { ok: false, error: 'match-not-found' });
+    let entry = bracketResults.get(code);
+    if (!entry) {
+      entry = { slot: bracketRooms.get(code).slot, reports: {}, confirmed: false, winner: null, created: Date.now() };
+      bracketResults.set(code, entry);
+    }
+    entry.reports[role] = { won: !!body.won, ts: Date.now() };
+    if (!entry.confirmed && entry.reports.host && entry.reports.guest) {
+      const h = !!entry.reports.host.won;
+      const g = !!entry.reports.guest.won;
+      entry.confirmed = true;
+      // Resultados iguais (os dois dizem que venceram) anulam o confronto.
+      entry.winner = h === g ? null : (h ? 'host' : 'guest');
+    }
+    return sendJson(res, 200, bracketResultPayload(code));
+  }
+
+  if (parts[1] === 'bracket' && parts[2] === 'result' && req.method === 'POST') {
+    bracketPrune();
+    const body = await readBody(req);
+    const code = String(body.code || '').toUpperCase();
+    if (!bracketRoleOf(code, String(body.token || ''))) {
+      return sendJson(res, 404, { ok: false, error: 'match-not-found' });
+    }
+    return sendJson(res, 200, bracketResultPayload(code));
   }
 
   if (parts[1] === 'rooms' && parts.length === 2 && req.method === 'POST') {
@@ -633,6 +844,7 @@ setInterval(() => {
     if (now - room.updated > ROOM_TTL_MS) closeRoom(room, 'expired');
   });
   queuePrune();
+  bracketPrune();
 }, 60 * 1000).unref();
 
 server.listen(PORT, HOST, () => {

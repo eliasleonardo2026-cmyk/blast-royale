@@ -238,7 +238,9 @@ async function handle(req, res, url) {
 
   // A fila pública vive na memória de um processo único; no modo serverless
   // cada requisição pode cair em uma instância diferente.
-  if (parts[1] === 'matchmaking') {
+  if (parts[1] === 'matchmaking' || parts[1] === 'bracket') {
+    // Fila e resultado da chave vivem em memória: sem estado compartilhado
+    // entre invocações serverless não há como parear/confirmar.
     return sendJson(res, 501, { ok: false, error: 'matchmaking-unavailable' });
   }
 
