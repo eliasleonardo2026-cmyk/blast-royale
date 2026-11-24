@@ -37,6 +37,26 @@ O projeto já vem com `render.yaml`.
    É esse link que você manda para os amigos. Confira a URL exata no topo da
    página do serviço no Render (o nome do serviço pode ganhar um sufixo).
 
+### Configurar TURN no Render (para P2P em redes 4G/CGNAT)
+
+Depois de criar o serviço no Render:
+
+1. Crie uma conta em um provedor de TURN grátis (ex.: <https://metered.ca>) e anote `urls`, `username` e `credential`.
+2. No painel do Render, abra seu serviço **blast-royale**.
+3. Vá em **Environment** → **Add Environment Variable**.
+4. Adicione estas três variáveis (uma por vez):
+
+   | Key | Value |
+   |-----|-------|
+   | `TURN_URL` | `turn:seu-servidor-de-turn.com:3478` |
+   | `TURN_USERNAME` | `seu_usuario_turn` |
+   | `TURN_CREDENTIAL` | `sua_senha_turn` |
+
+5. Clique em **Save Changes**. O Render reinicia o serviço automaticamente.
+6. Confirme em `https://SEU-LINK.onrender.com/api/ice` que a lista de TURN aparece.
+
+Alternativamente, edite o `render.yaml` e descomente as linhas de `TURN_URL`, `TURN_USERNAME` e `TURN_CREDENTIAL` com seus valores reais, então faça um novo `git push` (o autoDeploy do Render sobe sozinho).
+
 ### Atenção ao plano free
 - O serviço **dorme após ~15 minutos sem acesso**. O primeiro acesso depois disso
   demora ~30–60 s (aparece “carregando”).
@@ -164,25 +184,103 @@ os amigos sem mexer nisso, Render/Railway/Fly são mais diretos.
 
 ---
 
-## TURN (importante para jogar pela internet)
+## TURN (essencial para jogar pela internet)
 
 Sem TURN, algumas redes (4G, Wi-Fi corporativo, CGNAT) bloqueiam a conexão P2P
-mesmo com o servidor funcionando. Configurar um TURN melhora muito a taxa de
-sucesso.
+mesmo com o servidor funcionando. O jogo tem **relay automático** (cai para o
+servidor se o P2P não abrir), mas o relay tem latência maior e consome banda do
+servidor. Um TURN real mantém o **P2P** funcionando nessas redes, com menor
+latência.
 
-No painel da hospedagem, adicione as variáveis:
+### Como configurar
+
+No painel da sua hospedagem (Render, Railway, Fly, VPS), adicione as variáveis
+de ambiente:
 
 ```text
-TURN_URL=turn:seu-servidor:3478
-TURN_USERNAME=usuario
-TURN_CREDENTIAL=senha
+TURN_URL=turn:seu-servidor.com:3478
+TURN_USERNAME=blast_turn_user
+TURN_CREDENTIAL=uma_senha_forte_aqui
 ```
 
-Ou a lista completa em `ICE_SERVERS` (JSON). O cliente pega isso sozinho em
-`/api/health`.
+Ou passe a lista ICE completa em uma única variável:
 
-Se quiser um TURN gerenciado: Metered, Twilio Network Traversal, Cloudflare
-Calls (TURN). Todos têm plano gratuito limitado.
+```text
+ICE_SERVERS='[{"urls":"turn:turn.seu-servidor.com:3478","username":"u","credential":"p"},{"urls":"stun:stun.l.google.com:19302"}]'
+```
+
+O cliente busca essa configuração automaticamente em `/api/health` e `/api/ice`.
+
+### Opção A — TURN próprio com coturn (Linux, recomendado se você tem VPS)
+
+```bash
+# 1. Instale o coturn
+sudo apt update
+sudo apt install coturn
+
+# 2. Rode com seu usuário/senha
+sudo turnserver -a -f -n \
+  --user=blast_turn_user:uma_senha_forte_aqui \
+  --realm=blast \
+  --listening-port=3478 \
+  --cert=/etc/letsencrypt/live/seu-dominio.com/fullchain.pem \
+  --pkey=/etc/letsencrypt/live/seu-dominio.com/privkey.pem
+
+# 3. Libere no firewall (ufw exemplo)
+sudo ufw allow 3478/tcp
+sudo ufw allow 3478/udp
+sudo ufw allow 49152:65535/udp   # faixa de relay de mídia do coturn
+```
+
+No `.env` da hospedagem:
+
+```text
+TURN_URL=turn:seu-dominio.com:3478
+TURN_USERNAME=blast_turn_user
+TURN_CREDENTIAL=uma_senha_forte_aqui
+```
+
+> O coturn precisa de **certificado TLS válido** para funcionar em TURN sobre
+> TLS (porta 5349). Para TURN simples (3478 UDP/TCP sem TLS), pode pular
+> `--cert`/`--pkey`, mas algumas redes bloqueiam porta 3478.
+
+### Opção B — Provedores gerenciados de TURN (mais rápido, sem VPS próprio)
+
+Todos têm planos gratuitos limitados, suficientes para testes e partidas
+ocasionalmente:
+
+| Provedor | Plano grátis | Link |
+|----------|-------------|------|
+| **Metered** | 10 GB de relé grátis/mês | https://metered.ca |
+| **Twilio Network Traversal** | créditos iniciais | https://twilio.com |
+| **Xirsys** | 10 GB grátis/mês | https://xirsys.com |
+| **Cloudflare Calls** | TURN incluído | https://cloudflare.com/products/calls |
+
+Após criar a conta, você recebe `urls`, `username` e `credential`. Preencha no
+`.env` da sua hospedagem:
+
+```text
+TURN_URL=turn:seu-provedor.com:3478
+TURN_USERNAME=usuario_do_provedor
+TURN_CREDENTIAL=senha_do_provedor
+```
+
+### Opção C — Sem TURN (relay automático, já funciona)
+
+O servidor já inclui **relay automático** via WebSocket ou HTTP long-poll.
+Se o P2P não abrir, o jogo passa sozinho para o relay e a partida acontece
+— apenas com latência um pouco maior. O selo do HUD mostra `📡` quando está
+no relay. Isso já cobre a maioria dos casos sem precisar configurar nada
+extra.
+
+### Checklist depois de publicar
+
+- [ ] Abrir `https://SEU-LINK/api/health` e ver `"ok": true`.
+- [ ] Confirmar que `/api/ice` retorna a lista de STUN/TURN configurada.
+- [ ] Abrir o jogo e confirmar o selo **“Servidor online · conectado”** no lobby ONLINE.
+- [ ] Criar sala em um computador e entrar com o código em outro (de outra rede).
+- [ ] Testar o link `?room=CODIGO` no celular.
+- [ ] Se aparecer “Sua rede bloqueou o WebRTC”, configurar `TURN_URL`.
 
 ---
 

@@ -51,7 +51,7 @@ const I18N = {
     tagSolo: "BATTLE ROYALE • 16 LUTADORES", tagDuel: "DUELO • 1 CONTRA 1",
     tagLocal: "MULTIPLAYER LOCAL • 2 JOGADORES", tagLocalDuel: "DUELO LOCAL • 1 V 1",
     tagOnline: "MULTIPLAYER ONLINE • 1 CONTRA 1",
-    tagTeam1v1: "🥊 DUELO 1 v 1", tagTeam2v2: "⚔️ EQUIPE 2 v 2", tagTeam3v3: "🛡️ GUERRA 3 v 3",
+    tagTeam1v1: "🥊 DUELO 1 v 1", tagTeam2v2: "⚔️ EQUIPE 2 v 2", tagTeam3v3: "🛡️ GUERRA 3 v 3", tagTeam4v4: "🛡️ GUERRA 4 v 4",
     hintSolo: "WASD • ESPAÇO • E • Q • SHIFT",
     hintLocal: "P1: WASD / ESPAÇO / E / Q / SHIFT ESQ.  ·  P2: SETAS / ENTER / . / , / SHIFT DIR.",
     padOne: "1 controle conectado", padTwo: "2 controles conectados",
@@ -142,6 +142,9 @@ const I18N = {
     setDeadzone: "Zona morta do analógico", setDeadzoneDesc: "Aumente se o personagem se mover sozinho",
     setShake: "Tremor de tela", setShakeDesc: "Sacudir a câmera nas explosões",
     setReduceMotion: "Reduzir movimento", setReduceMotionDesc: "Desliga tremor, flashes e animações extras",
+    setHighContrast: "Alto contraste", setHighContrastDesc: "Cores sólidas e bordas definidas",
+    setDaltonism: "Modo de daltonismo", setDaltonismDesc: "Filtros de cor para daltonismo",
+    daltonismNone: "Nenhum", daltonismProtanopia: "Protanopia", daltonismDeuteranopia: "Deuteranopia", daltonismTritanopia: "Tritanopia",
     progMissions: "🎯 Missões", progSeason: "🎫 Passe", progRanking: "🏆 Ranking",
     heroTitle: "PERSONAGEM", heroSub: "Visual, skins e estilo",
     heroHint: "Ganhe XP para liberar skins por nível. Skins exclusivas vêm do Passe de Temporada (coluna Plus).",
@@ -315,7 +318,7 @@ const I18N = {
     tagSolo: "BATTLE ROYALE • 16 FIGHTERS", tagDuel: "DUEL • 1 VERSUS 1",
     tagLocal: "LOCAL MULTIPLAYER • 2 PLAYERS", tagLocalDuel: "LOCAL DUEL • 1 V 1",
     tagOnline: "ONLINE MULTIPLAYER • 1 VERSUS 1",
-    tagTeam1v1: "🥊 DUEL 1 v 1", tagTeam2v2: "⚔️ TEAM 2 v 2", tagTeam3v3: "🛡️ WAR 3 v 3",
+    tagTeam1v1: "🥊 DUEL 1 v 1", tagTeam2v2: "⚔️ TEAM 2 v 2", tagTeam3v3: "🛡️ WAR 3 v 3", tagTeam4v4: "🛡️ WAR 4 v 4",
     hintSolo: "WASD • SPACE • E • Q • SHIFT",
     hintLocal: "P1: WASD / SPACE / E / Q / L-SHIFT  ·  P2: ARROWS / ENTER / . / , / R-SHIFT",
     padOne: "1 gamepad connected", padTwo: "2 gamepads connected",
@@ -406,6 +409,9 @@ const I18N = {
     setDeadzone: "Stick deadzone", setDeadzoneDesc: "Raise it if your fighter drifts on its own",
     setShake: "Screen shake", setShakeDesc: "Camera shake on explosions",
     setReduceMotion: "Reduce motion", setReduceMotionDesc: "Turns off shake, flashes and extra animations",
+    setHighContrast: "High contrast", setHighContrastDesc: "Solid colors and defined borders",
+    setDaltonism: "Color blindness mode", setDaltonismDesc: "Color filters for color blindness",
+    daltonismNone: "None", daltonismProtanopia: "Protanopia", daltonismDeuteranopia: "Deuteranopia", daltonismTritanopia: "Tritanopia",
     progMissions: "🎯 Missions", progSeason: "🎫 Pass", progRanking: "🏆 Ranking",
     heroTitle: "CHARACTER", heroSub: "Looks, skins and style",
     heroHint: "Earn XP to unlock skins by level. Exclusive skins come from the Season Pass (Plus column).",
@@ -621,8 +627,8 @@ class AudioPool {
   }
 }
 const AUDIO_POOL = new AudioPool();
-/* SFX gravados em audio/. (assets/audio/ ainda não existe; tentar carregá-lo
-   gerava 404 no console a cada boot.) */
+/* SFX gravados em audio/. Os arquivos existem na pasta audio/; o pool tenta
+   carregá-los e cai para tons sintéticos se faltar algum. */
 const AUDIO_POOL_FALLBACK = {
   bomb_place: 'audio/slam_06.mp3',
   explosion: 'audio/explosion.mp3',
@@ -986,6 +992,7 @@ const MODE_CONFIG = {
   TEAM1v1:   { id: 'TEAM1v1',   humans: 1, bots: 1,  stormInterval: 17, stormDelay: 25, startRing: 3, airdropTimer: 9,  teamMode: true, teamSize: 1 },
   TEAM2v2:   { id: 'TEAM2v2',   humans: 1, bots: 3,  stormInterval: 21, stormDelay: 33, startRing: 2, airdropTimer: 12, teamMode: true, teamSize: 2 },
   TEAM3v3:   { id: 'TEAM3v3',   humans: 1, bots: 5,  stormInterval: 25, stormDelay: 38, startRing: 1, airdropTimer: 15, teamMode: true, teamSize: 3 },
+  TEAM4v4:   { id: 'TEAM4v4',   humans: 1, bots: 7,  stormInterval: 30, stormDelay: 45, startRing: 0, airdropTimer: 18, teamMode: true, teamSize: 4 },
   LOCAL:     { id: 'LOCAL',     humans: 2, bots: 0,  stormInterval: 21, stormDelay: 35, startRing: 3, airdropTimer: 9,  teamMode: false },
   ONLINE:    { id: 'ONLINE',    humans: 2, bots: 0,  stormInterval: 21, stormDelay: 35, startRing: 3, airdropTimer: 9,  teamMode: false },
   TUTORIAL:  { id: 'TUTORIAL',  humans: 1, bots: 2,  stormInterval: 999, stormDelay: 999, startRing: 0, airdropTimer: 999, teamMode: false }
@@ -1034,6 +1041,34 @@ let selectedStarterTactical = 'SHOCK';
 
 const PREFS_KEY = 'blast-royale-prefs-v7';
 const LEGACY_PREFS_KEY = 'blast-royale-prefs-v6';
+const STORAGE_SECRET = 'blast-royale-v7-secret-salt';
+function storageSign(data) {
+  let h = 0;
+  const s = String(data) + STORAGE_SECRET;
+  for (let i = 0; i < s.length; i++) {
+    h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h).toString(36);
+}
+function storageLoad(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object') return null;
+    const sig = obj.__sig;
+    delete obj.__sig;
+    if (sig && sig === storageSign(JSON.stringify(obj))) return obj;
+    return null; // assinatura não confere: dados adulterados
+  } catch (e) { return null; }
+}
+function storageSave(key, obj) {
+  try {
+    const copy = { ...obj };
+    copy.__sig = storageSign(JSON.stringify(copy));
+    localStorage.setItem(key, JSON.stringify(copy));
+  } catch (e) {}
+}
 const prefs = {
   name: '', name2: 'Viper-02', lang: 'pt', tactical: 'SHOCK', mode: 'SOLO', map: 'NEON', duelBest: 3,
   wins: 0, kills: 0, matches: 0, maxKillsInMatch: 0, maxSurvivalTime: 0,
@@ -1047,9 +1082,9 @@ const prefs = {
 
 function loadPrefs() {
   try {
-    let raw = localStorage.getItem(PREFS_KEY);
-    if (!raw) raw = localStorage.getItem(LEGACY_PREFS_KEY);
-    if (raw) Object.assign(prefs, JSON.parse(raw) || {});
+    let data = storageLoad(PREFS_KEY);
+    if (!data) data = storageLoad(LEGACY_PREFS_KEY);
+    if (data) Object.assign(prefs, data);
     if (!prefs.achievements) prefs.achievements = {};
     if (!prefs.ownedSkins) prefs.ownedSkins = { VIPER: true };
     if (!prefs.season || typeof prefs.season !== 'object') prefs.season = {};
@@ -1062,7 +1097,7 @@ function loadPrefs() {
 
 function savePrefs(patch) {
   Object.assign(prefs, patch || {});
-  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
+  storageSave(PREFS_KEY, prefs);
 }
 
 /* ========================================================================
@@ -1215,7 +1250,7 @@ const GameState = (() => {
     listeners.forEach(fn => { try { fn(state); } catch (e) {} });
   }
   function save(withEmit = true) {
-    try { localStorage.setItem(GAMESTATE_KEY, JSON.stringify(state)); } catch (e) {}
+    storageSave(GAMESTATE_KEY, state);
     if (withEmit) emit();
   }
   function normalizeLeagueRow(b) {
@@ -1324,10 +1359,9 @@ const GameState = (() => {
     if (typeof state.coins !== 'number' || !isFinite(state.coins)) state.coins = 300;
   }
   function load() {
-    let raw = null;
-    try { raw = localStorage.getItem(GAMESTATE_KEY); } catch (e) {}
-    if (raw) {
-      try { const data = JSON.parse(raw); if (data && typeof data === 'object') Object.assign(state, data); } catch (e) {}
+    let data = storageLoad(GAMESTATE_KEY);
+    if (data) {
+      Object.assign(state, data);
     } else {
       // Contas antigas vinham com "Viper-01" pré-preenchido. Isso não é
       // mais um nick: o campo fica vazio até o jogador escolher o seu.
@@ -2015,7 +2049,8 @@ const GRAPHICS_PRESETS = {
 const DEFAULT_SETTINGS = {
   volume: 80, music: 35, vibration: true, shake: true, reduceMotion: false,
   joySize: 112, joyOpacity: 80, deadzone: 22, showFps: false,
-  graphics: IS_TOUCH ? 'medium' : 'high'
+  graphics: IS_TOUCH ? 'medium' : 'high',
+  highContrast: false, daltonism: 'none' // none | protanopia | deuteranopia | tritanopia
 };
 const settings = { ...DEFAULT_SETTINGS };
 let QUALITY = GRAPHICS_PRESETS[settings.graphics];
@@ -2055,6 +2090,13 @@ function applySettings() {
     shakeBtn.classList.toggle('border-slate-700/80', !match.shakeEnabled);
   }
   QUALITY = GRAPHICS_PRESETS[settings.graphics] || GRAPHICS_PRESETS.high;
+  // 🌈 Acessibilidade: alto contraste e filtros de daltonismo
+  const hc = !!settings.highContrast;
+  document.documentElement.dataset.accessibility = hc ? 'high-contrast' : '';
+  if (settings.daltonism && settings.daltonism !== 'none') {
+    document.documentElement.dataset.accessibility = 'daltonism-' + settings.daltonism;
+  }
+  document.documentElement.dataset.reduceGlow = (reduce || hc) ? '1' : '0';
   if (typeof resize === 'function' && canvas && canvas.width) resize();
 }
 
@@ -2065,7 +2107,7 @@ function syncSettingsUI() {
   if (q('setMusic')) { q('setMusic').value = settings.music; setVal('setMusicVal', settings.music + '%'); }
   if (q('setJoyOpacity')) { q('setJoyOpacity').value = settings.joyOpacity; setVal('setJoyOpacityVal', settings.joyOpacity + '%'); }
   if (q('setDeadzone')) { q('setDeadzone').value = settings.deadzone; setVal('setDeadzoneVal', settings.deadzone + '%'); }
-  [['setVibration', settings.vibration], ['setShake', settings.shake], ['setFps', settings.showFps], ['setReduceMotion', settings.reduceMotion]].forEach(([id, on]) => {
+  [['setVibration', settings.vibration], ['setShake', settings.shake], ['setFps', settings.showFps], ['setReduceMotion', settings.reduceMotion], ['setHighContrast', settings.highContrast]].forEach(([id, on]) => {
     const el = q(id);
     if (!el) return;
     el.dataset.on = on ? '1' : '0';
@@ -2077,6 +2119,10 @@ function syncSettingsUI() {
   const segGfx = q('setGraphics');
   if (segGfx) segGfx.querySelectorAll('button[data-graphics]').forEach(b => {
     b.classList.toggle('active', b.dataset.graphics === settings.graphics);
+  });
+  const segDalt = q('setDaltonismSeg');
+  if (segDalt) segDalt.querySelectorAll('button[data-daltonism]').forEach(b => {
+    b.classList.toggle('active', b.dataset.daltonism === settings.daltonism);
   });
 }
 
@@ -2163,16 +2209,22 @@ function renderAchievementsModal() {
 }
 
 function recordCareer(result) {
+  if (!result) return null;
+  // Validação de integridade: evita valores impossíveis salvos em localStorage.
+  const kills = Math.max(0, Math.min(Number(result.kills || 0) || 0, 999));
+  const time = Math.max(0, Math.min(Number(result.time || 0) || 0, 3600));
+  const win = !!result.win;
+  const draw = !!result.draw;
   savePrefs({
-    wins: (prefs.wins || 0) + (result.win ? 1 : 0),
-    kills: (prefs.kills || 0) + (result.kills || 0),
+    wins: (prefs.wins || 0) + (win ? 1 : 0),
+    kills: (prefs.kills || 0) + kills,
     matches: (prefs.matches || 0) + 1,
-    maxKillsInMatch: Math.max(prefs.maxKillsInMatch || 0, result.kills || 0),
-    maxSurvivalTime: Math.max(prefs.maxSurvivalTime || 0, result.time || 0)
+    maxKillsInMatch: Math.max(prefs.maxKillsInMatch || 0, kills),
+    maxSurvivalTime: Math.max(prefs.maxSurvivalTime || 0, time)
   });
   // A moeda/XP da partida agora vêm da economia rebalanceada, então o
   // resumo é calculado antes para o XP respeitar o limite diário de bots.
-  const summary = GameState.addResult(result);
+  const summary = GameState.addResult({ ...result, kills, time, win, draw });
   awardMatchProgress(result, summary);
   checkAchievements();
   updateCareerUI();
@@ -2226,7 +2278,7 @@ const SKINS = [
   { id: 'SAKURA', name: 'Sakura', body: '#f9a8d4', visor: '#fff1f2', accent: '#db2777', seasonTier: 8, plus: true, desc: 'Exclusivo do Passe Plus' },
   { id: 'OBSIDIAN', name: 'Obsidiana', body: '#0f172a', visor: '#f43f5e', accent: '#7f1d1d', seasonTier: 12, plus: true, desc: 'Exclusivo do Passe Plus' }
 ];
-function getSkin(id) { return SKINS.find(sk => sk.id === id) || SKINS[0]; }
+function getSkin(id) { return SKINS.find(sk => sk.id === id) || getCharacterSkin(id) || SKINS[0]; }
 function skinUnlocked(skin) {
   if (prefs.ownedSkins && prefs.ownedSkins[skin.id]) return true;
   if (skin.level && levelInfo().level >= skin.level) return true;
@@ -2795,6 +2847,8 @@ const UI = {
   airdropBanner: document.getElementById('airdropBanner'),
   killFeed: document.getElementById('killFeed'),
   dashFill: document.getElementById('dashCooldownFill'),
+  bombFill: document.getElementById('bombCooldownFill'),
+  btnBombEl: document.getElementById('btnBomb'),
   tacticalIcon: document.getElementById('tacticalIcon'),
   tacticalLabel: document.getElementById('tacticalLabel'),
   tacticalAmmo: document.getElementById('tacticalAmmoBadge'),
@@ -2928,7 +2982,7 @@ function hazardCellType(c, r) {
 const BIOME_TEXTURES_ENABLED = false;
 /* O botão "+200 moedas" é uma ferramenta de teste. Ele só aparece em builds
    de desenvolvimento (?dev=1), para não dar moedas de graça ao jogador. */
-const DEV_MODE = /(?:^|[?&])dev=1(?:&|$)/.test(location.search);
+const DEV_MODE = false;
 const BIOMES = { quatro_nucleos: 'NEON', selva: 'JUNGLE', cristal: 'FROST', vulcao: 'EMBER', oasis: 'SAKURA' };
 const BIOME_TEXTURE = {};
 function loadBiomeTextures() {
@@ -3235,7 +3289,9 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
       const p2El = document.getElementById('player2NameInput');
       const n2 = (((p2El && p2El.value) || 'Viper-02').trim() || 'Viper-02').slice(0, 14);
       const p2Team = isTeamMode ? 1 : 2;
-      humans.push({ sp: SPAWN_P2, name: n2, color: '#38bdf8', visor: '#e0f2fe', device: 'p2', team: p2Team });
+      const p2Saved = prefs.name2 ? String(prefs.name2).trim().slice(0, 14) : '';
+      const p2Default = (I18N[currentLang] || {}).nickFallback || 'JOGADOR 2';
+      humans.push({ sp: SPAWN_P2, name: (p2Saved || p2Default), color: '#38bdf8', visor: '#e0f2fe', device: 'p2', team: p2Team });
     }
   }
   humans.forEach(h => fighters.push(makeFighter(fighters.length, h.sp, h.name, h.color, h.visor, h.device, h.team)));
@@ -3264,9 +3320,16 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
       const teamSize = cfg.teamSize;
       const team1Count = fighters.filter(f => f.team === 1).length;
       const team2Count = fighters.filter(f => f.team === 2).length;
-      
-      if (team2Count < teamSize) botTeam = 2;
-      else if (team1Count < teamSize) botTeam = 1;
+      const team1Open = team1Count < teamSize;
+      const team2Open = team2Count < teamSize;
+      // Distribui bots para preencher times vazios primeiro, depois o que tiver menos
+      if (!team1Open && !team2Open) {
+        // Times cheios: não cria mais bots além do limite (segurança)
+        continue;
+      }
+      if (team1Open && !team2Open) botTeam = 1;
+      else if (team2Open && !team1Open) botTeam = 2;
+      else if (team1Count <= team2Count) botTeam = 1;
       else botTeam = 2;
     } else if (cfg.duel) {
       botTeam = isDemo ? (i === 0 ? 1 : 2) : 2;
@@ -3289,6 +3352,7 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
   updateHUD();
   if (cfg.duel) updateDuelHUD();
   MUSIC.play(isDemo ? 'menu' : 'battle');
+  if (!isDemo) MUSIC.unlock(); // Garante que o áudio da partida toque mesmo sem interação prévia.
   updateRotateGate();
   if (!isDemo) {
     if (match.eventMode && rotEv) {
@@ -4422,7 +4486,8 @@ function findDanger(f) {
   let worst = null, worstDist = Infinity;
   for (const b of bombs) {
     if (b.exploded) continue;
-    if (sameTeam(b)) continue;
+    // Bombas de aliado só são perigo se estão prestes a explodir (fuse baixo)
+    if (sameTeam(b) && b.fuse > 0.8) continue;
     if (!alert && b.ownerId !== f.id && b.bornAt != null && match.elapsedTime - b.bornAt < (f.ai.sense || 1.0)) continue;
     let hit = false;
     if (b.type === 'SHOCK') {
@@ -4619,14 +4684,21 @@ function decideBotAction(f) {
   const snack = nearestPowerup(f, TILE_SIZE * 4);
   if (snack) { f.ai.targetX = snack.x; f.ai.targetY = snack.y; return; }
 
-  // Aliados: protege o humano do time e nunca bombardeia colega de equipe
+  // Aliados: protege companheiros de time e nunca bombardeia colega de equipe
   if (f.team !== 0) {
-    const humanAlly = fighters.find(h => h.team === f.team && h.isHuman && h.alive);
+    const allies = fighters.filter(h => h.team === f.team && h.alive && h !== f);
+    const humanAlly = allies.find(h => h.isHuman);
+    const botAllies = allies.filter(h => !h.isHuman);
     const threat = nearestEnemy(f, TILE_SIZE * 13);
-    if (humanAlly && threat) {
-      const dEnemy = Math.hypot(threat.x - humanAlly.x, threat.y - humanAlly.y);
-      const dAlly = Math.hypot(humanAlly.x - f.x, humanAlly.y - f.y);
-      if (dEnemy < TILE_SIZE * 4 && dAlly < TILE_SIZE * 6) {
+    // Protege o aliado mais próximo que está em perigo (humano tem prioridade)
+    const allyInDanger = allies.find(a => {
+      const d = Math.hypot(a.x - f.x, a.y - f.y);
+      return d < TILE_SIZE * 6 && findDanger(a);
+    }) || humanAlly || allies[0];
+    if (allyInDanger && threat) {
+      const dEnemy = Math.hypot(threat.x - allyInDanger.x, threat.y - allyInDanger.y);
+      const dAlly = Math.hypot(allyInDanger.x - f.x, allyInDanger.y - f.y);
+      if (dEnemy < TILE_SIZE * 5 && dAlly < TILE_SIZE * 7) {
         const step = botApproachStep(f, threat);
         f.ai.targetX = step.x; f.ai.targetY = step.y;
         const alignedX = Math.abs(threat.y - f.y) < TILE_SIZE * 0.8 &&
@@ -4637,9 +4709,31 @@ function decideBotAction(f) {
         return;
       }
     }
+    // Se não há ameaça imediata, mantém distância dos aliados para não atrapalhar
+    if (allies.length > 0) {
+      const tooClose = allies.find(a => Math.hypot(a.x - f.x, a.y - f.y) < TILE_SIZE * 1.5);
+      if (tooClose) {
+        const dx = f.x - tooClose.x;
+        const dy = f.y - tooClose.y;
+        const len = Math.hypot(dx, dy) || 1;
+        f.ai.targetX = f.x + (dx / len) * TILE_SIZE * 2;
+        f.ai.targetY = f.y + (dy / len) * TILE_SIZE * 2;
+        return;
+      }
+    }
     if (humanAlly && !threat) {
       const d = Math.hypot(humanAlly.x - f.x, humanAlly.y - f.y);
       if (d > TILE_SIZE * 3) { f.ai.targetX = humanAlly.x; f.ai.targetY = humanAlly.y; return; }
+    }
+    // Se não há humano, segue o aliado bot mais próximo se estiver muito longe
+    if (!humanAlly && !threat && allies.length > 0) {
+      const nearestAlly = allies.reduce((best, a) => {
+        const d = Math.hypot(a.x - f.x, a.y - f.y);
+        const bd = Math.hypot(best.x - f.x, best.y - f.y);
+        return d < bd ? a : best;
+      });
+      const d = Math.hypot(nearestAlly.x - f.x, nearestAlly.y - f.y);
+      if (d > TILE_SIZE * 5) { f.ai.targetX = nearestAlly.x; f.ai.targetY = nearestAlly.y; return; }
     }
   }
 
@@ -4915,6 +5009,11 @@ function checkMatchEnd(dt) {
   const humans = getHumans();
   if (!humans.length) return;
   const localHumans = humans.filter(f => controlOf(f.device) !== null);
+  // Empate por duplo KO: ninguém sobrou vivo ao mesmo tempo.
+  if (alive.length === 0 && localHumans.length) {
+    endMatch(false, false, { draw: true });
+    return;
+  }
   if (localHumans.length && localHumans.every(f => !f.alive)) {
     endMatch(false, false);
     return;
@@ -5000,6 +5099,25 @@ function endMatch(win, isTeamMode = false, opts = {}) {
     let localSummary = null;
     if (shouldRecord) localSummary = recordCareer({ win: ownerWon, kills: human ? human.kills : 0, mode: match.mode, time: match.elapsedTime, competitive: false, league: false });
     updateEndLeagueLine(localSummary);
+    applyEndButtons(false);
+    updateEndXpLine();
+    MUSIC.play('menu');
+    return;
+  }
+
+  // Empate por duplo KO: ninguém sobrou vivo.
+  if (opts.draw) {
+    UI.endTrophy.textContent = '🤝';
+    UI.endRank.textContent = `#${match.humanRank || fighters.length} / ${total}`;
+    UI.endRank.className = 'inline-block px-3 py-1 rounded-full bg-slate-500/20 border border-slate-400/50 text-slate-300 font-display font-extrabold text-sm mb-1';
+    UI.endTitle.textContent = dict.drawTitle;
+    UI.endSub.textContent = dict.drawSub;
+    UI.endKills.textContent = human ? human.kills : 0;
+    UI.endTime.textContent = formatTime(match.elapsedTime);
+    UI.endModal.classList.remove('hidden');
+    SFX.playHit();
+    if (opts.record !== false) recordCareer({ win: false, draw: true, kills: human ? human.kills : 0, mode: match.mode, time: match.elapsedTime, competitive: false, league: false });
+    updateEndLeagueLine(null);
     applyEndButtons(false);
     updateEndXpLine();
     MUSIC.play('menu');
@@ -5609,6 +5727,10 @@ function updateHUD() {
   UI.tacticalAmmo.textContent = ammo;
   UI.btnTactical.style.opacity = ammo > 0 ? '1' : '0.55';
   UI.dashFill.style.height = human.dashCooldown <= 0 ? '100%' : `${Math.round((1 - human.dashCooldown / DASH_COOLDOWN) * 100)}%`;
+  const bombSlotsFree = Math.max(0, human.maxBombs - human.activeBombs);
+  const bombPct = human.maxBombs > 0 ? Math.round((bombSlotsFree / human.maxBombs) * 100) : 100;
+  if (UI.bombFill) UI.bombFill.style.height = `${bombPct}%`;
+  if (UI.btnBombEl) UI.btnBombEl.style.opacity = bombSlotsFree > 0 ? '1' : '0.6';
   const p2 = fighters.find(f => f.device === 'p2');
   const showP2 = !!p2 && (match.mode === 'LOCAL');
   if (UI.hudP2) {
@@ -6462,7 +6584,7 @@ async function startBracketMatch(id) {
   const rival = m.aMe ? m.b : m.a;
   const tbd = dict.bracketTbd || 'A definir';
   if (!rival || rival === tbd) return;
-  if (!(await netServerCheck())) { showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.'); return; }
+  if (!(await netServerCheck(!netServer.available))) { showToast(dict.serverErrorMsg || 'Falha no servidor. Tente novamente.'); return; }
   if (netServer.serverless) { showToast(dict.bracketUnavailable || 'A chave online precisa do servidor de salas.'); return; }
   // O confronto é PvP online de verdade: pareia com o adversário da chave e
   // só avança quando o resultado é confirmado pelos dois lados.
@@ -7199,7 +7321,7 @@ function acceptScheduleFromModal() {
   renderBracket();
 }
 
-const MODE_ICONS = { SOLO: '👤', DUEL: '🥊', TEAM1v1: '🥊', TEAM2v2: '⚔️', TEAM3v3: '🛡️', LOCAL: '👥', ONLINE: '🌐' };
+const MODE_ICONS = { SOLO: '👤', DUEL: '🥊', TEAM1v1: '🥊', TEAM2v2: '⚔️', TEAM3v3: '🛡️', TEAM4v4: '🛡️', LOCAL: '👥', ONLINE: '🌐' };
 
 function updateModeSelectBtn() {
   const row = document.querySelector(`.mode-choice[data-mode="${selectedMode}"]`);
@@ -7260,6 +7382,7 @@ function setSelectedMode(id) {
       TEAM1v1: dict.tagTeam1v1,
       TEAM2v2: dict.tagTeam2v2,
       TEAM3v3: dict.tagTeam3v3,
+      TEAM4v4: dict.tagTeam4v4,
       LOCAL: dict.tagLocalDuel,
       ONLINE: dict.tagOnline
     };
@@ -7775,6 +7898,17 @@ function bindUI() {
   bindToggleSetting('setShake', 'shake');
   bindToggleSetting('setFps', 'showFps');
   bindToggleSetting('setReduceMotion', 'reduceMotion');
+  bindToggleSetting('setHighContrast', 'highContrast');
+
+  const segDalt = document.getElementById('setDaltonismSeg');
+  if (segDalt) segDalt.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-daltonism]');
+    if (!btn) return;
+    settings.daltonism = btn.dataset.daltonism;
+    saveSettings();
+    applySettings();
+    syncSettingsUI();
+  });
 
   const segJoy = document.getElementById('setJoySize');
   if (segJoy) segJoy.addEventListener('click', e => {
@@ -8135,7 +8269,10 @@ const netServer = {
   quick: false,
   bracketSlot: '', bracketRival: '',
   peers: { host: false, guest: false },
-  ws: null, wsWanted: false, wsTries: 0
+  ws: null, wsWanted: false, wsTries: 0,
+  // Health-check: cache só é confiável quando deu certo. Falha não fica
+  // gravada para sempre — tenta de novo com backoff (Render free dorme).
+  checking: false, checkPromise: null, lastCheck: 0, failCount: 0, retryTimer: null
 };
 function netApiUrl(p) { return netServer.base + p; }
 function netServerLikely() {
@@ -8462,6 +8599,14 @@ function netWireChannel(dc) {
 /* Roteia uma mensagem da partida, venha ela do canal P2P ou do relay. */
 function netHandleMessage(msg) {
   if (!msg || !msg.t) return;
+  // Lote do relay HTTP. Quando um lado envia em lote e o outro está no
+  // WebSocket, o servidor entrega o lote inteiro; sem desembrulhar aqui os
+  // inputs/snapshots seriam descartados e a partida congelaria.
+  if (msg.t === 'rb') {
+    if (Array.isArray(msg.m)) for (const item of msg.m) netHandleMessage(item);
+    else if (msg.m && typeof msg.m === 'object') netHandleMessage(msg.m);
+    return;
+  }
   net.lastReceive = performance.now();
   if (net.hold) netExitReconnectGrace();
   if (msg.t === 's') netApplySnapshot(msg);
@@ -8626,25 +8771,51 @@ function netServerUI() {
   quickMatchUI();
 }
 
+const NET_CHECK_OK_MS = 60000;
+const NET_CHECK_BACKOFF_MS = [15000, 30000, 60000];
+
 async function netServerCheck(force = false) {
   const now = Date.now();
-  if (!force && netServer.checked) return netServer.available;
-  if (netServer.checking) return netServer.available;
-  netServer.checking = true;
-  netServer.lastCheck = now;
-  try {
-    const data = await netApi('/api/health', null, 'GET', 3500);
-    netServer.available = !!data.ok;
-    // Serverless não tem long-poll: o laço precisa respirar um pouco mais.
-    netServer.serverless = data.mode === 'serverless';
-    if (Array.isArray(data.iceServers) && data.iceServers.length) NET_ICE.iceServers = data.iceServers;
-  } catch (e) {
-    netServer.available = false;
+  // Uma única requisição por vez: cliques durante o check reaproveitam a
+  // mesma promessa em vez de falhar por causa de uma corrida.
+  if (netServer.checkPromise) return netServer.checkPromise;
+  if (!force && netServer.checked) {
+    const ttl = netServer.available
+      ? NET_CHECK_OK_MS
+      : NET_CHECK_BACKOFF_MS[Math.min(netServer.failCount, NET_CHECK_BACKOFF_MS.length - 1)];
+    if (now - (netServer.lastCheck || 0) < ttl) return netServer.available;
   }
-  netServer.checking = false;
-  netServer.checked = true;
-  netServerUI();
-  return netServer.available;
+  netServer.lastCheck = now;
+  netServer.checking = true;
+  const run = (async () => {
+    try {
+      const data = await netApi('/api/health', null, 'GET', 3500);
+      netServer.available = !!data.ok;
+      // Serverless não tem long-poll: o laço precisa respirar um pouco mais.
+      netServer.serverless = data.mode === 'serverless';
+      if (Array.isArray(data.iceServers) && data.iceServers.length) NET_ICE.iceServers = data.iceServers;
+      if (netServer.available) {
+        netServer.failCount = 0;
+        clearTimeout(netServer.retryTimer); netServer.retryTimer = null;
+      }
+    } catch (e) {
+      netServer.available = false;
+      netServer.failCount = Math.min((netServer.failCount || 0) + 1, NET_CHECK_BACKOFF_MS.length);
+    }
+    netServer.checking = false;
+    netServer.checkPromise = null;
+    netServer.checked = true;
+    netServerUI();
+    // Sem sucesso, agenda a próxima tentativa sozinho (15s → 30s → 60s).
+    if (!netServer.available) {
+      const delay = NET_CHECK_BACKOFF_MS[Math.min(Math.max(0, netServer.failCount - 1), NET_CHECK_BACKOFF_MS.length - 1)];
+      clearTimeout(netServer.retryTimer);
+      netServer.retryTimer = setTimeout(() => { netServer.retryTimer = null; netServerCheck(true); }, delay);
+    }
+    return netServer.available;
+  })();
+  netServer.checkPromise = run;
+  return run;
 }
 
 function netServerStopPoll() {
@@ -8688,7 +8859,7 @@ async function netServerHandleSignal(data) {
 }
 
 /* ---------- Relay do servidor: partida mesmo sem P2P ---------- */
-const NET_RELAY_DELAY_MS = 7000;
+const NET_RELAY_DELAY_MS = 3000;
 
 /* Socket por sala: um envio/recebimento por mensagem, sem custo de
    requisição. Quando o servidor não aceita o upgrade (proxy, Vercel,
@@ -8785,7 +8956,7 @@ function netEnterRelay(opts = {}) {
   // Pode ser chamado de dentro do próprio laço de poll: não abre um segundo.
   if (!netServer.polling) netServerStartPoll();
   clearInterval(net.relayPump);
-  net.relayPump = setInterval(netServerRelayPump, 50);
+  net.relayPump = setInterval(netServerRelayPump, 20);
   netServer.wsTries = 0;
   netServer.wsWanted = true;
   netServerSocketOpen();
@@ -8815,7 +8986,7 @@ function netServerRelayPump() {
     return;
   }
   if (!netServer.code || !netServer.token) return;
-  const raw = net.relayOut.splice(0, net.relayOut.length > 40 ? 24 : 12);
+  const raw = net.relayOut.splice(0, net.relayOut.length > 64 ? 48 : 32);
   const batch = [];
   raw.forEach(s => { try { batch.push(JSON.parse(s)); } catch (e) {} });
   if (!batch.length) return;
@@ -8936,7 +9107,7 @@ async function netServerCreateRoom() {
   const dict = netServerDict();
   if (!hasCompetitiveNick()) { openNickGate(netServerCreateRoom); return; }
   if (netServer.busy) return;
-  if (!(await netServerCheck())) { showToast(dict.serverErrorMsg); return; }
+  if (!(await netServerCheck(!netServer.available))) { showToast(dict.serverErrorMsg); return; }
   netServer.busy = true;
   netServer.manualOpen = false;
   try {
@@ -8976,7 +9147,7 @@ async function netServerJoinRoom(rawCode) {
   if (code.length !== 4) { showToast(dict.serverBadCode); return; }
   if (!hasCompetitiveNick()) { openNickGate(() => netServerJoinRoom(code)); return; }
   if (netServer.busy) return;
-  if (!(await netServerCheck())) { showToast(dict.serverErrorMsg); return; }
+  if (!(await netServerCheck(!netServer.available))) { showToast(dict.serverErrorMsg); return; }
   netServer.busy = true;
   netServer.manualOpen = false;
   try {
@@ -9167,6 +9338,12 @@ async function quickMatchPollLoop() {
         showToast(dict.quickMatchExpired || 'A busca expirou. Tente de novo.');
         return;
       }
+      // Token inválido (sala/busca recriada ou limpa): insistir só martela a API.
+      if (err.status === 403 || err.status === 401) {
+        quickMatchStop('');
+        showToast(dict.serverErrorMsg || 'Sessão expirada. Tente de novo.');
+        return;
+      }
       await new Promise(r => setTimeout(r, 1500));
       continue;
     }
@@ -9181,7 +9358,7 @@ async function quickMatchSearch() {
   if (!hasCompetitiveNick()) { openNickGate(quickMatchSearch); return; }
   if (bracketDuel.polling) { showToast(dict.quickMatchInBracket || 'Você está na busca da chave. Cancele antes de buscar partida.'); return; }
   if (netServer.code) { showToast(dict.quickMatchLeaveRoom || ''); return; }
-  if (!(await netServerCheck())) { showToast(dict.serverErrorMsg || ''); return; }
+  if (!(await netServerCheck(!netServer.available))) { showToast(dict.serverErrorMsg || ''); return; }
   if (netServer.serverless) { showToast(dict.quickMatchUnavailable || ''); return; }
   const name = String(GameState.state.profile.nick || '').trim().slice(0, 24);
   if (!name) return;
@@ -9275,6 +9452,13 @@ async function bracketDuelPollLoop() {
         showToast(dict.bracketExpired || 'A busca da chave expirou. Tente de novo.');
         return;
       }
+      // Ticket inválido: encerra o laço em vez de repetir a cada 1,5s.
+      if (err.status === 403 || err.status === 401) {
+        bracketDuelStop();
+        renderBracket();
+        showToast(dict.serverErrorMsg || 'Sessão expirada. Tente de novo.');
+        return;
+      }
       await new Promise(r => setTimeout(r, 1500));
       continue;
     }
@@ -9366,7 +9550,10 @@ async function bracketReportResult(slot) {
 }
 
 // Fecha a sala no servidor se o jogador fechar/recarregar a aba antes da partida.
-window.addEventListener('pagehide', () => {
+window.addEventListener('pagehide', (event) => {
+  // bfcache: o navegador guarda a página e pode voltar pelo botão "voltar".
+  // Nesse caso a sala NÃO deve ser encerrada.
+  if (event && event.persisted) return;
   if (matchmaking.ticket) {
     try {
       const body = new Blob([JSON.stringify({ ticket: matchmaking.ticket })], { type: 'application/json' });
@@ -9878,7 +10065,9 @@ function netHostSend(dt) {
     netSend({ t: 'p', ts: performance.now() });
   }
   net.sendAccum += dt;
-  if (net.sendAccum < 0.033) return;
+  // Depois do fim da partida o placar não muda: 1 snapshot por segundo
+  // mantém a revanche/estado vivo sem continuar transmitindo 30 Hz à toa.
+  if (net.sendAccum < (match.ended ? 1 : 0.033)) return;
   net.sendAccum = 0;
   // Evita acumular snapshots na fila quando a conexão está lenta.
   if (!net.relay && net.dc && net.dc.bufferedAmount > 96 * 1024) return;

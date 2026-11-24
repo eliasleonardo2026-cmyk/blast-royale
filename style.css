@@ -1507,3 +1507,45 @@ canvas#gameCanvas {
   transition: transform 0.1s ease;
 }
 .mode-sheet-done:active { transform: scale(0.98); }
+
+/* ========================================================================
+   ACESSIBILIDADE AVANÇADA
+   Alto contraste e filtros para daltonismo
+   ======================================================================== */
+
+/* Alto contraste: cores sólidas, bordas definidas, sem transparências */
+html[data-accessibility="high-contrast"] {
+  filter: contrast(1.4) saturate(1.3);
+}
+html[data-accessibility="high-contrast"] button,
+html[data-accessibility="high-contrast"] .btn-play-glow,
+html[data-accessibility="high-contrast"] .mode-choice,
+html[data-accessibility="high-contrast"] .map-chip {
+  border-width: 2px !important;
+  filter: none !important;
+}
+
+/* Protanopia (vermelho-verde): substituir vermelhos por tons mais distinguíveis */
+html[data-accessibility="daltonism-protanopia"] {
+  filter: url("#daltonism-protanopia");
+}
+
+/* Deuteranopia (vermelho-verde) */
+html[data-accessibility="daltonism-deuteranopia"] {
+  filter: url("#daltonism-deuteranopia");
+}
+
+/* Tritanopia (azul-amarelo) */
+html[data-accessibility="daltonism-tritanopia"] {
+  filter: url("#daltonism-tritanopia");
+}
+
+/* Reduzir brilho/neon para quem tem sensibilidade visual */
+html[data-accessibility="reduce-glow"] .glow,
+html[data-reduce-motion="1"] .glow,
+html[data-reduce-motion="1"] [style*="box-shadow"],
+html[data-reduce-motion="1"] [class*="shadow"] {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: brightness(0.8) !important;
+}

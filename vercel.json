@@ -9,5 +9,13 @@
       "source": "/(.*).(html|js|css|webmanifest)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     }
+  ],
+  "routes": [
+    { "src": "/(.*/)?\\..*", "status": 404 },
+    { "src": "/(node_modules|data|_backup-v6|neon-rivals)(/.*)?", "status": 404 },
+    {
+      "src": "/(server\\.js|package\\.json|package-lock\\.json|vercel\\.json|Dockerfile|Procfile|render\\.yaml|README-SERVIDOR\\.md|DEPLOY\\.md|tailwind\\.config\\.cjs|tailwind\\.input\\.css)",
+      "status": 404
+    }
   ]
 }

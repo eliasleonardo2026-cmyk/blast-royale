@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#080b13" />
+    <meta name="description" content="Neon Rivals: entre na arena, domine o dash e dispute o topo." />
+    <title>NEON RIVALS // Arena</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Neon Rivals início">
+          <span class="brand-mark">N</span>
+          <span>NEON<span class="brand-light">RIVALS</span></span>
+        </a>
+        <div class="topbar-right">
+          <span class="season-chip"><i></i> TEMPORADA ZERO</span>
+          <span id="connection-status" class="connection-status">CONECTANDO</span>
+        </div>
+      </header>
+
+      <main class="game-layout">
+        <section class="arena-column" aria-label="Arena de combate">
+          <div class="arena-topline">
+            <div>
+              <p class="eyebrow">QUICKPLAY // SOLO</p>
+              <h1>Prove seu reflexo.</h1>
+            </div>
+            <div class="match-meta">
+              <span class="live-dot"></span>
+              <span id="match-status">AGUARDANDO PILOTOS</span>
+            </div>
+          </div>
+
+          <div class="arena-frame">
+            <div id="arena" class="arena" role="img" aria-label="Arena Neon Rivals. Use WASD para mover, mouse para mirar, clique para atirar e espaço para dash.">
+              <div class="canvas-vignette"></div>
+              <div id="arena-overlay" class="arena-overlay">
+                <div class="overlay-card">
+                  <div class="overlay-emblem">NR<span>01</span></div>
+                  <p class="eyebrow">PROTOCOLO DE COMBATE</p>
+                  <h2 id="overlay-title">Entre na arena.</h2>
+                  <p id="overlay-copy">Encontre rivais, acerte seus disparos e use o dash para virar cada confronto.</p>
+                  <label class="name-field">
+                    <span>SEU CODINOME</span>
+                    <input id="pilot-name" maxlength="16" autocomplete="nickname" value="PILOTO" />
+                  </label>
+                  <button id="play-button" class="primary-button" type="button">
+                    <span>BUSCAR PARTIDA</span><b>↗</b>
+                  </button>
+                  <div class="queue-note"><span class="queue-pip"></span><span id="queue-copy">2–4 PILOTOS · PARTIDAS DE 2:30</span></div>
+                </div>
+              </div>
+              <div id="match-countdown" class="match-countdown hidden"></div>
+              <div id="toast" class="toast hidden" role="status"></div>
+              <div class="arena-corner arena-corner-tl"></div>
+              <div class="arena-corner arena-corner-br"></div>
+            </div>
+            <div class="hud-strip">
+              <div class="hud-player">
+                <span class="hud-avatar">✦</span>
+                <div><small>SEU PILOTO</small><strong id="hud-name">—</strong></div>
+              </div>
+              <div class="hud-stat"><small>ELIMS</small><strong id="hud-kills">00</strong></div>
+              <div class="hud-stat"><small>VIDA</small><strong id="hud-health">100<span>%</span></strong></div>
+              <div class="hud-stat dash-stat"><small>DASH</small><strong id="hud-dash">PRONTO</strong></div>
+              <div class="hud-clock"><span class="clock-icon">◷</span><strong id="hud-clock">02:30</strong></div>
+            </div>
+          </div>
+
+          <div class="controls-row">
+            <div class="control-hint"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd><span>MOVER</span></div>
+            <div class="control-hint"><kbd>MOUSE</kbd><span>MIRAR + ATIRAR</span></div>
+            <div class="control-hint"><kbd>ESPAÇO</kbd><span>DASH</span></div>
+            <span class="fair-play-note"><span>◆</span> COMBATE VALIDADO PELO SERVIDOR</span>
+          </div>
+        </section>
+
+        <aside class="side-column">
+          <section class="side-card leaderboard-card">
+            <div class="card-heading">
+              <div><p class="eyebrow">AO VIVO</p><h2>PLACAR</h2></div>
+              <span class="rank-badge">TOP 04</span>
+            </div>
+            <div id="leaderboard" class="leaderboard">
+              <div class="empty-rank"><span>01</span><span>Esperando pilotos...</span><b>—</b></div>
+              <div class="empty-rank"><span>02</span><span>—</span><b>—</b></div>
+              <div class="empty-rank"><span>03</span><span>—</span><b>—</b></div>
+              <div class="empty-rank"><span>04</span><span>—</span><b>—</b></div>
+            </div>
+            <div class="rank-foot"><span>VITÓRIAS</span><strong id="hud-wins">0</strong><span class="rank-foot-spacer"></span><span>SEU RANK</span><strong class="unranked">—</strong></div>
+          </section>
+
+          <section class="side-card mission-card">
+            <div class="card-heading">
+              <div><p class="eyebrow">CICLO DE PARTIDA</p><h2>SUBA DE NÍVEL</h2></div>
+              <span class="mission-icon">↗</span>
+            </div>
+            <p>Eliminações valem pontos. Cada duelo é uma chance de subir no placar.</p>
+            <div class="progress-label"><span>PROGRESSO DA SESSÃO</span><span id="session-progress">0 / 3</span></div>
+            <div class="progress-track"><i id="progress-fill"></i></div>
+            <div class="mission-reward"><span>PRÓXIMO MARCO</span><strong>Sequência de 3 eliminações</strong></div>
+          </section>
+
+          <section class="tip-card">
+            <span class="tip-symbol">✳</span>
+            <div><strong>JOGUE COM INTENÇÃO</strong><p>O dash te deixa invulnerável por um instante. Guarde-o para escapar de um disparo.</p></div>
+          </section>
+          <div class="build-label"><span>BUILD 0.1.0 // TESTE DE ARENA</span><span>◉ SERVER AUTH</span></div>
+        </aside>
+      </main>
+      <footer class="page-footer"><span>NEON RIVALS © 2026</span><span>COMPETITIVO, NÃO ALEATÓRIO.</span><span>FEITO PARA DOMINAR.</span></footer>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

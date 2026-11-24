@@ -1,4 +1,4 @@
-const CACHE = 'blast-royale-v1.18.8';
+const CACHE = 'blast-royale-v1.18.9';
 const APP_SHELL = [
   './',
   './index.html',

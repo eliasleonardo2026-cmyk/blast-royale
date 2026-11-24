@@ -191,9 +191,10 @@
           <span id="tacticalAmmoBadge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-slate-950 font-display font-extrabold text-[10px] min-w-[18px] h-[18px] px-1 rounded-full border border-slate-950 flex items-center justify-center shadow">3</span>
         </button>
       </div>
-      <button id="btnBomb" type="button" class="w-[76px] h-[76px] rounded-full bg-gradient-to-br from-rose-500 to-orange-600 border-[3px] border-rose-200 flex flex-col items-center justify-center shadow-2xl active:scale-90 transition">
-        <span class="text-3xl leading-none drop-shadow">💣</span>
-        <span class="text-[9px] font-display font-extrabold text-white tracking-wider mt-0.5">BOMB</span>
+      <button id="btnBomb" type="button" class="w-[76px] h-[76px] rounded-full bg-gradient-to-br from-rose-500 to-orange-600 border-[3px] border-rose-200 flex flex-col items-center justify-center shadow-2xl active:scale-90 transition relative overflow-hidden">
+        <div id="bombCooldownFill" class="absolute bottom-0 left-0 right-0 bg-rose-500/40 transition-all duration-75" style="height: 100%"></div>
+        <span class="text-3xl leading-none drop-shadow relative z-10">💣</span>
+        <span class="text-[9px] font-display font-extrabold text-white tracking-wider mt-0.5 relative z-10">BOMB</span>
       </button>
     </div>
   </div>
@@ -286,6 +287,11 @@
         <span class="mode-row-body"><span class="mode-row-name">3v3</span></span>
         <span class="mode-row-check">✓</span>
       </button>
+      <button type="button" data-mode="TEAM4v4" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
+        <span class="mode-row-icon">🛡️</span>
+        <span class="mode-row-body"><span class="mode-row-name">4v4</span></span>
+        <span class="mode-row-check">✓</span>
+      </button>
       <button type="button" data-mode="LOCAL" class="mode-choice mode-row bg-slate-800/60 border-2 border-slate-700">
         <span class="mode-row-icon">👥</span>
         <span class="mode-row-body"><span class="mode-row-name">LOCAL 2P</span></span>
@@ -303,35 +309,35 @@
           <span class="map-chip-icon">🌐</span>
           <span class="map-chip-name">Neon</span>
         </button>
-        <button type="button" data-map="DUNES" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="DUNES" class="map-choice map-chip">
           <span class="map-chip-icon">🏜️</span>
           <span class="map-chip-name">Dunas</span>
         </button>
-        <button type="button" data-map="FROST" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="FROST" class="map-choice map-chip">
           <span class="map-chip-icon">❄️</span>
           <span class="map-chip-name">Gelo</span>
         </button>
-        <button type="button" data-map="EMBER" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="EMBER" class="map-choice map-chip">
           <span class="map-chip-icon">🌋</span>
           <span class="map-chip-name">Vulcão</span>
         </button>
-        <button type="button" data-map="JUNGLE" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="JUNGLE" class="map-choice map-chip">
           <span class="map-chip-icon">🌿</span>
           <span class="map-chip-name">Selva</span>
         </button>
-        <button type="button" data-map="SAKURA" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="SAKURA" class="map-choice map-chip">
           <span class="map-chip-icon">🌸</span>
           <span class="map-chip-name">Sakura</span>
         </button>
-        <button type="button" data-map="METRO" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="METRO" class="map-choice map-chip">
           <span class="map-chip-icon">🏙️</span>
           <span class="map-chip-name">Metrópole</span>
         </button>
-        <button type="button" data-map="PORTO" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="PORTO" class="map-choice map-chip">
           <span class="map-chip-icon">⚓</span>
           <span class="map-chip-name">Porto</span>
         </button>
-        <button type="button" data-map="ORBIT" class="map-choice map-chip opacity-60">
+        <button type="button" data-map="ORBIT" class="map-choice map-chip">
           <span class="map-chip-icon">🛰️</span>
           <span class="map-chip-name">Estação</span>
         </button>
@@ -1047,6 +1053,29 @@
       </div>
     </div>
 
+    <div class="settings-group">
+      <div class="settings-group-title" data-i18n="settingsAccessibility">ACESSIBILIDADE</div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setHighContrast">Alto contraste</div>
+          <div class="settings-desc" data-i18n="setHighContrastDesc">Cores sólidas e bordas definidas</div>
+        </div>
+        <button id="setHighContrast" type="button" class="settings-switch" data-on="0" role="switch" aria-checked="false" aria-label="Alto contraste"></button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label" data-i18n="setDaltonism">Modo de daltonismo</div>
+          <div class="settings-desc" data-i18n="setDaltonismDesc">Filtros de cor para daltonismo</div>
+        </div>
+        <div class="settings-seg settings-seg-wide" id="setDaltonismSeg">
+          <button type="button" data-daltonism="none" class="active" data-i18n="daltonismNone">Nenhum</button>
+          <button type="button" data-daltonism="protanopia" data-i18n="daltonismProtanopia">Protanopia</button>
+          <button type="button" data-daltonism="deuteranopia" data-i18n="daltonismDeuteranopia">Deuteranopia</button>
+          <button type="button" data-daltonism="tritanopia" data-i18n="daltonismTritanopia">Tritanopia</button>
+        </div>
+      </div>
+    </div>
+
     <button id="btnResetSettings" type="button" class="w-full mt-2 py-2.5 rounded-2xl bg-slate-800 border border-slate-600 text-slate-300 font-display font-bold text-xs uppercase tracking-wider active:scale-95 transition" data-i18n="setReset">RESTAURAR PADRÕES</button>
   </div>
 </div>
@@ -1246,5 +1275,20 @@
 
 <script src="script.js"></script>
 <script src="firebase-sync.js"></script>
+<!-- Filtros SVG para simulação de daltonismo (acessibilidade) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="daltonism-protanopia">
+      <feColorMatrix type="matrix" values="0.567 0.433 0 0 0  0.558 0.442 0 0 0  0 0.242 0.758 0 0  0 0 0 1 0"/>
+    </filter>
+    <filter id="daltonism-deuteranopia">
+      <feColorMatrix type="matrix" values="0.625 0.375 0 0 0  0.7 0.3 0 0 0  0 0.3 0.7 0 0  0 0 0 1 0"/>
+    </filter>
+    <filter id="daltonism-tritanopia">
+      <feColorMatrix type="matrix" values="0.95 0.05 0 0 0  0 0.433 0.567 0 0  0 0.475 0.525 0 0  0 0 0 1 0"/>
+    </filter>
+  </defs>
+</svg>
+
 </body>
 </html>

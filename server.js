@@ -12,6 +12,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const zlib = require('zlib');
 
 let WebSocketServer = null;
 try { ({ WebSocketServer } = require('ws')); }
@@ -25,7 +26,7 @@ const MAX_BODY = 256 * 1024;
 // A fila guarda lotes de relay (~até 12 mensagens cada), então 240 cobre
 // vários segundos de partida mesmo com o polling do outro lado oscilando.
 const MAX_QUEUE = 240;
-const POLL_TIMEOUT_MS = 12000;
+const POLL_TIMEOUT_MS = 4000;
 
 /* ----------------------------- SEGURANÇA ------------------------------- */
 /* Cabeçalhos aplicados a todo conteúdo servido. A CSP libera só o que o jogo
@@ -109,6 +110,41 @@ const MIME = {
   '.map': 'application/json; charset=utf-8'
 };
 
+/* Pastas e arquivos internos que nunca devem ser servidos ao navegador. */
+const BLOCKED_DIRS = new Set([
+  'node_modules', 'data', 'api', '_backup-v6', 'neon-rivals',
+  '.git', '.screenshots', '.trae-html-share-packages', '.vercel'
+]);
+const BLOCKED_FILES = new Set([
+  'server.js', 'package.json', 'package-lock.json', 'vercel.json',
+  'dockerfile', 'procfile', 'render.yaml', 'readme-servidor.md',
+  'deploy.md', 'tailwind.config.cjs', 'tailwind.input.css'
+]);
+function isBlockedStatic(segments) {
+  if (!segments.length) return false;
+  if (segments.some(s => BLOCKED_DIRS.has(s) || s.startsWith('.'))) return true;
+  return BLOCKED_FILES.has(segments[segments.length - 1].toLowerCase());
+}
+
+/* Compressão sob demanda com cache em memória (um binário por arquivo). */
+const compressedCache = new Map();
+const COMPRESSIBLE = /\.(html|js|mjs|css|json|webmanifest|svg|txt|map)$/i;
+function pickEncoding(req) {
+  const ae = String(req.headers['accept-encoding'] || '');
+  if (/\bbr\b/.test(ae)) return 'br';
+  if (/\bgzip\b/.test(ae)) return 'gzip';
+  return '';
+}
+function compressBuffer(buf, encoding) {
+  return new Promise(resolve => {
+    const done = (err, out) => resolve(err ? null : out);
+    if (encoding === 'br') zlib.brotliCompress(buf, {
+      params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 6 }
+    }, done);
+    else zlib.gzip(buf, { level: 6 }, done);
+  });
+}
+
 /* ----------------------------- ICE / TURN ------------------------------ */
 function iceServers() {
   // Formato aceito: ICE_SERVERS='[{"urls":"turn:host:3478","username":"u","credential":"p"}]'
@@ -124,12 +160,17 @@ function iceServers() {
     { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
     { urls: 'stun:stun.cloudflare.com:3478' }
   ];
+  // TURN obrigatório para redes CGNAT / corporativas / firewall. Configure via
+  // variáveis de ambiente: TURN_URL, TURN_USERNAME, TURN_CREDENTIAL.
+  // Exemplo: TURN_URL=turn:seu-servidor:3478 TURN_USERNAME=usuario TURN_CREDENTIAL=senha
   if (process.env.TURN_URL) {
     list.push({
       urls: process.env.TURN_URL,
       username: process.env.TURN_USERNAME || '',
       credential: process.env.TURN_CREDENTIAL || ''
     });
+  } else {
+    console.warn('TURN_URL não configurado: WebRTC P2P pode falhar em redes restritas (CGNAT, Wi-Fi corporativo). O relé HTTP funciona como fallback.');
   }
   return list;
 }
@@ -974,6 +1015,10 @@ async function handleApi(req, res, url) {
       entry.done = true;
       clearTimeout(entry.timer);
       room.polls[role].delete(entry);
+      // No relay HTTP esta era a única prova de vida do jogador. Sem socket
+      // e sem novo poll, ele precisa ser marcado como ausente para o
+      // adversário não ficar preso para sempre.
+      if (!peerHasTransport(room, role)) schedulePeerCheck(room, role);
     });
     return;
   }
@@ -1014,6 +1059,10 @@ function serveStatic(req, res, url) {
   catch (err) { return sendText(res, 400, 'Bad request'); }
 
   if (pathname === '/' || pathname === '') pathname = '/index.html';
+  const relSegments = pathname.replace(/\\/g, '/').split('/').filter(Boolean);
+  // Nunca expor código-fonte, dados locais, dotfiles e pastas de build.
+  if (isBlockedStatic(relSegments)) return sendText(res, 404, 'Not found');
+
   const target = path.resolve(ROOT, '.' + pathname);
   if (target !== ROOT && !target.startsWith(ROOT + path.sep)) {
     return sendText(res, 403, 'Forbidden');
@@ -1025,26 +1074,62 @@ function serveStatic(req, res, url) {
     const type = MIME[ext] || 'application/octet-stream';
     const noCache = /\.(html|js|css|webmanifest)$/i.test(target) || path.basename(target) === 'sw.js';
     const cacheControl = noCache ? 'no-cache' : 'public, max-age=86400';
+    const etag = `W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
     const headers = {
       'Content-Type': type,
       'Cache-Control': cacheControl,
+      'ETag': etag,
+      'Last-Modified': stat.mtime.toUTCString(),
+      'Vary': 'Accept-Encoding',
       ...SECURITY_HEADERS
     };
-    // Marca no HTML que este host tem o servidor de salas. Em hospedagem
-    // estática o cliente não tenta /api e cai direto nos códigos manuais.
+
+    // Revalidação: 304 evita rebaixar 587 KB de script.js a cada visita.
+    const inm = String(req.headers['if-none-match'] || '');
+    const ims = Date.parse(String(req.headers['if-modified-since'] || ''));
+    if ((inm && inm === etag) || (!inm && Number.isFinite(ims) && Math.floor(stat.mtimeMs / 1000) <= Math.floor(ims / 1000))) {
+      res.writeHead(304, headers);
+      return res.end();
+    }
+
+    const encoding = COMPRESSIBLE.test(target) ? pickEncoding(req) : '';
+    const writeBody = (body, extra) => {
+      res.writeHead(200, { ...headers, ...extra, 'Content-Length': body.length });
+      if (req.method === 'HEAD') return res.end();
+      res.end(body);
+    };
+
+    // O HTML recebe a flag do servidor de salas antes de sair.
     if (path.basename(target) === 'index.html') {
-      return fs.readFile(target, 'utf8', (readErr, html) => {
+      return fs.readFile(target, 'utf8', async (readErr, html) => {
         if (readErr) return sendText(res, 500, 'Read error');
         const flag = '<script>window.__BLAST_SERVER__=true;</script>';
         const out = html.includes('</head>') ? html.replace('</head>', flag + '</head>') : flag + html;
-        res.writeHead(200, { ...headers, 'Content-Length': Buffer.byteLength(out) });
-        if (req.method === 'HEAD') return res.end();
-        res.end(out);
+        const raw = Buffer.from(out);
+        if (!encoding) return writeBody(raw);
+        const compressed = await compressBuffer(raw, encoding);
+        if (!compressed) return writeBody(raw);
+        writeBody(compressed, { 'Content-Encoding': encoding });
       });
     }
-    res.writeHead(200, { ...headers, 'Content-Length': stat.size });
-    if (req.method === 'HEAD') return res.end();
-    fs.createReadStream(target).pipe(res);
+
+    if (!encoding) {
+      res.writeHead(200, { ...headers, 'Content-Length': stat.size });
+      if (req.method === 'HEAD') return res.end();
+      return fs.createReadStream(target).pipe(res);
+    }
+
+    const key = `${target}:${stat.mtimeMs}:${stat.size}:${encoding}`;
+    const cached = compressedCache.get(key);
+    if (cached) return writeBody(cached, { 'Content-Encoding': encoding });
+    fs.readFile(target, async (readErr, raw) => {
+      if (readErr) return sendText(res, 500, 'Read error');
+      const compressed = await compressBuffer(raw, encoding);
+      if (!compressed) return writeBody(raw);
+      if (compressedCache.size > 40) compressedCache.clear();
+      compressedCache.set(key, compressed);
+      writeBody(compressed, { 'Content-Encoding': encoding });
+    });
   });
 }
 
