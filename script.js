@@ -4711,15 +4711,18 @@ function setBotFleeTarget(f) {
       const d = Math.hypot((c + 0.5) * TILE_SIZE - f.x, (r + 0.5) * TILE_SIZE - f.y);
       if (d > bestD) { bestD = d; best = { c, r }; }
     }
-    if (best) break; // encontrou em algum raio, usa o mais distante
+    if (best) break;
   }
   if (best) {
     f.ai.targetX = tileCenter(best.c, best.r).x;
     f.ai.targetY = tileCenter(best.c, best.r).y;
+    setBotStep(f, best, 0.1);
   } else {
     f.ai.targetX = WORLD_PX / 2;
     f.ai.targetY = WORLD_PX / 2;
+    setBotStep(f, { c: bc, r: br }, 0.1);
   }
+  f.ai.pathTimer = 0;
 }
 
 function decideBotAction(f) {
@@ -4815,11 +4818,11 @@ function decideBotAction(f) {
     const alignedX = Math.abs(enemy.y - f.y) < TILE_SIZE * 0.8 && Math.abs(enemy.x - f.x) <= TILE_SIZE * (f.bombRange + 0.3);
     const alignedY = Math.abs(enemy.x - f.x) < TILE_SIZE * 0.8 && Math.abs(enemy.y - f.y) <= TILE_SIZE * (f.bombRange + 0.3);
     if (d <= TILE_SIZE * (f.bombRange + 0.7) && botTrapsEnemy(f, enemy)) {
-      if (botTryBomb(f, 1)) setBotFleeTarget(f);
+      if (botTryBomb(f, 1)) { setBotFleeTarget(f); return; }
     }
     else if ((alignedX || alignedY) && d <= TILE_SIZE * (f.bombRange + 0.25)) {
       const chance = (alignedX && alignedY ? 0.95 : 0.7) * f.ai.aggression;
-      if (botTryBomb(f, chance)) setBotFleeTarget(f);
+      if (botTryBomb(f, chance)) { setBotFleeTarget(f); return; }
     }
     const step = botApproachStep(f, enemy);
     f.ai.targetX = step.x; f.ai.targetY = step.y;
