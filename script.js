@@ -3401,6 +3401,7 @@ function makeFighter(idx, sp, name, color, visor, device = 'bot', team = 0, prof
     canKick: false, shield: false,
     tacticalType: tactical, tacticalAmmo: { SHOCK: 0, CRYO: 0, C4: 0 },
     invulnTimer: 0, dashTimer: 0, dashCooldown: 0, dashDirX: 0, dashDirY: 1,
+    dashCount: 0, dashChargeLevel: 0,
     portalCooldown: 0.8, inBush: false,
     ai: {
       timer: 0, targetX: null, targetY: null, stuckTimer: 0, lastX: 0, lastY: 0, pathTimer: 0, stepX: 0, stepY: 0,
@@ -3822,6 +3823,9 @@ function circleOverlapsTile(x, y, c, r, radius) {
 function updateBombPassThrough(b) {
   if (b.exploded) return;
   const allowed = new Set();
+  // O dono da bomba SEMPRE pode atravessar a própria bomba
+  const owner = fighters.find(f => f.id === b.ownerId);
+  if (owner && owner.alive) allowed.add(b.ownerId);
   for (const f of fighters) {
     if (!f.alive) continue;
     const fc = Math.floor(f.x / TILE_SIZE), fr = Math.floor(f.y / TILE_SIZE);
@@ -3899,16 +3903,37 @@ function cycleTactical(who = null) {
 }
 
 function tryDash(f) {
-  if (!f || !f.alive || f.dashCooldown > 0) return;
+  if (!f || !f.alive) return;
+  // Se já tem dash disponível na sequência dupla, usa imediatamente (pausa de 1s entre eles)
+  if (f.dashCount > 0) {
+    f.dashCount--;
+    doDash(f);
+    return;
+  }
+  // Se está em cooldown longo, não pode iniciar nova sequência
+  if (f.dashCooldown > 0) return;
+  // Inicia nova sequência: primeiro dash
+  f.dashCount = 1; // sobra 1 para o segundo dash
+  doDash(f);
+}
+
+function doDash(f) {
   let dx = f.vx, dy = f.vy;
   const len = Math.hypot(dx, dy);
   if (len < 0.15) { dx = Math.cos(f.facingAngle); dy = Math.sin(f.facingAngle); }
   else { dx /= len; dy /= len; }
   f.dashDirX = dx; f.dashDirY = dy;
-  f.dashTimer = DASH_DURATION; f.dashCooldown = DASH_COOLDOWN;
+  f.dashTimer = DASH_DURATION;
+  // Pausa de 1s entre os dois dashes da sequência
+  f.dashCooldown = f.dashCount > 0 ? 1 : DASH_COOLDOWN;
   f.invulnTimer = Math.max(f.invulnTimer, 0.3);
   spawnParticles(f.x, f.y, '#22d3ee', 10, 140, 0.3);
   if (isMyFighter(f)) { SFX.playDash(); tutorialEvent('dash'); }
+  // Se acabou os dashes da sequência, aplica cooldown longo escalonado
+  if (f.dashCount === 0) {
+    f.dashCooldown = 5 + f.dashChargeLevel * 5;
+    f.dashChargeLevel++;
+  }
 }
 
 function updateBombs(dt) {
@@ -4669,9 +4694,56 @@ function hasCrateInCross(f) {
   return false;
 }
 
+// Após colocar uma bomba, o bot define um alvo para se afastar dela
+function setBotFleeTarget(f) {
+  const { c: bc, r: br } = worldToGrid(f.x, f.y);
+  // Encontra a bomba própria mais próxima
+  const ownBomb = bombs.find(b => !b.exploded && b.ownerId === f.id);
+  if (!ownBomb) return;
+  const bc2 = Math.floor(ownBomb.x / TILE_SIZE), br2 = Math.floor(ownBomb.y / TILE_SIZE);
+  // Fogê na direção oposta à bomba, procurando célula walkable distante
+  const dirs = [[0,-1],[0,1],[-1,0],[1,0],[-1,-1],[-1,1],[1,-1],[1,1]];
+  let best = null, bestD = -1;
+  for (let dist = 1; dist <= 4; dist++) {
+    for (const [dx, dy] of dirs) {
+      const c = bc2 + dx * dist, r = br2 + dy * dist;
+      if (!inBounds(c, r) || !isTileWalkable(c, r, f)) continue;
+      const d = Math.hypot((c + 0.5) * TILE_SIZE - f.x, (r + 0.5) * TILE_SIZE - f.y);
+      if (d > bestD) { bestD = d; best = { c, r }; }
+    }
+    if (best) break; // encontrou em algum raio, usa o mais distante
+  }
+  if (best) {
+    f.ai.targetX = tileCenter(best.c, best.r).x;
+    f.ai.targetY = tileCenter(best.c, best.r).y;
+  } else {
+    f.ai.targetX = WORLD_PX / 2;
+    f.ai.targetY = WORLD_PX / 2;
+  }
+}
+
 function decideBotAction(f) {
   const danger = findDanger(f);
   if (danger) { f.ai.pathTimer = 0; return; }
+
+  // Se o bot está em cima de sua própria bomba, foge imediatamente
+  const ownBomb = bombs.find(b => !b.exploded && b.ownerId === f.id &&
+    Math.floor(b.x / TILE_SIZE) === Math.floor(f.x / TILE_SIZE) &&
+    Math.floor(b.y / TILE_SIZE) === Math.floor(f.y / TILE_SIZE));
+  if (ownBomb) {
+    // Fogê para a célula walkable mais próxima longe da bomba
+    const { c: bc, r: br } = worldToGrid(f.x, f.y);
+    let best = null, bestD = 0;
+    for (const [dc, dr] of [[0,-1],[0,1],[-1,0],[1,0]]) {
+      const c = bc + dc, r = br + dr;
+      if (!inBounds(c, r) || !isTileWalkable(c, r, f)) continue;
+      const d = Math.hypot((c + 0.5) * TILE_SIZE - f.x, (r + 0.5) * TILE_SIZE - f.y);
+      if (d > bestD) { bestD = d; best = { c, r }; }
+    }
+    if (best) { f.ai.targetX = tileCenter(best.c, best.r).x; f.ai.targetY = tileCenter(best.c, best.r).y; }
+    else { f.ai.targetX = WORLD_PX / 2; f.ai.targetY = WORLD_PX / 2; }
+    return;
+  }
 
   const { c: bc, r: br } = worldToGrid(f.x, f.y);
   const edge = Math.min(bc, br, GRID_SIZE - 1 - bc, GRID_SIZE - 1 - br);
@@ -4742,10 +4814,12 @@ function decideBotAction(f) {
     const d = Math.hypot(enemy.x - f.x, enemy.y - f.y);
     const alignedX = Math.abs(enemy.y - f.y) < TILE_SIZE * 0.8 && Math.abs(enemy.x - f.x) <= TILE_SIZE * (f.bombRange + 0.3);
     const alignedY = Math.abs(enemy.x - f.x) < TILE_SIZE * 0.8 && Math.abs(enemy.y - f.y) <= TILE_SIZE * (f.bombRange + 0.3);
-    if (d <= TILE_SIZE * (f.bombRange + 0.7) && botTrapsEnemy(f, enemy)) botTryBomb(f, 1);
+    if (d <= TILE_SIZE * (f.bombRange + 0.7) && botTrapsEnemy(f, enemy)) {
+      if (botTryBomb(f, 1)) setBotFleeTarget(f);
+    }
     else if ((alignedX || alignedY) && d <= TILE_SIZE * (f.bombRange + 0.25)) {
       const chance = (alignedX && alignedY ? 0.95 : 0.7) * f.ai.aggression;
-      botTryBomb(f, chance);
+      if (botTryBomb(f, chance)) setBotFleeTarget(f);
     }
     const step = botApproachStep(f, enemy);
     f.ai.targetX = step.x; f.ai.targetY = step.y;
@@ -4759,7 +4833,7 @@ function decideBotAction(f) {
     if (d > TILE_SIZE * 2 && d < TILE_SIZE * 9) { f.ai.targetX = boom.x; f.ai.targetY = boom.y; return; }
   }
 
-  if (hasCrateInCross(f) && botTryBomb(f, f.ai.farm)) { f.ai.digAt = match.elapsedTime + 0.9; return; }
+  if (hasCrateInCross(f) && botTryBomb(f, f.ai.farm)) { f.ai.digAt = match.elapsedTime + 0.9; setBotFleeTarget(f); return; }
 
   const pu = nearestPowerup(f, 420);
   if (pu) { f.ai.targetX = pu.x; f.ai.targetY = pu.y; return; }
