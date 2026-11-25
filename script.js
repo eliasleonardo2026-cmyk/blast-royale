@@ -1846,7 +1846,7 @@ function serverNow() { return Date.now() + serverClockOffset; }
 function syncServerClock() {
   if (!/^https?:$/.test(location.protocol)) return;
   const t0 = Date.now();
-  fetch('api/health', { cache: 'no-store' })
+  fetch('https://bastleroyale.duckdns.org/api/health', { cache: 'no-store' })
     .then(res => {
       const dateHeader = res.headers.get('date');
       if (!dateHeader) return;
@@ -8330,7 +8330,7 @@ function updateCamera(dt) {
 /* ========================================================================
    17. ONLINE MULTIPLAYER (WebRTC)
    ======================================================================== */
-const NET_ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'turn:177.52.161.107:3478', username: 'blast', credential: 'BlastTurn2026' }] };
+const NET_ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'turn:177.52.161.107:3478', username: 'blast', credential: 'BlastTurn2026' }, { urls: 'turn:177.52.161.107:3478?transport=tcp', username: 'blast', credential: 'BlastTurn2026' }] };
 
 /* ---------- Servidor de salas (sinalização WebRTC) ---------- */
 // Mesmo host por padrão; aceita ?server=https://... ou window.BLAST_SERVER.
@@ -8936,7 +8936,7 @@ async function netServerHandleSignal(data) {
 }
 
 /* ---------- Relay do servidor: partida mesmo sem P2P ---------- */
-const NET_RELAY_DELAY_MS = 3000;
+const NET_RELAY_DELAY_MS = 7000;
 
 /* Socket por sala: um envio/recebimento por mensagem, sem custo de
    requisição. Quando o servidor não aceita o upgrade (proxy, Vercel,
@@ -9653,7 +9653,7 @@ window.addEventListener('pagehide', (event) => {
    13.5 CHAT DE VOZ OPCIONAL (WebRTC — sempre desligado ao entrar)
    ======================================================================== */
 const VOICE_ICE = {
-  iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
+  iceServers: NET_ICE.iceServers
 };
 const VOICE_REPORT_KEY = 'blastVoiceReports';
 
