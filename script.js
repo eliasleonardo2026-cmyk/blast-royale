@@ -8330,7 +8330,7 @@ function updateCamera(dt) {
 /* ========================================================================
    17. ONLINE MULTIPLAYER (WebRTC)
    ======================================================================== */
-const NET_ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }] };
+const NET_ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'turn:177.52.161.107:3478', username: 'blast', credential: 'BlastTurn2026' }] };
 
 /* ---------- Servidor de salas (sinalização WebRTC) ---------- */
 // Mesmo host por padrão; aceita ?server=https://... ou window.BLAST_SERVER.
@@ -8338,8 +8338,8 @@ const netServer = {
   base: (() => {
     try {
       const q = new URLSearchParams(location.search).get('server');
-      return String(q || window.BLAST_SERVER || '').replace(/\/+$/, '');
-    } catch (e) { return ''; }
+      return String(q || window.BLAST_SERVER || 'https://bastleroyale.duckdns.org').replace(/\/+$/, '');
+    } catch (e) { return 'https://bastleroyale.duckdns.org'; }
   })(),
   available: false, checked: false, serverless: false, code: '', token: '', role: null,
   since: 0, polling: false, pollAbort: null, busy: false, roomToken: '',
@@ -8944,10 +8944,8 @@ const NET_RELAY_DELAY_MS = 3000;
 function netWsUrl() {
   if (!netServer.code || !netServer.token) return '';
   const p = `/api/rooms/${netServer.code}/ws?token=${encodeURIComponent(netServer.token)}`;
-  if (netServer.base) return netServer.base.replace(/^http/i, 'ws') + p;
-  if (location.protocol === 'https:') return 'wss://' + location.host + p;
-  if (location.protocol === 'http:') return 'ws://' + location.host + p;
-  return '';
+  const base = netServer.base || 'https://bastleroyale.duckdns.org';
+  return base.replace(/^http/i, 'wss') + p;
 }
 
 function netServerSocketOpen() {
