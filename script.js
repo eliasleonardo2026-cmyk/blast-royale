@@ -8936,7 +8936,7 @@ async function netServerHandleSignal(data) {
 }
 
 /* ---------- Relay do servidor: partida mesmo sem P2P ---------- */
-const NET_RELAY_DELAY_MS = 7000;
+const NET_RELAY_DELAY_MS = 8000;
 
 /* Socket por sala: um envio/recebimento por mensagem, sem custo de
    requisição. Quando o servidor não aceita o upgrade (proxy, Vercel,
