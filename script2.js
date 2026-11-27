@@ -11,22 +11,29 @@
 const NET_ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'turn:177.52.161.107:3478', username: 'blast', credential: 'BlastTurn2026' }, { urls: 'turn:177.52.161.107:3478?transport=tcp', username: 'blast', credential: 'BlastTurn2026' }] };
 
 /* ---------- Servidor de salas (sinalização WebRTC) ---------- */
-// Mesmo host por padrão; aceita ?server=https://... ou window.BLAST_SERVER.
+/* ⚙️ CONFIG ONLINE — onde ficam as PARTIDAS ONLINE (salas/WebSocket/movimento).
+   - Preenchendo abaixo com a URL do LET'S CLOUD, o jogo manda o ONLINE pra lá,
+     mesmo que a página seja servida pelo Render (que fica só p/ Solo/offline).
+   - Deixe '' para usar a própria URL de onde o jogo foi servido (servidor único).
+   Ex.: window.BLAST_SERVER = 'https://SEU-APP.letscloud.io';   */
+window.BLAST_SERVER = window.BLAST_SERVER || '';
+
 const netServer = {
   base: (() => {
     try {
       // 1) ?server=... sobrescreve sempre (útil p/ apontar p/ outro servidor).
       const q = new URLSearchParams(location.search).get('server');
       if (q) return String(q).replace(/\/+$/, '');
-      // 2) Quando a página veio do próprio servidor (localhost OU produção),
-      //    usa a URL de onde ela veio — assim o "servidor local" de fato serve
-      //    as salas, e a produção usa a produção.
+      // 2) Servidor ONLINE dedicado (Let's Cloud) — usado pelo modo online.
+      const online = String(window.BLAST_SERVER || '').replace(/\/+$/, '');
+      if (online && /^https?:\/\//.test(online)) return online;
+      // 3) Senão, usa a URL de onde a página veio (servidor único).
       if (window.__BLAST_SERVER__) {
         const origin = String(location.origin || '').replace(/\/+$/, '');
         if (origin && /^https?:\/\//.test(origin)) return origin;
       }
-      // 3) Fallback final: o relé público do jogo.
-      return window.BLAST_SERVER || 'https://bastleroyale.duckdns.org';
+      // 4) Fallback final: o relé público do jogo.
+      return 'https://bastleroyale.duckdns.org';
     } catch (e) { return 'https://bastleroyale.duckdns.org'; }
   })(),
   available: false, checked: false, serverless: false, code: '', token: '', role: null,
