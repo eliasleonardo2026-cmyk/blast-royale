@@ -787,7 +787,8 @@ body.rotate-locked { overflow: hidden; }
 .net-member-chip.t2 { border-color: rgba(244, 114, 182, 0.6); }
 .net-member-chip.empty { opacity: 0.5; color: #64748b; border-style: dashed; }
 .net-server-room { display: flex; flex-direction: column; gap: 0.4rem; }
-.countdown-overlay { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(3px); }
+.countdown-overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(2, 6, 23, 0.82); backdrop-filter: blur(3px); }
+.countdown-overlay:not(.hidden) { display: flex; align-items: center; justify-content: center; }
 .countdown-card { text-align: center; padding: 1.2rem 2rem; border-radius: 1.4rem; background: linear-gradient(180deg, rgba(14, 35, 56, 0.9), rgba(8, 20, 40, 0.95)); border: 1px solid rgba(34, 211, 238, 0.35); box-shadow: 0 0 50px rgba(34, 211, 238, 0.25); }
 .countdown-number { font-size: clamp(4rem, 20vw, 9rem); font-weight: 900; line-height: 1; color: #22d3ee; text-shadow: 0 0 34px rgba(34, 211, 238, 0.55); animation: cdpop 0.8s ease; }
 .countdown-label { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.2em; color: #67e8f9; text-transform: uppercase; margin-top: 0.3rem; }
