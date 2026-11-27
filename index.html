@@ -26,6 +26,18 @@
 <meta property="og:description" content="Sobreviva à arena, chute bombas com ondas de choque e seja o último de pé. 16 lutadores, bombas táticas, portais e airdrops." />
 <meta property="og:image" content="icons/icon-512.png" />
 <meta name="twitter:card" content="summary" />
+<script>
+  // Em file:// o manifest/PWA é bloqueado por CORS (origin null). Remove o link
+  // fora de http(s) para não soltar erro. Dica: rode sempre com o servidor local!
+  (function () {
+    var p = location.protocol;
+    if (p === 'http:' || p === 'https:') return;
+    ['link[rel="manifest"]', 'link[rel="apple-touch-icon"]'].forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+    });
+  })();
+</script>
 </head>
 <body class="relative w-full h-full text-slate-100">
 
@@ -372,6 +384,7 @@
     <div class="flex items-center justify-between gap-2">
       <span id="modeBadge" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-display font-bold text-[10px] tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">BATTLE ROYALE • 16 LUTADORES</span>
       <div class="flex items-center gap-1.5 shrink-0">
+        <button id="btnOpenSocial" type="button" title="Mensagens e Amigos" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">💬<span id="socialBadge" class="social-badge hidden"></span></button>
         <button id="btnAchievements" type="button" title="Conquistas" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">🏆</button>
         <button id="btnOpenSettings" type="button" title="Ajustes" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">⚙️</button>
       </div>
@@ -541,6 +554,7 @@
           <div id="profileStats" class="profile-stat-groups"></div>
           <div id="profileRank" class="profile-rank"></div>
           <p id="profileSync" class="profile-sync">📴 Modo local — entre na internet para sincronizar</p>
+          <button id="btnProfileGoogle" type="button" class="profile-google hidden">G Entrar com Google — salve seu progresso</button>
         </div>
       </div>
     </section>
@@ -697,7 +711,7 @@
         <div id="onlinePanel" class="flex flex-col gap-2.5 bg-slate-950/70 border border-slate-800 rounded-2xl p-3">
       <div class="flex items-center justify-between">
         <span data-i18n="onlineLabel" class="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">Multiplayer a Distância</span>
-        <span class="text-[9px] font-bold text-slate-500 tracking-wider">WebRTC P2P</span>
+        <span class="text-[9px] font-bold text-slate-500 tracking-wider">WebSocket</span>
       </div>
       <p data-i18n="onlineHint" class="text-[10px] text-slate-400 leading-snug">Sem servidor: troque os códigos abaixo com seu amigo.</p>
       <div id="netServerBox" class="net-server hidden">
@@ -706,6 +720,12 @@
           <span id="netServerState" class="net-server-state" data-i18n="serverChecking">verificando…</span>
         </div>
         <div id="netServerLobby" class="net-server-lobby">
+          <div class="net-server-label" data-i18n="onlineModeLabel">Modo da sala online</div>
+          <div id="netModeRow" class="net-mode-row" role="group" aria-label="Modo da sala online">
+            <button type="button" class="net-mode-btn active" data-online-mode="1v1">1v1</button>
+            <button type="button" class="net-mode-btn" data-online-mode="2v2">2v2</button>
+            <button type="button" class="net-mode-btn" data-online-mode="3v3">3v3</button>
+          </div>
           <div class="net-quick">
             <button id="btnQuickMatch" type="button" class="net-server-btn primary">
               <span class="qm-idle" data-i18n="quickMatchBtn">🔎 BUSCAR PARTIDA 1v1</span>
@@ -724,6 +744,8 @@
             <span data-i18n="serverRoomCode">Código da sala</span>
             <b id="netServerCodeOut">----</b>
           </div>
+          <div id="netServerMeta" class="net-server-meta"></div>
+          <div id="netServerMembers" class="net-server-members"></div>
           <div class="net-server-actions">
             <button id="btnServerCopy" type="button" class="net-server-btn" data-i18n="serverCopyLink">Copiar link</button>
             <button id="btnServerLeave" type="button" class="net-server-btn danger" data-i18n="serverLeave">Sair</button>
@@ -1273,8 +1295,53 @@
   </div>
 </div>
 
+<div id="socialModal" class="hidden fixed inset-0 z-[95] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-3">
+  <div class="social-modal">
+    <div class="social-head">
+      <span class="social-head-title">💬 Mensagens & Amigos</span>
+      <span id="socialLogged" class="social-logged"></span>
+      <button id="btnGoogleSignin" type="button" class="social-google hidden">G Entrar com Google</button>
+      <button id="btnSocialClose" type="button" class="social-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="social-body">
+      <div class="social-col social-friends">
+        <div class="social-subtitle">Amigos</div>
+        <div class="social-add">
+          <input id="socialAddNick" type="text" maxlength="24" autocomplete="off" placeholder="Nick do jogador" />
+          <button id="btnSocialAdd" type="button" title="Adicionar amigo">＋</button>
+        </div>
+        <div id="socialFriendsList" class="social-list"></div>
+        <div class="social-subtitle">Pedidos recebidos</div>
+        <div id="socialRequests" class="social-list"></div>
+      </div>
+      <div class="social-col social-chat">
+        <div class="social-chat-head">
+          <span id="socialChatHeadText">Escolha um amigo para conversar</span>
+        </div>
+        <div id="socialChatMsgs" class="social-chat-msgs"></div>
+        <div class="social-chat-input">
+          <button id="btnAudioRec" type="button" title="Gravar mensagem de voz" class="social-audio-btn">🎤</button>
+          <input id="socialChatText" type="text" maxlength="500" autocomplete="off" placeholder="Escreva uma mensagem..." />
+          <button id="btnSocialSend" type="button" title="Enviar">➤</button>
+          <span id="audioRecTimer" class="social-audio-timer hidden"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="countdownOverlay" class="countdown-overlay hidden" role="status" aria-live="polite">
+  <div class="countdown-card">
+    <div id="countdownTeams" class="countdown-teams"></div>
+    <div id="countdownNumber" class="countdown-number">3</div>
+    <div id="countdownLabel" class="countdown-label">A PARTIDA COMEÇA EM</div>
+  </div>
+</div>
+
 <script src="script.js"></script>
+<script src="script2.js"></script>
 <script src="firebase-sync.js"></script>
+<script src="social.js"></script>
 <!-- Filtros SVG para simulação de daltonismo (acessibilidade) -->
 <svg width="0" height="0" style="position:absolute">
   <defs>

@@ -17,7 +17,7 @@
     measurementId: "G-R0JTDHPEJH"
   };
   const SDK_BASE = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const SDK_FILES = ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-database-compat.js'];
+  const SDK_FILES = ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-database-compat.js', 'firebase-storage-compat.js'];
   const LOCAL_ID_KEY = 'blast-fb-uid';
   // Nuvem sempre ligada quando há internet: perfil, liga, economia e
   // presença sincronizam sozinhos. Sem rede o jogo segue 100% local.
@@ -303,6 +303,195 @@
     } catch (e) { return false; }
   }
 
+  /* ------------ LOGIN GOOGLE (vincula a conta anônima, mantém o uid) ------------ */
+  async function loginWithGoogle() {
+    if (!auth) return { ok: false, error: 'no-auth' };
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try {
+      const cur = auth.currentUser;
+      if (!cur) {
+        await auth.signInWithPopup(provider);
+      } else if (typeof cur.linkWithPopup === 'function' && cur.isAnonymous) {
+        await cur.linkWithPopup(provider);
+      } else {
+        await cur.reload().catch(() => {});
+      }
+      state.uid = auth.currentUser.uid;
+      state.status = 'online';
+      return { ok: true, isGoogle: !auth.currentUser.isAnonymous };
+    } catch (e) {
+      const code = (e && e.code) || 'auth';
+      // A conta Google já tem dados próprios: passa a usá-la (perde o anônimo).
+      if (code === 'auth/account-exists-with-different-credential') {
+        try {
+          await auth.signInWithPopup(provider);
+          state.uid = auth.currentUser.uid;
+          return { ok: true, isGoogle: true, switched: true };
+        } catch (e2) { return { ok: false, error: (e2 && e2.code) || 'auth' }; }
+      }
+      return { ok: false, error: code };
+    }
+  }
+
+  async function signOutAccount() {
+    if (!auth) return;
+    try { await auth.signOut(); } catch (e) {}
+    // Após signOut não há usuário anônimo: entra como anônimo de novo.
+    try { await auth.signInAnonymously(); } catch (e) {}
+    state.uid = auth.currentUser ? auth.currentUser.uid : null;
+    socialRef = 0;
+  }
+
+  /* ------------ AMIGOS & CHAT DE TEXTO (Firestore) ------------ */
+  let socialRef = 0;
+  const socialSubs = [];
+  function dmIdOf(a, b) { const s = [a, b].sort(); return s[0] + '__' + s[1]; }
+  function myProfile() { return profile(); }
+
+  async function findUserByNick(nick) {
+    if (!db) return null;
+    const n = String(nick || '').trim().slice(0, 24);
+    if (!n) return null;
+    const snap = await db.collection('users').where('nick', '==', n).limit(1).get();
+    if (snap.empty) return null;
+    return { uid: snap.docs[0].id, name: String((snap.docs[0].data() || {}).nick || n), avatar: (snap.docs[0].data() || {}).avatar || '🐍' };
+  }
+
+  async function sendFriendRequest(nick) {
+    if (!state.ready || !db) return { ok: false, error: 'offline' };
+    const target = await findUserByNick(nick);
+    if (!target) return { ok: false, error: 'not-found' };
+    if (target.uid === state.uid) return { ok: false, error: 'self' };
+    const me = myProfile();
+    const id = 'F_' + dmIdOf(state.uid, target.uid);
+    try {
+      await db.collection('friendRequests').doc(id).set({
+        from: state.uid, to: target.uid,
+        fromName: String(me.nick || '').slice(0, 24), fromAvatar: me.avatar || '🐍',
+        status: 'pending', toName: target.name, at: Date.now()
+      }, { merge: true });
+      return { ok: true, toName: target.name };
+    } catch (e) { return { ok: false, error: (e && e.code) || 'db' }; }
+  }
+
+  function listenFriends(cb) {
+    if (!db || !state.uid) return function () {};
+    const col = db.collection('users').doc(state.uid).collection('friends');
+    const un = col.orderBy('since', 'desc').onSnapshot(sn => {
+      cb && cb(sn.docs.map(d => ({ uid: d.id, name: d.data().name || '', avatar: d.data().avatar || '🐍', since: d.data().since || 0 })));
+    }, () => {});
+    socialSubs.push(un); return un;
+  }
+
+  function listenFriendRequests(cb) {
+    if (!db || !state.uid) return function () {};
+    const res = { in: [], out: [] };
+    const emit = () => cb && cb(res);
+    const u1 = db.collection('friendRequests').where('to', '==', state.uid).onSnapshot(sn => {
+      res.in = sn.docs
+        .filter(d => d.data().status === 'pending')
+        .map(d => { const x = d.data(); return { id: d.id, from: x.from, fromName: x.fromName || '', fromAvatar: x.fromAvatar || '🐍', status: x.status }; });
+      emit();
+    }, () => {});
+    const u2 = db.collection('friendRequests').where('from', '==', state.uid).onSnapshot(sn => {
+      res.out = sn.docs
+        .filter(d => d.data().status === 'pending')
+        .map(d => { const x = d.data(); return { id: d.id, to: x.to, toName: x.toName || '', status: x.status }; });
+      emit();
+    }, () => {});
+    socialSubs.push(u1, u2); return () => { u1(); u2(); };
+  }
+
+  async function acceptRequest(reqId, fromUid, fromName, fromAvatar) {
+    if (!db) return;
+    const me = myProfile();
+    try { await db.collection('friendRequests').doc(reqId).update({ status: 'accepted', at: Date.now() }); } catch (e) {}
+    const batch = db.batch();
+    batch.set(db.collection('users').doc(state.uid).collection('friends').doc(fromUid), { name: fromName, avatar: fromAvatar || '🐍', since: Date.now() });
+    batch.set(db.collection('users').doc(fromUid).collection('friends').doc(state.uid), { name: String(me.nick || '').slice(0, 24), avatar: me.avatar || '🐍', since: Date.now() });
+    try { await batch.commit(); } catch (e) {}
+  }
+
+  async function declineRequest(reqId) {
+    if (!db || !reqId) return;
+    try { await db.collection('friendRequests').doc(reqId).delete(); } catch (e) {}
+  }
+
+  async function removeFriend(friendUid) {
+    if (!db || !friendUid) return;
+    const batch = db.batch();
+    try {
+      batch.delete(db.collection('users').doc(state.uid).collection('friends').doc(friendUid));
+      batch.delete(db.collection('users').doc(friendUid).collection('friends').doc(state.uid));
+      await batch.commit();
+    } catch (e) {}
+  }
+
+  function listenMessages(friendUid, cb) {
+    if (!db || !state.uid) return function () {};
+    const col = db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages');
+    const un = col.orderBy('at').limitToLast(200).onSnapshot(sn => {
+      cb && cb(sn.docs.map(d => { const x = d.data(); return { id: d.id, from: x.from, to: x.to, text: x.text || '', at: x.at || 0 }; }));
+    }, () => {});
+    socialSubs.push(un); return un;
+  }
+
+  async function sendMessage(friendUid, text) {
+    if (!db || !state.uid) return false;
+    const t = String(text || '').trim().slice(0, 500);
+    if (!t) return false;
+    try {
+      await db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages').add({ from: state.uid, to: friendUid, text: t, at: Date.now() });
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* ------------ Voz nas mensagens: sinalização via Realtime DB ------------ */
+  function callIdOf(a, b) { const s = [a, b].sort(); return s[0] + '_' + s[1]; }
+  function sendCallSignal(pairId, fromUid, obj) {
+    if (!rtdb || !pairId || !fromUid) return;
+    try { rtdb.ref('callSignals/' + pairId + '/' + fromUid).set(Object.assign({ at: Date.now() }, obj)); } catch (e) {}
+  }
+  function listenCallSignals(pairId, theirUid, cb) {
+    if (!rtdb || !pairId || !theirUid || typeof cb !== 'function') return function () {};
+    const ref = rtdb.ref('callSignals/' + pairId + '/' + theirUid);
+    const on = ref.on('value', snap => { const v = snap.val(); if (v) cb(v); });
+    return () => ref.off('value', on);
+  }
+  function setCallMeta(pairId, obj) {
+    if (!rtdb || !pairId) return;
+    try { rtdb.ref('calls/' + pairId).set(obj); } catch (e) {}
+  }
+  function listenCallMeta(pairId, cb) {
+    if (!rtdb || !pairId || typeof cb !== 'function') return function () {};
+    const ref = rtdb.ref('calls/' + pairId);
+    const on = ref.on('value', snap => cb(snap.val()));
+    return () => ref.off('value', on);
+  }
+
+  function listenPresence(friendUid, cb) {
+    if (!rtdb || !friendUid || typeof cb !== 'function') return function () {};
+    const ref = rtdb.ref('presence/' + friendUid);
+    const on = ref.on('value', snap => cb(snap.val()));
+    return () => ref.off('value', on);
+  }
+
+  /* ------------ Mensagem de voz (gravação → Firebase Storage) ------------ */
+  async function uploadAudioMessage(friendUid, blob, durMs) {
+    if (!state.ready || !db || !firebase.storage) return { ok: false, error: 'no-storage' };
+    try {
+      const dm = dmIdOf(state.uid, friendUid);
+      const st = firebase.storage();
+      const path = 'audio/' + dm + '/' + Date.now() + '.webm';
+      await st.ref(path).put(blob);
+      const audioUrl = await st.ref(path).getDownloadURL();
+      await db.collection('dms').doc(dm).collection('messages').add({
+        from: state.uid, to: friendUid, kind: 'audio', audioUrl, dur: Math.round(durMs || 0), at: Date.now()
+      });
+      return { ok: true, audioUrl };
+    } catch (e) { return { ok: false, error: (e && e.code) || 'upload' }; }
+  }
+
   window.FirebaseSync = {
     get ready() { return state.ready; },
     get uid() { return state.uid; },
@@ -312,8 +501,17 @@
     get compLocked() { return !!state.compLocked; },
     get lastComp() { return state.lastComp; },
     get leagueRows() { return window.GameState ? GameState.state.league.length : 0; },
-    saveProfileNow, reportPlayer, refreshText,
-    init
+    get isGoogle() { return !!(auth && auth.currentUser && !auth.currentUser.isAnonymous); },
+    get linked() { return !!(auth && auth.currentUser); },
+    saveProfileNow, reportPlayer, refreshText, init,
+    loginWithGoogle, signOutAccount,
+    findUserByNick, sendFriendRequest, acceptRequest, declineRequest, removeFriend,
+    listenFriends, listenFriendRequests, listenMessages, sendMessage, dmIdOf,
+    callIdOf, sendCallSignal, listenCallSignals, setCallMeta, listenCallMeta,
+    listenPresence,
+    uploadAudioMessage,
+    get hasStorage() { return !!(state.ready && firebase && firebase.storage); },
+    get socialVersion() { return socialRef; }
   };
 
   const start = () => {

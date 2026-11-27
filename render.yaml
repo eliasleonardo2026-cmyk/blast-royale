@@ -14,16 +14,15 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
-      # TURN SERVER — necessário para WebRTC P2P em redes 4G / CGNAT / corporativas
-      # Sem TURN, o jogo cai no relay automático do servidor (funciona, mas com mais latência).
-      # Recomendação grátis: https://metered.ca (plano gratuito com 10 GB/mês)
-      # Depois de criar a conta, preencha com os dados que eles fornecem:
-      - key: TURN_URL
-        value: turn:seu-servidor-de-turn.com:3478
-      - key: TURN_USERNAME
-        value: seu_usuario_turn
-      - key: TURN_CREDENTIAL
-        value: sua_senha_turn
+      # TURN SERVER — para testar/convidados o relay automático já funciona sem TURN.
+      # Se quiser TURN de verdade (redes 4G/CGNAT), preencha com dados reais
+      # (ex.: metered.ca plano grátis) e descomente as 3 variáveis abaixo.
+      # - key: TURN_URL
+      #   value: turn:seu-servidor-de-turn.com:3478
+      # - key: TURN_USERNAME
+      #   value: seu_usuario_turn
+      # - key: TURN_CREDENTIAL
+      #   value: sua_senha_turn
       # Alternativa: lista ICE completa em uma única variável (sobrescreve as 3 acima)
       # - key: ICE_SERVERS
       #   value: '[{"urls":"turn:turn.seu-servidor.com:3478","username":"u","credential":"p"},{"urls":"stun:stun.l.google.com:19302"}]'

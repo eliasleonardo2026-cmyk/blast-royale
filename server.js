@@ -1,11 +1,14 @@
 'use strict';
 /* =========================================================================
-   BLAST ROYALE — servidor de jogo e sinalização WebRTC
+   BLAST ROYALE — servidor de jogo e transporte WebSocket puro
    - Serve o jogo (arquivos estáticos) em http://localhost:8123
-   - Cria salas com código curto e troca offer/answer entre os dois jogadores
-   - Não guarda dados de partida: o gameplay continua P2P (WebRTC)
-   - Relay com WebSocket (um socket por jogador) e fallback HTTP (signal+poll)
-   - Dependência: ws (opcional — sem ela o relay funciona só por HTTP)
+   - Cria salas com código curto; partidas online passam pelo WebSocket /ws
+   - Nenhum dado de partida é guardado: o servidor só retransmite para o
+     adversário da mesma sala em tempo real (latência baixa) e mede o ping
+   - Transporte único: WebSocket persistente em /ws (path novo, com join pelo
+     primeiro frame). O legado /api/rooms/:code/ws e o relay HTTP (signal+poll)
+     continuam existindo apenas para clientes antigos.
+   - Dependência: ws
    ========================================================================= */
 
 const http = require('http');
@@ -189,36 +192,75 @@ function roomCode() {
   return String(Date.now()).slice(-5);
 }
 
-function newRoom(name) {
+/* Papéis de uma sala: host + guest (1v1) e M3..M6 para 2v2/3v3. As estruturas
+   por papel (sockets/filas/polls/peers) usam essas strings como chave, então a
+   lógica de 1v1, busca rápida e mata-mata continua idêntica — só cresce o nº de
+   cadeiras conforme a capacidade do modo de time. */
+const ROLE_ORDER = ['host', 'guest', 'M3', 'M4', 'M5', 'M6'];
+
+function roleByIndex(i) { return ROLE_ORDER[i] || ('M' + (i + 1)); }
+function indexByRole(r) {
+  if (r === 'host') return 0;
+  if (r === 'guest') return 1;
+  const m = /^M(\d+)$/.exec(r);
+  return m ? (Number(m[1]) - 1) : -1;
+}
+
+function newRoom(name, mode = '1v1') {
+  const capacity = mode === '2v2' ? 4 : mode === '3v3' ? 6 : 2;
   const code = roomCode();
+  const roleNames = ROLE_ORDER.slice(0, capacity);
+  const peers = {}, sockets = {}, messages = {}, polls = {}, goneTimers = {};
+  roleNames.forEach(r => {
+    peers[r] = null; sockets[r] = new Set();
+    messages[r] = []; polls[r] = new Set(); goneTimers[r] = null;
+  });
   const room = {
-    code,
-    created: Date.now(),
-    updated: Date.now(),
-    seq: 0,
-    peers: {
-      host: { token: crypto.randomBytes(16).toString('hex'), name: sanitizeName(name, 'Host'), since: Date.now() },
-      guest: null
-    },
-    messages: { host: [], guest: [] },
-    polls: { host: new Set(), guest: new Set() },
-    sockets: { host: new Set(), guest: new Set() },
-    goneTimers: { host: null, guest: null },
+    code, mode, capacity,
+    created: Date.now(), updated: Date.now(), seq: 0,
+    peers, sockets, messages, polls, goneTimers,
     closed: false
   };
+  const host = { token: crypto.randomBytes(16).toString('hex'), name: sanitizeName(name, 'Host'), since: Date.now() };
+  peers.host = host;
   rooms.set(code, room);
   return room;
 }
 
 function peerRole(room, token) {
   if (!room || !token) return null;
-  if (room.peers.host && room.peers.host.token === token) return 'host';
-  if (room.peers.guest && room.peers.guest.token === token) return 'guest';
+  for (const r in room.peers) {
+    if (room.peers[r] && room.peers[r].token === token) return r;
+  }
   return null;
 }
 
+function firstFreeRole(room) {
+  for (const r of ROLE_ORDER.slice(0, room.capacity || 2)) {
+    if (!room.peers[r]) return r;
+  }
+  return null;
+}
+function countPresent(room) {
+  let n = 0;
+  for (const r in room.peers) if (room.peers[r]) n++;
+  return n;
+}
+function teamForIndex(i, cap) { const half = Math.floor((cap || 2) / 2); return i < half ? 1 : 2; }
+function sanitizeAvatar(raw) { const s = String(raw == null ? '' : raw).trim(); if (!s) return '🐍'; return s.slice(0, 3); }
+
 function peersInfo(room) {
-  return { host: !!room.peers.host, guest: !!room.peers.guest };
+  const cap = room.capacity || 2;
+  const mode = room.mode || '1v1';
+  const members = ROLE_ORDER.slice(0, cap).map(role => {
+    const m = room.peers[role];
+    const idx = indexByRole(role);
+    return { role, index: idx, team: teamForIndex(idx, cap), name: m ? String(m.name) : '', av: m ? (m.avatar || '🐍') : '', present: !!m };
+  });
+  return {
+    host: !!room.peers.host, guest: !!room.peers.guest,
+    mode, capacity: cap, count: members.filter(x => x.present).length, members
+  };
 }
 
 function sendJson(res, status, body) {
@@ -287,16 +329,15 @@ function respondPoll(room, role, entry) {
 
 function closeRoom(room, reason) {
   if (!room) return;
-  cancelPeerGone(room, 'host');
-  cancelPeerGone(room, 'guest');
+  for (const r in room.goneTimers) cancelPeerGone(room, r);
   room.closed = true;
   room.updated = Date.now();
   broadcastSockets(room, { closed: true, peers: peersInfo(room), reason: reason || 'left' });
-  ['host', 'guest'].forEach(role => {
-    room.sockets[role].forEach(ws => { try { ws.close(); } catch (err) {} });
-    room.sockets[role].clear();
-    const entries = Array.from(room.polls[role] || []);
-    room.polls[role].clear();
+  for (const r in room.peers) {
+    room.sockets[r].forEach(ws => { try { ws.close(); } catch (err) {} });
+    room.sockets[r].clear();
+    const entries = Array.from(room.polls[r] || []);
+    room.polls[r].clear();
     entries.forEach(entry => {
       if (entry.done) return;
       entry.done = true;
@@ -307,7 +348,7 @@ function closeRoom(room, reason) {
         });
       } catch (err) { /* ignore */ }
     });
-  });
+  }
   rooms.delete(room.code);
 }
 
@@ -367,26 +408,30 @@ function sendToSockets(room, role, payload) {
 }
 
 function broadcastSockets(room, payload) {
-  sendToSockets(room, 'host', payload);
-  sendToSockets(room, 'guest', payload);
+  for (const r in room.peers) {
+    if (room.peers[r]) sendToSockets(room, r, payload);
+  }
 }
 
-/* Entrega uma mensagem de jogo ao outro jogador: socket quando existe,
-   senão fila do long-poll. Sempre com seq para nunca duplicar.
+/* Entrega uma mensagem de jogo a TODOS os outros jogadores presentes na sala
+   (socket quando existe, senão fila do long-poll). Sempre com seq para nunca
+   duplicar. Em 1v1 o "outro" é um só; em 2v2/3v3 retransmite para cada um.
    `msg` pode ser null (sinal antigo em base64): aí vai como está. */
 function relayMessage(room, fromRole, msg, raw) {
   if (msg && typeof msg === 'object') bracketObserveRelay(room, fromRole, msg);
-  const target = fromRole === 'host' ? 'guest' : 'host';
   room.seq += 1;
   const seq = room.seq;
   room.updated = Date.now();
-  if (msg && typeof msg === 'object' && sendToSockets(room, target, { m: msg, seq })) return seq;
   const data = typeof raw === 'string' ? raw : JSON.stringify(msg);
-  room.messages[target].push({ seq, data, ts: Date.now() });
-  if (room.messages[target].length > MAX_QUEUE) {
-    room.messages[target].splice(0, room.messages[target].length - MAX_QUEUE);
+  for (const r in room.peers) {
+    if (r === fromRole || !room.peers[r]) continue;
+    if (msg && typeof msg === 'object' && sendToSockets(room, r, { m: msg, seq })) continue;
+    room.messages[r].push({ seq, data, ts: Date.now() });
+    if (room.messages[r].length > MAX_QUEUE) {
+      room.messages[r].splice(0, room.messages[r].length - MAX_QUEUE);
+    }
+    flushPolls(room, r);
   }
-  flushPolls(room, target);
   return seq;
 }
 
@@ -951,11 +996,14 @@ async function handleApi(req, res, url) {
   if (parts[1] === 'rooms' && parts.length === 2 && req.method === 'POST') {
     if (!rateLimit('rooms:' + ip, 12, 60000)) return sendJson(res, 429, { ok: false, error: 'rate-limited' });
     const body = await readBody(req);
-    const room = newRoom(body.name);
+    const mode = body.mode === '2v2' || body.mode === '3v3' ? body.mode : '1v1';
+    const room = newRoom(body.name, mode);
+    room.peers.host.avatar = sanitizeAvatar(body.avatar);
     return sendJson(res, 201, {
       ok: true,
       code: room.code,
-      role: 'host',
+      mode: room.mode, capacity: room.capacity,
+      role: 'host', index: 0, team: 1,
       token: room.peers.host.token,
       peers: peersInfo(room)
     });
@@ -964,19 +1012,24 @@ async function handleApi(req, res, url) {
   if (parts[1] === 'rooms' && parts[3] === 'join' && req.method === 'POST') {
     const room = rooms.get(String(parts[2] || '').toUpperCase());
     if (!room || room.closed) return sendJson(res, 404, { ok: false, error: 'room-not-found' });
-    if (room.peers.guest) return sendJson(res, 409, { ok: false, error: 'room-full' });
+    const freeRole = firstFreeRole(room);
+    if (!freeRole) return sendJson(res, 409, { ok: false, error: 'room-full' });
     const body = await readBody(req);
-    room.peers.guest = {
+    const index = indexByRole(freeRole);
+    room.peers[freeRole] = {
       token: crypto.randomBytes(16).toString('hex'),
-      name: sanitizeName(body.name, 'Guest'),
+      name: sanitizeName(body.name, freeRole === 'guest' ? 'Guest' : 'Player'),
+      avatar: sanitizeAvatar(body.avatar),
       since: Date.now()
     };
     room.updated = Date.now();
-    cancelPeerGone(room, 'guest');
+    cancelPeerGone(room, freeRole);
     flushPolls(room, 'host');
     broadcastSockets(room, { peers: peersInfo(room) });
     return sendJson(res, 200, {
-      ok: true, code: room.code, role: 'guest', token: room.peers.guest.token, peers: peersInfo(room)
+      ok: true, code: room.code, mode: room.mode, capacity: room.capacity,
+      role: freeRole, index, team: teamForIndex(index, room.capacity),
+      token: room.peers[freeRole].token, peers: peersInfo(room)
     });
   }
 
@@ -1167,13 +1220,98 @@ function drainQueue(room, role, ws) {
 }
 
 if (WebSocketServer) {
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true });   // /api/rooms/:code/ws (legado)
+  const wssWs = new WebSocketServer({ noServer: true });  // /ws (protocolo novo)
+
+  /* Cada socket novo guarda a sala/papel. Antes do primeiro frame de join ele
+     não pertence a nenhuma sala. */
+  function gameWsMeta(ws) {
+    if (!ws.__game) ws.__game = {};
+    return ws.__game;
+  }
+
+  /* Associa o socket à sala pelo frame de join:
+     { type:'join', roomId, playerId, isHost, token? }.
+     O token decide o papel com segurança; quando ele não vem (fallback), as
+     cadeiras livres do estado pós criar/entrar definem host/convidado. */
+  function gameWsJoin(ws, frame) {
+    const meta = gameWsMeta(ws);
+    if (meta.room) return;
+    const code = String(frame.roomId || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    const room = rooms.get(code);
+    if (!room || room.closed) { ws.close(4001, 'invalid-room'); return; }
+    let role = frame.token ? peerRole(room, frame.token) : null;
+    if (!role) {
+      if (frame.isHost && room.peers.host && !room.peers.guest) role = 'host';
+      else if (!frame.isHost && room.peers.host && !room.peers.guest) role = 'guest';
+    }
+    if (!role) { ws.close(4001, 'invalid-role'); return; }
+    meta.room = room; meta.role = role; meta.playerId = String(frame.playerId || '').slice(0, 64);
+    room.sockets[role].add(ws);
+    room.updated = Date.now();
+    cancelPeerGone(room, role);
+    try { ws.send(JSON.stringify({ peers: peersInfo(room), role, joined: true })); } catch (err) { /* ignore */ }
+    drainQueue(room, role, ws);
+  }
+
+  /* Roteia as mensagens de jogo em tempo real para o adversário da mesma
+     sala, junto com o ping/pong do protocolo. */
+  function gameWsRoute(ws, frame) {
+    const meta = gameWsMeta(ws);
+    const room = meta.room, role = meta.role;
+    if (!room || room.closed) return;
+    if (frame.type === 'ping') {
+      try { ws.send(JSON.stringify({ type: 'pong', ts: Number(frame.ts) || Date.now(), roomId: room.code })); } catch (err) { /* ignore */ }
+      return;
+    }
+    if (frame.type === 'leave') { gameWsLeave(ws); return; }
+    if (!frame.m || typeof frame.m !== 'object') return;
+    relayMessage(room, role, frame.m);
+  }
+
+  function gameWsLeave(ws) {
+    const meta = gameWsMeta(ws);
+    const room = meta.room, role = meta.role;
+    meta.room = null; meta.role = null;
+    if (room && role && room.sockets[role]) {
+      room.sockets[role].delete(ws);
+      room.updated = Date.now();
+      // Socket caiu: se o outro (reconexão) não assumir logo, o jogador saiu.
+      if (room.sockets[role].size === 0 && !peerHasTransport(room, role)) {
+        schedulePeerCheck(room, role);
+      }
+    }
+  }
 
   server.on('upgrade', (req, socket, head) => {
     let url = null;
     try { url = new URL(req.url || '/', 'http://localhost'); }
     catch (err) { socket.destroy(); return; }
-    const parts = url.pathname.split('/').filter(Boolean); // api rooms CODE ws
+    const parts = url.pathname.split('/').filter(Boolean); // ws | api rooms CODE ws
+
+    // Protocolo novo das salas: caminho único /ws, join pelo primeiro frame.
+    if (parts[0] === 'ws') {
+      wssWs.handleUpgrade(req, socket, head, ws => {
+        ws.isAlive = true;
+        ws.on('pong', () => { ws.isAlive = true; });
+        ws.on('message', raw => {
+          let frame = null;
+          try { frame = JSON.parse(String(raw)); } catch (err) { return; }
+          if (!frame || typeof frame !== 'object') return;
+          if (!gameWsMeta(ws).room) {
+            if (frame.type !== 'join' || !frame.roomId) { ws.close(4000, 'join-required'); return; }
+            gameWsJoin(ws, frame);
+            return;
+          }
+          gameWsRoute(ws, frame);
+        });
+        ws.on('close', () => gameWsLeave(ws));
+        ws.on('error', () => gameWsLeave(ws));
+      });
+      return;
+    }
+
+    // Legado: /api/rooms/:code/ws (token na query) — mantido p/ clientes antigos.
     if (parts[0] !== 'api' || parts[1] !== 'rooms' || parts[3] !== 'ws') { socket.destroy(); return; }
     const room = rooms.get(String(parts[2] || '').toUpperCase());
     const role = peerRole(room, url.searchParams.get('token') || '');
@@ -1215,6 +1353,14 @@ if (WebSocketServer) {
       try { ws.ping(); } catch (err) { /* ignore */ }
     });
   }, 30000).unref();
+
+  setInterval(() => {
+    wssWs.clients.forEach(ws => {
+      if (!ws.isAlive) return ws.terminate();
+      ws.isAlive = false;
+      try { ws.ping(); } catch (err) { /* ignore */ }
+    });
+  }, 30000).unref();
 }
 
 setInterval(() => {
@@ -1229,12 +1375,22 @@ setInterval(() => {
 bracketDiskLoad();
 bracketPrune();
 
+server.on('error', err => {
+  if (err && err.code === 'EADDRINUSE') {
+    console.error(`\n  ⚠️  A porta ${PORT} já está em uso.`);
+    console.error(`  → Encerre o processo antigo, ou rode em outra porta:  PORT=8124 node server.js\n`);
+  } else {
+    console.error('\n  ❌ Erro ao iniciar o servidor:', err.message || err);
+  }
+  process.exit(1);
+});
+
 server.listen(PORT, HOST, () => {
   const shown = HOST === '0.0.0.0' ? 'localhost' : HOST;
   console.log(`\n  Blast Royale server`);
   console.log(`  ➜  http://${shown}:${PORT}`);
-  console.log(`  ➜  Salas WebRTC: /api/health`);
-  console.log(`  ➜  TURN: ${process.env.TURN_URL ? 'configurado' : 'não configurado (use STUN ou configure TURN_URL)'}\n`);
+  console.log(`  ➜  Partidas online: WebSocket puro em /ws`);
+  console.log(`  ➜  Health: /api/health`);
 });
 
 process.on('SIGINT', () => {

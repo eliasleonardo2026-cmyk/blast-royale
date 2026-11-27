@@ -5,7 +5,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Só o necessário para o jogo e o servidor.
-COPY package.json server.js index.html script.js style.css tailwind.css ui-extra.css firebase-sync.js sw.js manifest.webmanifest ./
+COPY package.json server.js index.html script.js script2.js social.js style.css tailwind.css ui-extra.css firebase-sync.js sw.js manifest.webmanifest ./
 COPY audio ./audio
 COPY icons ./icons
 

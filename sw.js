@@ -1,9 +1,11 @@
-const CACHE = 'blast-royale-v1.19.0';
+const CACHE = 'blast-royale-v1.33.0';
 const APP_SHELL = [
   './',
   './index.html',
   './script.js',
+  './script2.js',
   './firebase-sync.js',
+  './social.js',
   './style.css',
   './ui-extra.css',
   './tailwind.css',
