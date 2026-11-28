@@ -847,6 +847,15 @@ body.rotate-locked { overflow: hidden; }
    têm a classe .hidden, mesmo que outra utilidade (ex.: flex) tente exibi-los.
    Sem isso, em alguns caches o modal fica 'invisível' cobrindo a tela e atrapalha
    cliques no jogo (ex.: 'Entrar na arena abre mensagens'). */
+/* O modal de mensagens precisa de z-index EXPLÍCITO: a classe utilitária
+   z-[95] não existe no tailwind.css compilado, então o modal ficava com
+   z-index "auto" e era pintado ATRÁS do lobby (#startScreen tem z-30).
+   Resultado do bug: abrir mensagens parecia não fazer nada (ficava escondido)
+   e, ao clicar em "ENTRAR NA ARENA" (que esconde o lobby), o modal aparecia. */
+#socialModal {
+  z-index: 900;
+}
+
 #socialModal.hidden, #countdownOverlay.hidden {
   display: none !important;
   visibility: hidden !important;

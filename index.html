@@ -4,9 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Blast Royale — Tactical Bomb Arena</title>
-<link rel="stylesheet" href="tailwind.css?v=55" />
-<link rel="stylesheet" href="style.css?v=55" />
-<link rel="stylesheet" href="ui-extra.css?v=55" />
+<link rel="stylesheet" href="tailwind.css?v=56" />
+<link rel="stylesheet" href="style.css?v=56" />
+<link rel="stylesheet" href="ui-extra.css?v=56" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -40,28 +40,6 @@
 </script>
 </head>
 <body class="relative w-full h-full text-slate-100">
-<div id="dbgLog" style="position:fixed; top:3px; left:3px; z-index:10000; background:rgba(2,6,23,.88); color:#fbbf24; font:11px/1.4 monospace; padding:5px 8px; border-radius:8px; border:1px solid rgba(251,191,36,.5); max-width:96vw; max-height:40vh; overflow:auto;"></div>
-<script>
-(function(){
-  var box=document.getElementById('dbgLog');
-  function log(msg){ var p=document.createElement('div'); p.textContent='['+new Date().toISOString().slice(11,23)+'] '+msg; box.appendChild(p); while(box.childNodes.length>40) box.removeChild(box.firstChild); }
-  log('dbg on');
-  document.addEventListener('click', function(e){
-    var t=e.target; var s='';
-    function nm(n){ if(!n) return ''; if(n.id) return '#'+n.id; if(n.className&&n.className.toString) return '.'+String(n.className).split(' ')[0]; return n.tagName||''; }
-    var n=t, chain=[];
-    while(n&&chain.length<5){ chain.push(nm(n)); n=n.parentElement; }
-    log('TOQUE '+chain.join('>')+' :: '+(t.textContent?t.textContent.trim().slice(0,30):''));
-  }, true);
-  var modal=document.getElementById('socialModal');
-  if(modal){
-    var ob=new MutationObserver(function(ms){ ms.forEach(function(m){ if(m.type==='attributes'&&m.attributeName==='style') log('MODAL='+modal.style.display); }); });
-    ob.observe(modal,{attributes:true});
-  }
-  log('modal inicial: '+(modal?modal.style.display:'MISSING'));
-})();
-</script>
-<div id="buildMarker" style="position:fixed; bottom:4px; right:8px; z-index:9999; color:#22d3ee; font-size:10px; font-weight:900; background:rgba(2,6,23,.7); padding:2px 7px; border-radius:999px; border:1px solid rgba(34,211,238,.4);">v55-build</div>
 
 <!-- ================= CANVAS PRINCIPAL ================= -->
 <canvas id="gameCanvas" role="img" aria-label="Arena de jogo do Blast Royale" tabindex="-1">Arena de jogo do Blast Royale. Este jogo precisa de tela e controles gráficos.</canvas>
@@ -1318,7 +1296,7 @@
   </div>
 </div>
 
-<div id="socialModal" class="fixed inset-0 z-[95] bg-slate-950/95 backdrop-blur-md items-center justify-center p-3" style="display:none">
+<div id="socialModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md items-center justify-center p-3" style="display:none">
   <div class="social-modal">
     <div class="social-head">
       <span class="social-head-title">💬 Mensagens & Amigos</span>
@@ -1361,10 +1339,10 @@
   </div>
 </div>
 
-<script src="script.js?v=55"></script>
-<script src="script2.js?v=55"></script>
-<script src="firebase-sync.js?v=55"></script>
-<script src="social.js?v=55"></script>
+<script src="script.js?v=56"></script>
+<script src="script2.js?v=56"></script>
+<script src="firebase-sync.js?v=56"></script>
+<script src="social.js?v=56"></script>
 <!-- Filtros SVG para simulação de daltonismo (acessibilidade) -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
