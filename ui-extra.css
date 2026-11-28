@@ -843,6 +843,14 @@ body.rotate-locked { overflow: hidden; }
 .ms-head-btn:hover { background: rgba(30,41,59,0.72); }
 .ms-head-btn:active { background: rgba(38,54,78,0.85); }
 .ms-head-btn .lobby-section-emoji { font-size: 1.05rem; }
+/* IMPORTANTE: o modal e o countdown nunca devem aparecer cobertos quando
+   têm a classe .hidden, mesmo que outra utilidade (ex.: flex) tente exibi-los.
+   Sem isso, em alguns caches o modal fica 'invisível' cobrindo a tela e atrapalha
+   cliques no jogo (ex.: 'Entrar na arena abre mensagens'). */
+#socialModal.hidden, #countdownOverlay.hidden {
+  display: none !important;
+  visibility: hidden !important;
+}
 .ms-head-btn .ms-head-text { display: flex; flex-direction: column; line-height: 1.25; }
 .ms-head-btn .lobby-section-title { font-weight: 900; font-size: 0.78rem; letter-spacing: 0.05em; color: #fff; }
 .ms-head-btn .lobby-section-sub { font-size: 0.62rem; color: #94a3b8; }
