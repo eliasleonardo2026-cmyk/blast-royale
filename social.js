@@ -235,9 +235,7 @@
     renderProfileGoogle();
     bind('btnOpenSocial', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
     bind('btnOpenSocialLeft', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
-    // Cabeçalho da seção "MENSAGENS & AMIGOS" tbém abre direto (bom no celular).
-    const msHead = document.querySelector('[data-lobby-tab="mensagens"]');
-    if (msHead) msHead.addEventListener('click', e => { e.stopPropagation(); open(); });
+    bind('btnOpenSocialSection', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
     bind('btnSocialClose', 'click', close);
     bind('btnGoogleSignin', 'click', googleLogin);
     bind('btnProfileGoogle', 'click', googleLogin);

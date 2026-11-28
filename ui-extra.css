@@ -839,6 +839,14 @@ body.rotate-locked { overflow: hidden; }
 .social-call-act.decline { border-color: rgba(251,113,133,0.6); background: rgba(244,63,94,0.16); color: #fda4af; }
 .social-badge { position: absolute; top: -4px; right: -4px; min-width: 15px; height: 15px; padding: 0 3px; border-radius: 999px; background: #f43f5e; color: #fff; font-size: 9px; font-weight: 900; line-height: 15px; text-align: center; }
 #btnOpenSocial { position: relative; }
+.ms-head-btn { display: flex; align-items: center; gap: 0.55rem; width: 100%; padding: 0.72rem 0.85rem; border: 1px solid rgba(51,65,85,0.5); border-radius: 0.9rem; background: rgba(15,23,42,0.6); color: #fff; font: inherit; cursor: pointer; text-align: left; transition: background 0.12s ease; }
+.ms-head-btn:hover { background: rgba(30,41,59,0.72); }
+.ms-head-btn:active { background: rgba(38,54,78,0.85); }
+.ms-head-btn .lobby-section-emoji { font-size: 1.05rem; }
+.ms-head-btn .ms-head-text { display: flex; flex-direction: column; line-height: 1.25; }
+.ms-head-btn .lobby-section-title { font-weight: 900; font-size: 0.78rem; letter-spacing: 0.05em; color: #fff; }
+.ms-head-btn .lobby-section-sub { font-size: 0.62rem; color: #94a3b8; }
+.ms-head-btn .lobby-chevron { margin-left: auto; color: #64748b; font-size: 0.8rem; }
 .online-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; flex: none; }
 .online-dot .on { }
 .social-friend .online-dot { margin-right: -0.1rem; }
