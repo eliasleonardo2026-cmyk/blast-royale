@@ -45,7 +45,7 @@ const SECURITY_HEADERS = {
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-    "font-src 'self' data: https://fonts.gstatic.com; " +
+    "font-src 'self' data: https:; " +
     "img-src 'self' data: blob:; " +
     "media-src 'self' data: blob:; " +
     "connect-src 'self' https: wss: ws: blob:; " +
