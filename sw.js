@@ -1,4 +1,4 @@
-const CACHE = 'blast-royale-v1.47.0';
+const CACHE = 'blast-royale-v1.50.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -85,19 +85,19 @@ self.addEventListener('fetch', event => {
   }
 
   if (url.origin === self.location.origin) {
+    // NETWORK-FIRST em tudo: a versão nova do servidor chega sempre. O cache
+    // só entra como fallback quando a rede falha (offline) — assim nenhum
+    // aparelho fica preso em arquivo antigo por causa do Service Worker.
     event.respondWith(
-      caches.match(req).then(hit => {
-        const network = fetch(req)
-          .then(res => {
-            if (res && res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then(cache => cache.put(req, copy));
-            }
-            return res;
-          })
-          .catch(() => hit);
-        return hit || network;
-      })
+      fetch(req)
+        .then(res => {
+          if (res && res.ok && res.status !== 206) {
+            const copy = res.clone();
+            caches.open(CACHE).then(cache => cache.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
     );
     return;
   }

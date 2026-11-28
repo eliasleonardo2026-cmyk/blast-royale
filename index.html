@@ -4,9 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Blast Royale — Tactical Bomb Arena</title>
-<link rel="stylesheet" href="tailwind.css?v=47" />
-<link rel="stylesheet" href="style.css?v=47" />
-<link rel="stylesheet" href="ui-extra.css?v=47" />
+<link rel="stylesheet" href="tailwind.css?v=49" />
+<link rel="stylesheet" href="style.css?v=49" />
+<link rel="stylesheet" href="ui-extra.css?v=49" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -384,7 +384,7 @@
     <div class="flex items-center justify-between gap-2">
       <span id="modeBadge" class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 font-display font-bold text-[10px] tracking-wider whitespace-nowrap overflow-hidden text-ellipsis">BATTLE ROYALE • 16 LUTADORES</span>
       <div class="flex items-center gap-1.5 shrink-0">
-        <button id="btnOpenSocial" type="button" title="Mensagens e Amigos" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">💬<span id="socialBadge" class="social-badge hidden"></span></button>
+        <button id="btnOpenSocial" type="button" title="Mensagens e Amigos" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition" onclick="if(window.SocialUI)SocialUI.open()">💬<span id="socialBadge" class="social-badge hidden"></span></button>
         <button id="btnAchievements" type="button" title="Conquistas" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">🏆</button>
         <button id="btnOpenSettings" type="button" title="Ajustes" class="w-8 h-8 rounded-lg bg-slate-800 border border-slate-700 text-sm active:scale-90 transition">⚙️</button>
       </div>
@@ -822,7 +822,7 @@
     </section>
 
     <section class="lobby-section" data-lobby-section="mensagens">
-      <button type="button" id="btnOpenSocialSection" class="ms-head-btn">
+      <button type="button" id="btnOpenSocialSection" class="ms-head-btn" onclick="(function(){if(window.SocialUI){SocialUI.open();}else{var m=document.getElementById('socialModal');if(m){m.style.display='flex';}}})()">
         <span class="lobby-section-emoji">💬</span>
         <span class="ms-head-text">
           <span class="lobby-section-title" data-i18n="tabMensagens">MENSAGENS &amp; AMIGOS</span>
@@ -1349,10 +1349,10 @@
   </div>
 </div>
 
-<script src="script.js?v=47"></script>
-<script src="script2.js?v=47"></script>
-<script src="firebase-sync.js?v=47"></script>
-<script src="social.js?v=47"></script>
+<script src="script.js?v=49"></script>
+<script src="script2.js?v=49"></script>
+<script src="firebase-sync.js?v=49"></script>
+<script src="social.js?v=49"></script>
 <!-- Filtros SVG para simulação de daltonismo (acessibilidade) -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
