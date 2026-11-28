@@ -183,11 +183,9 @@
   }
 
   function open() {
-    if (state.open) return;
-    state.open = true;
     const modal = el('socialModal');
     if (modal) modal.classList.remove('hidden');
-    resubscribe();
+    if (!state.open) { state.open = true; resubscribe(); }
   }
 
   function close() {
@@ -235,8 +233,8 @@
 
   function init() {
     renderProfileGoogle();
-    bind('btnOpenSocial', 'click', open);
-    bind('btnOpenSocialLeft', 'click', open);
+    bind('btnOpenSocial', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
+    bind('btnOpenSocialLeft', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
     bind('btnSocialClose', 'click', close);
     bind('btnGoogleSignin', 'click', googleLogin);
     bind('btnProfileGoogle', 'click', googleLogin);
