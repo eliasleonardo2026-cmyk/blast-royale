@@ -183,17 +183,20 @@
   }
 
   function open() {
-    const modal = el('socialModal');
-    if (modal) modal.classList.remove('hidden');
-    if (!state.open) { state.open = true; resubscribe(); }
+  const modal = el('socialModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    modal.classList.remove('hidden');
   }
+  if (!state.open) { state.open = true; resubscribe(); }
+}
 
-  function close() {
-    state.open = false;
-    clearSubs();
-    const modal = el('socialModal');
-    if (modal) modal.classList.add('hidden');
-  }
+function close() {
+  state.open = false;
+  clearSubs();
+  const modal = el('socialModal');
+  if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
+}
 
   async function googleLogin() {
     const b = el('btnGoogleSignin');

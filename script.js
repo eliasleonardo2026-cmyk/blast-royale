@@ -1852,7 +1852,10 @@ function serverNow() { return Date.now() + serverClockOffset; }
 function syncServerClock() {
   if (!/^https?:$/.test(location.protocol)) return;
   const t0 = Date.now();
-  fetch('https://bastleroyale.duckdns.org/api/health', { cache: 'no-store' })
+  const clockHost = (window.__BLAST_SERVER__ && typeof window.BLAST_SERVER !== 'undefined' && window.BLAST_SERVER)
+    ? window.BLAST_SERVER
+    : location.origin;
+  fetch(clockHost + '/api/health', { cache: 'no-store' })
     .then(res => {
       const dateHeader = res.headers.get('date');
       if (!dateHeader) return;
