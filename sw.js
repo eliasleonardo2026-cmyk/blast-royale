@@ -1,4 +1,4 @@
-const CACHE = 'blast-royale-v1.39.0';
+const CACHE = 'blast-royale-v1.40.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -40,7 +40,7 @@ self.addEventListener('install', event => {
       .then(cache => Promise.all(APP_SHELL.map(url =>
         fetch(new Request(url, { cache: 'reload' }))
           .then(res => {
-            if (!res || !res.ok) throw new Error('app-shell:' + url);
+            if (!res || !res.ok || res.status === 206) throw new Error('app-shell:' + url);
             return cache.put(url, res);
           })
       )))
@@ -109,7 +109,7 @@ self.addEventListener('fetch', event => {
   const CROSS_ORIGIN_CACHE_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
   if (!CROSS_ORIGIN_CACHE_HOSTS.includes(url.hostname)) return;
 
-  const cacheable = res => !!res && (res.ok || res.type === 'opaque');
+  const cacheable = res => !!res && res.status !== 206 && (res.ok || res.type === 'opaque');
   event.respondWith(
     caches.match(req).then(hit => {
       const network = fetch(req)

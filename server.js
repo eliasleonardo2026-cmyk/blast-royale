@@ -50,6 +50,7 @@ const SECURITY_HEADERS = {
     "media-src 'self' data: blob:; " +
     "connect-src 'self' https: wss: ws: blob:; " +
     "worker-src 'self' blob:; " +
+    "frame-src 'self' https://*.firebaseio.com https://*.googleapis.com; " +
     "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
 };
 
