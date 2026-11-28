@@ -236,6 +236,7 @@
   function init() {
     renderProfileGoogle();
     bind('btnOpenSocial', 'click', open);
+    bind('btnOpenSocialLeft', 'click', open);
     bind('btnSocialClose', 'click', close);
     bind('btnGoogleSignin', 'click', googleLogin);
     bind('btnProfileGoogle', 'click', googleLogin);
