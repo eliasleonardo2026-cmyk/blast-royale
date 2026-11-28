@@ -237,8 +237,7 @@ function close() {
   function init() {
     renderProfileGoogle();
     bind('btnOpenSocial', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
-    bind('btnOpenSocialLeft', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
-    bind('btnOpenSocialSection', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
+    bind('btnOpenSocialOnline', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
     bind('btnSocialClose', 'click', close);
     bind('btnGoogleSignin', 'click', googleLogin);
     bind('btnProfileGoogle', 'click', googleLogin);

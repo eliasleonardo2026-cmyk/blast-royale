@@ -4,9 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Blast Royale — Tactical Bomb Arena</title>
-<link rel="stylesheet" href="tailwind.css?v=51" />
-<link rel="stylesheet" href="style.css?v=51" />
-<link rel="stylesheet" href="ui-extra.css?v=51" />
+<link rel="stylesheet" href="tailwind.css?v=52" />
+<link rel="stylesheet" href="style.css?v=52" />
+<link rel="stylesheet" href="ui-extra.css?v=52" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -40,7 +40,7 @@
 </script>
 </head>
 <body class="relative w-full h-full text-slate-100">
-<div id="buildMarker" style="position:fixed; bottom:4px; right:8px; z-index:9999; color:#22d3ee; font-size:10px; font-weight:900; background:rgba(2,6,23,.7); padding:2px 7px; border-radius:999px; border:1px solid rgba(34,211,238,.4);">v50-build</div>
+<div id="buildMarker" style="position:fixed; bottom:4px; right:8px; z-index:9999; color:#22d3ee; font-size:10px; font-weight:900; background:rgba(2,6,23,.7); padding:2px 7px; border-radius:999px; border:1px solid rgba(34,211,238,.4);">v51-build</div>
 
 <!-- ================= CANVAS PRINCIPAL ================= -->
 <canvas id="gameCanvas" role="img" aria-label="Arena de jogo do Blast Royale" tabindex="-1">Arena de jogo do Blast Royale. Este jogo precisa de tela e controles gráficos.</canvas>
@@ -739,6 +739,7 @@
             <input id="netServerCode" type="text" maxlength="4" autocomplete="off" spellcheck="false" placeholder="CÓDIGO" aria-label="Código da sala" />
             <button id="btnServerJoin" type="button" class="net-server-btn" data-i18n="serverJoin">Entrar</button>
           </div>
+          <button id="btnOpenSocialOnline" type="button" class="net-server-btn" onclick="(function(){if(window.SocialUI){SocialUI.open();}else{var m=document.getElementById('socialModal');if(m){m.style.display='flex';}}})()">💬 Mensagens &amp; Amigos</button>
         </div>
         <div id="netServerRoom" class="net-server-room hidden">
           <div class="net-server-code-row">
@@ -820,17 +821,6 @@
           <span data-i18n="leaguePlayBtn">🏅 JOGAR LIGA ONLINE (+3 PTS)</span>
         </button>
       </div>
-    </section>
-
-    <section class="lobby-section" data-lobby-section="mensagens">
-      <button type="button" id="btnOpenSocialSection" class="ms-head-btn" onclick="(function(){if(window.SocialUI){SocialUI.open();}else{var m=document.getElementById('socialModal');if(m){m.style.display='flex';}}})()">
-        <span class="lobby-section-emoji">💬</span>
-        <span class="ms-head-text">
-          <span class="lobby-section-title" data-i18n="tabMensagens">MENSAGENS &amp; AMIGOS</span>
-          <span class="lobby-section-sub" data-i18n="tabMensagensSub">Chat, amigos e voz</span>
-        </span>
-        <span class="lobby-chevron">▸</span>
-      </button>
     </section>
 
     <section class="lobby-section" data-lobby-section="chroma">
@@ -1350,10 +1340,10 @@
   </div>
 </div>
 
-<script src="script.js?v=51"></script>
-<script src="script2.js?v=51"></script>
-<script src="firebase-sync.js?v=51"></script>
-<script src="social.js?v=51"></script>
+<script src="script.js?v=52"></script>
+<script src="script2.js?v=52"></script>
+<script src="firebase-sync.js?v=52"></script>
+<script src="social.js?v=52"></script>
 <!-- Filtros SVG para simulação de daltonismo (acessibilidade) -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
