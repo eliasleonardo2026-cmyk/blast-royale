@@ -1,4 +1,4 @@
-const CACHE = 'blast-royale-v1.38.0';
+const CACHE = 'blast-royale-v1.39.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -102,14 +102,14 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Terceiros: hoje só as fontes do Google. Só esses hosts são cacheados —
-  // e apenas quando a resposta é válida. Um servidor de sinalização em outro
-  // domínio (via ?server=) responde como CORS e nunca pode vir do cache, senão
-  // o multiplayer quebra; e uma página/bundle de erro nunca deve ser guardada.
+  // Terceiros: hoje só as fontes do Google são cacheadas (quando válidas).
+  // Tudo o mais (Firebase, RTDB, firestore, um relé via ?server=) NÃO é
+  // interceptado pelo SW: o navegador busca direto na rede, senão uma falha
+  // sem cache geraria "Failed to convert value to 'Response'" e quebraria.
   const CROSS_ORIGIN_CACHE_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
-  const cacheable = res => !!res && CROSS_ORIGIN_CACHE_HOSTS.includes(url.hostname) &&
-    (res.ok || res.type === 'opaque');
+  if (!CROSS_ORIGIN_CACHE_HOSTS.includes(url.hostname)) return;
 
+  const cacheable = res => !!res && (res.ok || res.type === 'opaque');
   event.respondWith(
     caches.match(req).then(hit => {
       const network = fetch(req)
