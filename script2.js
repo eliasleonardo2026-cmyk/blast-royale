@@ -16,7 +16,7 @@ const NET_ICE = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls:
      mesmo que a página seja servida pelo Render (que fica só p/ Solo/offline).
    - Deixe '' para usar a própria URL de onde o jogo foi servido (servidor único).
    Ex.: window.BLAST_SERVER = 'https://SEU-APP.letscloud.io';   */
-window.BLAST_SERVER = window.BLAST_SERVER || '';
+window.BLAST_SERVER = window.BLAST_SERVER || 'https://177-52-161-107.sslip.io';
 
 const netServer = {
   base: (() => {
