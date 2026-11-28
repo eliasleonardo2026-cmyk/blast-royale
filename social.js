@@ -272,12 +272,20 @@ function close() {
     const nick = input ? input.value.trim() : '';
     if (!nick) return;
     const F = fb();
+    if (!ready()) { toast('Conectando ao servidor… tente de novo em instantes.'); return; }
     if (!F || !F.sendFriendRequest) { toast('Firebase indisponível.'); return; }
-    const r = await F.sendFriendRequest(nick);
+    let r;
+    try {
+      r = await F.sendFriendRequest(nick);
+    } catch (e) {
+      r = { ok: false, error: (e && e.code) || 'erro' };
+    }
     if (r && r.ok) toast('Pedido enviado para ' + r.toName + '.');
-    else if (r && r.error === 'not-found') toast('Nenhum jogador com esse nick.');
+    else if (r && r.error === 'not-found') toast('Nenhum jogador com esse nick. O nick precisa ser exatamente igual (maiúsculas/minúsculas contam).');
     else if (r && r.error === 'self') toast('Esse é o seu próprio nick.');
-    else toast('Não foi possível enviar o pedido.');
+    else if (r && (r.error === 'resource-exhausted' || r.error === 'unavailable')) toast('Servidor cheio agora (limite diário grátis do Firebase atingido). Tente mais tarde.');
+    else if (r && r.error === 'offline') toast('Sem conexão com o servidor.');
+    else toast('Não foi possível enviar o pedido (' + ((r && r.error) || 'erro') + ').');
     if (input) input.value = '';
   }
 
@@ -335,8 +343,15 @@ function close() {
     const text = input ? input.value : '';
     if (!text.trim() || !state.active) return;
     const F = fb();
-    const ok = F && F.sendMessage ? await F.sendMessage(state.active.uid, text) : false;
-    if (ok && input) input.value = '';
+    let r = { ok: false, error: 'offline' };
+    try {
+      if (F && F.sendMessage) r = await F.sendMessage(state.active.uid, text);
+    } catch (e) {
+      r = { ok: false, error: (e && e.code) || 'erro' };
+    }
+    if (r && r.ok) { if (input) input.value = ''; return; }
+    if (r && (r.error === 'resource-exhausted' || r.error === 'unavailable')) toast('Servidor cheio agora (limite diário grátis do Firebase). Tente mais tarde.');
+    else toast('Não foi possível enviar a mensagem (' + ((r && r.error) || 'erro') + ').');
   }
 
   /* ------------ Voz nas mensagens (DMVoice) ------------ */

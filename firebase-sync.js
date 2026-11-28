@@ -33,7 +33,9 @@
     lastComp: null,       // último progresso competitivo confirmado na nuvem
     compLocked: false,    // regra rejeitou: sincroniza o resto e tenta depois
     hasCloudDoc: false,   // documento já existe no Firestore (create vs update)
-    catchUpTimer: null    // agenda o envio do excedente competitivo
+    catchUpTimer: null,   // agenda o envio do excedente competitivo
+    lastSavedSig: null,   // assinatura do último perfil gravado (evita gravações repetidas)
+    saveBackoffUntil: 0   // cota do Firestore esgotada: espera antes de tentar de novo
   };
   let app = null, auth = null, db = null, rtdb = null;
 
@@ -130,8 +132,15 @@
     }, 62000);
   }
 
-  function saveProfileNow(retrying = false) {
+  // Cota diária do Firestore no plano grátis (Spark): estourou a conta inteira
+  // e agora TODAS as operações respondem 429 até a meia-noite do Pacífico.
+  function isQuotaErr(code) {
+    return code === 'resource-exhausted' || code === 'unavailable' || code === 'deadline-exceeded';
+  }
+
+  function saveProfileNow(force = false) {
     if (!state.ready) return;
+    if (Date.now() < state.saveBackoffUntil) return; // cota estourada: aguarda
     const p = profile();
     const nome = String(p.nick || '').trim();
     if (!nome) return; // sem nick não há documento público
@@ -163,6 +172,14 @@
         Object.assign(payload, window.GameState.cloudPayload());
       }
     } catch (e) {}
+    // Não regrava o mesmo estado. Cada gravação ainda vira uma leitura da Liga
+    // em todos os clientes, então repetir o mesmo perfil esgota a cota grátis.
+    const sigParts = Object.assign({}, payload);
+    delete sigParts.updatedAt; // muda a cada chamada, não representa mudança real
+    const sig = JSON.stringify(sigParts);
+    if (!force && sig === state.lastSavedSig) return;
+    const prevSig = state.lastSavedSig;
+    state.lastSavedSig = sig; // otimista: evita gravações duplicadas em voo
     try {
       const ref = db.collection('users').doc(state.uid);
       Promise.resolve(ref.set(payload, { merge: true })).then(() => {
@@ -175,9 +192,16 @@
       }).catch(err => {
         const code = (err && err.code) || '';
         state.lastError = 'firestore:' + code;
+        if (isQuotaErr(code)) {
+          // Sem cota: recua 60 s para não martelar o servidor com retries.
+          state.lastSavedSig = prevSig;
+          state.saveBackoffUntil = Date.now() + 60000;
+          return;
+        }
         if (compChanged && code === 'permission-denied') {
           // Regra rejeitou o avanço: mantém a economia sincronizando e
           // tenta o competitivo mais tarde (respeitando o cooldown).
+          state.lastSavedSig = prevSig;
           state.compLocked = true;
           setTimeout(() => { if (state.ready) saveProfileNow(); }, 50);
           setTimeout(() => {
@@ -197,7 +221,8 @@
   function queueSave() {
     if (!state.ready) return;
     clearTimeout(state.saveTimer);
-    state.saveTimer = setTimeout(saveProfileNow, 700);
+    // Agrupa mudanças rápidas (moedas/XP) em uma única gravação para poupar cota.
+    state.saveTimer = setTimeout(saveProfileNow, 3000);
   }
 
   function leagueRowsFromSnapshot(snap) {
@@ -223,7 +248,9 @@
 
   function watchLeague() {
     try {
-      db.collection('users').limit(50).onSnapshot(
+      // Limite menor: cada documento do listener conta leitura e re-lê quando
+      // qualquer jogador grava o perfil (a cota grátis de leitura é apertada).
+      db.collection('users').limit(30).onSnapshot(
         snap => {
           try { window.GameState.setLeague(leagueRowsFromSnapshot(snap)); } catch (e) {}
         },
@@ -384,7 +411,13 @@
 
   async function sendFriendRequest(nick) {
     if (!state.ready || !db) return { ok: false, error: 'offline' };
-    const target = await findUserByNick(nick);
+    let target;
+    try {
+      target = await findUserByNick(nick);
+    } catch (e) {
+      // Sem cota / sem rede: sem isto o erro subia e o clique falhava calado.
+      return { ok: false, error: (e && e.code) || 'db' };
+    }
     if (!target) return { ok: false, error: 'not-found' };
     if (target.uid === state.uid) return { ok: false, error: 'self' };
     const me = myProfile();
@@ -455,20 +488,33 @@
   function listenMessages(friendUid, cb) {
     if (!db || !state.uid) return function () {};
     const col = db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages');
-    const un = col.orderBy('at').limitToLast(200).onSnapshot(sn => {
-      cb && cb(sn.docs.map(d => { const x = d.data(); return { id: d.id, from: x.from, to: x.to, text: x.text || '', at: x.at || 0 }; }));
-    }, () => {});
-    socialSubs.push(un); return un;
+    // As regras só liberam ler onde o usuário é remetente OU destinatário.
+    // O Firestore não filtra por regra: uma consulta sem filtro é negada
+    // ("rules are not filters"). Então fazemos duas consultas — cada uma
+    // satisfaz um lado da regra — e juntamos no cliente (sem índice composto).
+    let inTo = [], inFrom = [];
+    const mapDoc = d => {
+      const x = d.data() || {};
+      return { id: d.id, from: x.from, to: x.to, text: x.text || '', kind: x.kind || 'text', audio: x.audio || '', audioUrl: x.audioUrl || '', dur: x.dur || 0, at: x.at || 0 };
+    };
+    const emit = () => {
+      const all = inTo.concat(inFrom).sort((a, b) => (a.at || 0) - (b.at || 0));
+      cb && cb(all.slice(-200));
+    };
+    const un1 = col.where('to', '==', state.uid).limit(200).onSnapshot(sn => { inTo = sn.docs.map(mapDoc); emit(); }, () => {});
+    const un2 = col.where('from', '==', state.uid).limit(200).onSnapshot(sn => { inFrom = sn.docs.map(mapDoc); emit(); }, () => {});
+    socialSubs.push(un1, un2);
+    return () => { try { un1(); } catch (e) {} try { un2(); } catch (e) {} };
   }
 
   async function sendMessage(friendUid, text) {
-    if (!db || !state.uid) return false;
+    if (!db || !state.uid) return { ok: false, error: 'offline' };
     const t = String(text || '').trim().slice(0, 500);
-    if (!t) return false;
+    if (!t) return { ok: false, error: 'empty' };
     try {
-      await db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages').add({ from: state.uid, to: friendUid, text: t, at: Date.now() });
-      return true;
-    } catch (e) { return false; }
+      await db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages').add({ from: state.uid, to: friendUid, text: t, kind: 'text', at: Date.now() });
+      return { ok: true };
+    } catch (e) { return { ok: false, error: (e && e.code) || 'db' }; }
   }
 
   /* ------------ Voz nas mensagens: sinalização via Realtime DB ------------ */
