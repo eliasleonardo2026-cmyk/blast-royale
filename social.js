@@ -157,7 +157,7 @@
       const mine = m.from === myUid;
       const name = mine ? 'Você' : (state.active.name || 'Amigo');
       const body = (m.kind === 'audio')
-        ? '<audio class="voice-msg" controls preload="metadata" playsinline src="' + esc(m.audioUrl || '') + '"></audio>' +
+        ? '<audio class="voice-msg" controls preload="metadata" playsinline src="' + esc(m.audio || m.audioUrl || '') + '"></audio>' +
           (m.dur ? '<div class="chat-dur">' + Math.max(1, Math.round(m.dur / 1000)) + 's</div>' : '')
         : '<div class="chat-text">' + esc(m.text) + '</div>';
       return '<div class="chat-bubble ' + (mine ? 'mine' : 'theirs') + '">' +
@@ -430,8 +430,8 @@
       if (this.state === 'recording') { this.stop(); return; }
       if (!state.active) return;
       const F = fb();
-      if (!F || !F.hasStorage) { if (typeof toast === 'function') toast('Áudio indisponível — habilite o Firebase Storage.'); return; }
-      if (!navigator.mediaDevices || !window.MediaRecorder) { if (typeof toast === 'function') toast('Gravação de áudio não suportada neste navegador.'); return; }
+      if (!F || !F.canAudio) { if (typeof toast === 'function') toast('Áudio indisponível — sincronização em espera.'); return; }
+      if (!navigator.mediaDevices || !window.MediaRecorder) { if (typeof toast === 'function') toast('Gravação não suportada neste navegador.'); return; }
       this._begin();
     },
     async _begin() {

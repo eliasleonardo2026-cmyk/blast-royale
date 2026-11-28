@@ -17,7 +17,7 @@
     measurementId: "G-R0JTDHPEJH"
   };
   const SDK_BASE = 'https://www.gstatic.com/firebasejs/10.12.2/';
-  const SDK_FILES = ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-database-compat.js', 'firebase-storage-compat.js'];
+  const SDK_FILES = ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js', 'firebase-database-compat.js'];
   const LOCAL_ID_KEY = 'blast-fb-uid';
   // Nuvem sempre ligada quando há internet: perfil, liga, economia e
   // presença sincronizam sozinhos. Sem rede o jogo segue 100% local.
@@ -476,20 +476,27 @@
     return () => ref.off('value', on);
   }
 
-  /* ------------ Mensagem de voz (gravação → Firebase Storage) ------------ */
+  /* ------------ Mensagem de voz (gravação → base64 no Firestore, sem Storage)
+     No plano grátis o Firebase Storage exige Blaze; para não depender disso,
+     o áudio (curto) vai como data URL dentro da própria mensagem no Firestore. */
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result || '');
+      r.onerror = () => reject(new Error('read'));
+      r.readAsDataURL(blob);
+    });
+  }
   async function uploadAudioMessage(friendUid, blob, durMs) {
-    if (!state.ready || !db || !firebase.storage) return { ok: false, error: 'no-storage' };
+    if (!state.ready || !db) return { ok: false, error: 'offline' };
     try {
       const dm = dmIdOf(state.uid, friendUid);
-      const st = firebase.storage();
-      const path = 'audio/' + dm + '/' + Date.now() + '.webm';
-      await st.ref(path).put(blob);
-      const audioUrl = await st.ref(path).getDownloadURL();
+      const audio = await blobToDataUrl(blob);
       await db.collection('dms').doc(dm).collection('messages').add({
-        from: state.uid, to: friendUid, kind: 'audio', audioUrl, dur: Math.round(durMs || 0), at: Date.now()
+        from: state.uid, to: friendUid, kind: 'audio', audio, dur: Math.round(durMs || 0), at: Date.now()
       });
-      return { ok: true, audioUrl };
-    } catch (e) { return { ok: false, error: (e && e.code) || 'upload' }; }
+      return { ok: true };
+    } catch (e) { return { ok: false, error: (e && e.code) || 'db' }; }
   }
 
   window.FirebaseSync = {
@@ -510,7 +517,7 @@
     callIdOf, sendCallSignal, listenCallSignals, setCallMeta, listenCallMeta,
     listenPresence,
     uploadAudioMessage,
-    get hasStorage() { return !!(state.ready && firebase && firebase.storage); },
+    get canAudio() { return !!(state.ready && db); },
     get socialVersion() { return socialRef; }
   };
 
