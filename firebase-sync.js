@@ -138,11 +138,34 @@
     return code === 'resource-exhausted' || code === 'unavailable' || code === 'deadline-exceeded';
   }
 
+  // Com a cota estourada o SDK do Firestore fica em retry por muito tempo e a
+  // promessa nunca resolve (o clique parecia "não fazer nada"). Um timeout
+  // garante erro rápido e legível em vez de travar a interface.
+  function withTimeout(promise, ms, code) {
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        const err = new Error('timeout');
+        err.code = code || 'timeout';
+        reject(err);
+      }, ms || 10000);
+      Promise.resolve(promise).then(
+        v => { if (settled) return; settled = true; clearTimeout(timer); resolve(v); },
+        e => { if (settled) return; settled = true; clearTimeout(timer); reject(e); }
+      );
+    });
+  }
+
   function saveProfileNow(force = false) {
     if (!state.ready) return;
-    if (Date.now() < state.saveBackoffUntil) return; // cota estourada: aguarda
     const p = profile();
     const nome = String(p.nick || '').trim();
+    // Presença no Realtime DB não depende da cota do Firestore: mantém o
+    // "online" dos amigos funcionando mesmo com a cota grátis estourada.
+    touchPresence(nome, p.avatar || '🐍');
+    if (Date.now() < state.saveBackoffUntil) return; // cota estourada: aguarda
     if (!nome) return; // sem nick não há documento público
     const targetComp = competitiveOf(p);
     let competitive = targetComp;
@@ -212,10 +235,6 @@
         }
       });
     } catch (e) { state.lastError = 'firestore'; }
-    try {
-      rtdb.ref('presence/' + state.uid).update({ nick: nome, avatar: payload.avatar, at: Date.now() })
-        .catch(err => { state.lastError = 'rtdb:' + (err && err.code || ''); });
-    } catch (e) {}
   }
 
   function queueSave() {
@@ -257,6 +276,14 @@
         err => { state.lastError = 'firestore-league:' + (err && err.code || ''); }
       );
     } catch (e) { state.lastError = 'firestore-league'; }
+  }
+
+  function touchPresence(nome, avatar) {
+    if (!rtdb || !state.uid || !nome) return;
+    try {
+      rtdb.ref('presence/' + state.uid).update({ nick: nome, avatar: avatar || '🐍', at: Date.now() })
+        .catch(err => { state.lastError = 'rtdb:' + (err && err.code || ''); });
+    } catch (e) {}
   }
 
   function publishPresence() {
@@ -313,6 +340,8 @@
       saveProfileNow();
       watchLeague();
       publishPresence();
+      // Batida de presença independente do Firestore (RTDB não tem essa cota).
+      setInterval(() => { if (state.ready) publishPresence(); }, 90000);
       state.unsubscribe = window.GameState.subscribe(queueSave);
       refreshText();
     } catch (err) {
@@ -404,7 +433,7 @@
     if (!db) return null;
     const n = String(nick || '').trim().slice(0, 24);
     if (!n) return null;
-    const snap = await db.collection('users').where('nick', '==', n).limit(1).get();
+    const snap = await withTimeout(db.collection('users').where('nick', '==', n).limit(1).get(), 10000);
     if (snap.empty) return null;
     return { uid: snap.docs[0].id, name: String((snap.docs[0].data() || {}).nick || n), avatar: (snap.docs[0].data() || {}).avatar || '🐍' };
   }
@@ -423,11 +452,11 @@
     const me = myProfile();
     const id = 'F_' + dmIdOf(state.uid, target.uid);
     try {
-      await db.collection('friendRequests').doc(id).set({
+      await withTimeout(db.collection('friendRequests').doc(id).set({
         from: state.uid, to: target.uid,
         fromName: String(me.nick || '').slice(0, 24), fromAvatar: me.avatar || '🐍',
         status: 'pending', toName: target.name, at: Date.now()
-      }, { merge: true });
+      }, { merge: true }), 10000);
       return { ok: true, toName: target.name };
     } catch (e) { return { ok: false, error: (e && e.code) || 'db' }; }
   }
@@ -512,7 +541,7 @@
     const t = String(text || '').trim().slice(0, 500);
     if (!t) return { ok: false, error: 'empty' };
     try {
-      await db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages').add({ from: state.uid, to: friendUid, text: t, kind: 'text', at: Date.now() });
+      await withTimeout(db.collection('dms').doc(dmIdOf(state.uid, friendUid)).collection('messages').add({ from: state.uid, to: friendUid, text: t, kind: 'text', at: Date.now() }), 10000);
       return { ok: true };
     } catch (e) { return { ok: false, error: (e && e.code) || 'db' }; }
   }
@@ -563,9 +592,9 @@
     try {
       const dm = dmIdOf(state.uid, friendUid);
       const audio = await blobToDataUrl(blob);
-      await db.collection('dms').doc(dm).collection('messages').add({
+      await withTimeout(db.collection('dms').doc(dm).collection('messages').add({
         from: state.uid, to: friendUid, kind: 'audio', audio, dur: Math.round(durMs || 0), at: Date.now()
-      });
+      }), 15000);
       return { ok: true };
     } catch (e) { return { ok: false, error: (e && e.code) || 'db' }; }
   }

@@ -283,7 +283,7 @@ function close() {
     if (r && r.ok) toast('Pedido enviado para ' + r.toName + '.');
     else if (r && r.error === 'not-found') toast('Nenhum jogador com esse nick. O nick precisa ser exatamente igual (maiúsculas/minúsculas contam).');
     else if (r && r.error === 'self') toast('Esse é o seu próprio nick.');
-    else if (r && (r.error === 'resource-exhausted' || r.error === 'unavailable')) toast('Servidor cheio agora (limite diário grátis do Firebase atingido). Tente mais tarde.');
+    else if (r && (r.error === 'resource-exhausted' || r.error === 'unavailable' || r.error === 'timeout')) toast('Servidor cheio agora (limite diário grátis do Firebase atingido). Tente mais tarde.');
     else if (r && r.error === 'offline') toast('Sem conexão com o servidor.');
     else toast('Não foi possível enviar o pedido (' + ((r && r.error) || 'erro') + ').');
     if (input) input.value = '';
@@ -350,7 +350,7 @@ function close() {
       r = { ok: false, error: (e && e.code) || 'erro' };
     }
     if (r && r.ok) { if (input) input.value = ''; return; }
-    if (r && (r.error === 'resource-exhausted' || r.error === 'unavailable')) toast('Servidor cheio agora (limite diário grátis do Firebase). Tente mais tarde.');
+    if (r && (r.error === 'resource-exhausted' || r.error === 'unavailable' || r.error === 'timeout')) toast('Servidor cheio agora (limite diário grátis do Firebase). Tente mais tarde.');
     else toast('Não foi possível enviar a mensagem (' + ((r && r.error) || 'erro') + ').');
   }
 
