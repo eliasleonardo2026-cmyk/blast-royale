@@ -167,6 +167,12 @@ const I18N = {
     duelSeriesSub: "Placar final {a} × {b} — {bo}",
     duelBadgeMd: "MD{bo}",
     tabProfile: "PERFIL", tabProfileSub: "Nick, avatar e resumo",
+    tabAccount: "CONTA", tabAccountSub: "Entrar com Google e salvar progresso",
+    accountGuest: "👤 Jogando como visitante — seu progresso fica só neste aparelho.",
+    accountGoogleOn: "✅ Conectado com Google — seu progresso está salvo na nuvem.",
+    accountGoogleBtn: "G Entrar com Google",
+    accountSignOut: "Sair da conta Google",
+    accountNote: "Entrar com Google não é obrigatório: dá para jogar como visitante. Com a conta, o progresso e os amigos ficam salvos.",
     profileNick: "Nick do Jogador", profileSave: "SALVAR", profileSaved: "Perfil salvo!",
     profileAvatar: "Avatar", profileWins: "Vitórias", profileLosses: "Derrotas", profilePoints: "Pontos", profileCoins: "Moedas",
     profileGeneral: "PROGRESSO GERAL", profileCompetitive: "ESTATÍSTICAS COMPETITIVAS",
@@ -434,6 +440,12 @@ const I18N = {
     duelSeriesSub: "Final score {a} × {b} — {bo}",
     duelBadgeMd: "MD{bo}",
     tabProfile: "PROFILE", tabProfileSub: "Nick, avatar and summary",
+    tabAccount: "ACCOUNT", tabAccountSub: "Sign in with Google and save progress",
+    accountGuest: "👤 Playing as guest — your progress stays on this device.",
+    accountGoogleOn: "✅ Signed in with Google — your progress is saved in the cloud.",
+    accountGoogleBtn: "G Sign in with Google",
+    accountSignOut: "Sign out of Google",
+    accountNote: "Google sign-in is optional: you can play as a guest. With an account, progress and friends are saved.",
     profileNick: "Player Nick", profileSave: "SAVE", profileSaved: "Profile saved!",
     profileAvatar: "Avatar", profileWins: "Wins", profileLosses: "Losses", profilePoints: "Points", profileCoins: "Coins",
     profileGeneral: "OVERALL PROGRESS", profileCompetitive: "COMPETITIVE STATS",
@@ -3046,6 +3058,30 @@ function rebuildSpawns() {
     { c: 3, r: GRID_SIZE - 4 }, { c: GRID_MID, r: GRID_SIZE - 4 }, { c: GRID_SIZE - 4, r: GRID_SIZE - 4 },
     { c: GRID_MID - 7, r: GRID_SIZE - 4 }, { c: GRID_MID + 7, r: GRID_SIZE - 4 }
   ];
+  // Pontos internos usados pelo ONLINE: ficam BEM dentro do anel seguro
+  // inicial (nunca colados na Zona) e são simétricos por time. Também entram
+  // na lista geral para o gerador de mapa garantir piso livre ao redor.
+  [1, 2, 3].forEach(per => onlineSpawnRows(per).forEach(sp => SPAWN_COORDS.push(sp)));
+}
+
+/* Spawns justos do ONLINE: time 1 à esquerda, time 2 à direita, com margem
+   do anel da Zona. Antes o online reaproveitava SPAWN_COORDS[0..N] (borda do
+   mapa), então os jogadores nasciam dentro da zona vermelha e tomavam dano
+   assim que o anel fechava. */
+function onlineSpawnRows(perTeam, gridSize, mid) {
+  const g = gridSize == null ? GRID_SIZE : gridSize;
+  const m = mid == null ? GRID_MID : mid;
+  const off = Math.max(3, Math.min(6, Math.floor(g / 2) - 5));
+  const rows = perTeam <= 1 ? [m]
+    : perTeam === 2 ? [m - 3, m + 3]
+    : [m - 5, m, m + 5];
+  const out = [];
+  rows.forEach(r => out.push({ c: m - off, r }));
+  rows.forEach(r => out.push({ c: m + off, r }));
+  return out;
+}
+function onlineSpawnCoords(cap) {
+  return onlineSpawnRows(Math.max(1, Math.floor((cap || 2) / 2)));
 }
 function applyGridSize(n) {
   GRID_SIZE = n;
@@ -3306,9 +3342,10 @@ function initArena(isDemo = false, modeId = null, mapId = null) {
       // times divididos pela metade (time 1 = índices 0..N/2-1). Os nomes/cos
       // dos convidados chegam pelo hello/snapshot — aqui ficam placeholders.
       const cap = cfg.humans;
+      const onlineSpawns = onlineSpawnCoords(cap);
       for (let i = 0; i < cap; i++) {
         const dev = deviceOfIndex(i);
-        const sp = SPAWN_COORDS[i] || { c: 3 + (i % 9) * 2, r: 3 + (i % 7) * 3 };
+        const sp = onlineSpawns[i] || SPAWN_COORDS[i] || { c: GRID_MID, r: GRID_MID };
         const isMine = dev === myOnlineDevice();
         const name = (i === 0)
           ? ((GameState.state.profile.nick || '').trim().slice(0, 15) || fallbackName)

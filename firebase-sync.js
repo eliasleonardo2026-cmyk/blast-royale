@@ -69,6 +69,8 @@
       : state.status === 'auth'
         ? (d.profileSyncAuth || '☁️ Conectando ao Firebase...')
         : (d.profileSyncLocal || '📴 Modo local — entre na internet para sincronizar');
+    // Mantém a aba CONTA em sincronia quando o Firebase termina de conectar.
+    try { if (window.SocialUI && window.SocialUI.syncAccount) window.SocialUI.syncAccount(); } catch (e) {}
   }
 
   function loadScript(src) {
@@ -253,8 +255,14 @@
       rtdb = firebase.database();
       let user = null;
       try {
-        const cred = await auth.signInAnonymously();
-        user = cred && cred.user;
+        // Conclui um login por redirecionamento (fallback do popup em celular)
+        // e respeita uma sessão Google já persistida antes de criar anônimo.
+        const redirect = await auth.getRedirectResult().catch(() => null);
+        user = (redirect && redirect.user) || auth.currentUser || null;
+        if (!user) {
+          const cred = await auth.signInAnonymously();
+          user = cred && cred.user;
+        }
       } catch (err) {
         // Auth anônimo desabilitado ou domínio não autorizado: encerra em modo
         // local sem tentar Firestore/RTDB (evita erros de permissão em cascata).
@@ -307,27 +315,44 @@
   async function loginWithGoogle() {
     if (!auth) return { ok: false, error: 'no-auth' };
     const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const linkedWith = (code) => (
+      code === 'auth/credential-already-in-use' ||
+      code === 'auth/email-already-in-use' ||
+      code === 'auth/account-exists-with-different-credential'
+    );
+    let switched = false;
     try {
       const cur = auth.currentUser;
       if (!cur) {
         await auth.signInWithPopup(provider);
-      } else if (typeof cur.linkWithPopup === 'function' && cur.isAnonymous) {
-        await cur.linkWithPopup(provider);
+      } else if (cur.isAnonymous && typeof cur.linkWithPopup === 'function') {
+        try {
+          await cur.linkWithPopup(provider);
+        } catch (e) {
+          const code = (e && e.code) || '';
+          // A conta Google já existe (com outro uid): entra nela.
+          if (!linkedWith(code)) throw e;
+          await auth.signInWithPopup(provider);
+          switched = true;
+        }
       } else {
         await cur.reload().catch(() => {});
       }
       state.uid = auth.currentUser.uid;
       state.status = 'online';
-      return { ok: true, isGoogle: !auth.currentUser.isAnonymous };
+      state.ready = true;
+      return { ok: true, isGoogle: !auth.currentUser.isAnonymous, switched };
     } catch (e) {
       const code = (e && e.code) || 'auth';
-      // A conta Google já tem dados próprios: passa a usá-la (perde o anônimo).
-      if (code === 'auth/account-exists-with-different-credential') {
+      // Popup bloqueado (celular/navegador in-app): tenta por redirecionamento.
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
         try {
-          await auth.signInWithPopup(provider);
-          state.uid = auth.currentUser.uid;
-          return { ok: true, isGoogle: true, switched: true };
-        } catch (e2) { return { ok: false, error: (e2 && e2.code) || 'auth' }; }
+          await auth.signInWithRedirect(provider);
+          return { ok: false, error: 'redirect', redirect: true };
+        } catch (e2) {
+          return { ok: false, error: (e2 && e2.code) || code };
+        }
       }
       return { ok: false, error: code };
     }

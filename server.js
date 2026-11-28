@@ -43,15 +43,18 @@ const SECURITY_HEADERS = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'Content-Security-Policy':
     "default-src 'self'; " +
-    "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com; " +
+    "script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://apis.google.com https://accounts.google.com; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src 'self' data: https:; " +
-    "img-src 'self' data: blob:; " +
+    "img-src 'self' data: blob: https:; " +
     "media-src 'self' data: blob:; " +
     "connect-src 'self' https: wss: ws: blob:; " +
     "worker-src 'self' blob:; " +
-    "frame-src 'self' https://*.firebaseio.com https://*.googleapis.com; " +
-    "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+    // Login Google: o popup/redirect do Firebase Auth abre a página do
+    // projeto em *.firebaseapp.com e fala com accounts.google.com.
+    "frame-src 'self' https://*.firebaseio.com https://*.googleapis.com https://*.firebaseapp.com https://accounts.google.com; " +
+    "object-src 'none'; base-uri 'self'; " +
+    "form-action 'self' https://*.firebaseapp.com https://accounts.google.com; frame-ancestors 'self'"
 };
 
 /* Rate limit simples por IP, em janela fixa. Não é para punir jogo normal

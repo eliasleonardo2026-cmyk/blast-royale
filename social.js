@@ -58,6 +58,7 @@
   }
 
   function renderLogged() {
+    renderAccount();
     const logged = el('socialLogged');
     const btn = el('btnGoogleSignin');
     if (!logged || !btn) return;
@@ -70,6 +71,28 @@
     } else {
       logged.textContent = '📴 offline';
       btn.classList.remove('hidden');
+    }
+  }
+
+  /* Aba CONTA da tela inicial: status + botão Google. */
+  function renderAccount() {
+    const status = el('accountStatus');
+    const googleBtn = el('btnAccountGoogle');
+    const outBtn = el('btnAccountSignOut');
+    if (!status) return;
+    const d = dict();
+    if (ready() && fb() && fb().isGoogle) {
+      status.textContent = d.accountGoogleOn || '✅ Conectado com Google — seu progresso está salvo na nuvem.';
+      if (googleBtn) googleBtn.classList.add('hidden');
+      if (outBtn) outBtn.classList.remove('hidden');
+    } else if (ready()) {
+      status.textContent = d.accountGuest || '👤 Jogando como visitante — seu progresso fica só neste aparelho.';
+      if (googleBtn) googleBtn.classList.remove('hidden');
+      if (outBtn) outBtn.classList.add('hidden');
+    } else {
+      status.textContent = d.profileSyncLocal || '📴 Conectando…';
+      if (googleBtn) googleBtn.classList.remove('hidden');
+      if (outBtn) outBtn.classList.add('hidden');
     }
   }
 
@@ -198,21 +221,50 @@ function close() {
   if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
 }
 
+  const GOOGLE_ERRORS = {
+    'auth/popup-blocked': 'O navegador bloqueou a janela do Google. Libere pop-ups para este site e tente de novo.',
+    'auth/popup-closed-by-user': 'A janela do Google foi fechada antes de concluir.',
+    'auth/cancelled-popup-request': 'Login cancelado. Tente de novo.',
+    'auth/unauthorized-domain': 'Domínio não autorizado no Firebase. Adicione 177-52-161-107.sslip.io em Authentication → Settings → Authorized domains.',
+    'auth/operation-not-allowed': 'Login com Google desativado no Firebase (Authentication → Sign-in method → Google).',
+    'auth/operation-not-supported-in-this-environment': 'Este navegador não permite login com Google. Abra no Chrome/Safari (fora de apps como Instagram/WhatsApp).',
+    'auth/network-request-failed': 'Sem conexão com o Google. Verifique a internet e tente de novo.',
+    'auth/web-storage-unsupported': 'O navegador bloqueou cookies/armazenamento. Libere cookies para este site.',
+    'auth/internal-error': 'Erro interno do Google. Tente de novo em alguns segundos.'
+  };
+  function googleErrorText(code) {
+    return GOOGLE_ERRORS[code] || ('Não foi possível entrar com Google (' + (code || 'erro') + ').');
+  }
+
   async function googleLogin() {
-    const b = el('btnGoogleSignin');
-    const prev = b ? b.textContent : '';
-    if (b) b.textContent = 'Aguarde…';
+    const buttons = [el('btnGoogleSignin'), el('btnAccountGoogle'), el('btnProfileGoogle')].filter(Boolean);
+    const prev = buttons.map(b => b.textContent);
+    buttons.forEach(b => { b.textContent = 'Aguarde…'; });
+    const restore = () => buttons.forEach((b, i) => { if (prev[i] != null) b.textContent = prev[i]; });
     const F = fb();
-    if (!F || !F.loginWithGoogle) { toast('Firebase indisponível.'); if (b) b.textContent = prev; return; }
+    if (!F || !F.loginWithGoogle) { toast('Firebase indisponível.'); restore(); return; }
     const r = await F.loginWithGoogle();
-    if (b) b.textContent = prev;
+    restore();
     if (r && r.ok) {
-      toast(r.switched ? 'Entrou com Google (conta vinculada ao Google).' : 'Conta vinculada ao Google! Seu progresso está salvo.');
+      toast(r.switched ? 'Entrou com a conta Google (progresso vinculado).' : 'Conta vinculada ao Google! Seu progresso está salvo.');
       renderLogged();
       resubscribe();
+    } else if (r && r.redirect) {
+      toast('Redirecionando para o Google…');
     } else {
-      toast('Não foi possível entrar com Google (' + (r && r.error || 'erro') + ').');
+      const msg = googleErrorText(r && r.error);
+      toast(msg);
+      const st = el('accountStatus');
+      if (st) st.textContent = msg;
     }
+  }
+
+  async function signOutGoogle() {
+    const F = fb();
+    if (F && F.signOutAccount) { try { await F.signOutAccount(); } catch (e) {} }
+    toast('Você saiu da conta Google. Agora está como visitante.');
+    renderLogged();
+    resubscribe();
   }
 
   async function addFriend() {
@@ -236,11 +288,16 @@ function close() {
 
   function init() {
     renderProfileGoogle();
+    renderAccount();
+    // O Firebase termina de conectar depois; re-renderiza o status da CONTA.
+    [800, 2000, 4500, 8000].forEach(t => setTimeout(renderAccount, t));
     bind('btnOpenSocial', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
     bind('btnOpenSocialOnline', 'click', e => { if (e && e.stopPropagation) e.stopPropagation(); open(); });
     bind('btnSocialClose', 'click', close);
     bind('btnGoogleSignin', 'click', googleLogin);
     bind('btnProfileGoogle', 'click', googleLogin);
+    bind('btnAccountGoogle', 'click', googleLogin);
+    bind('btnAccountSignOut', 'click', signOutGoogle);
     bind('btnSocialAdd', 'click', addFriend);
     bind('btnSocialSend', 'click', () => sendText());
     bind('socialChatText', 'keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendText(); } });
@@ -483,5 +540,5 @@ function close() {
   if (document.readyState === 'complete') init();
   else window.addEventListener('load', init, { once: true });
 
-  window.SocialUI = { open, close, googleLogin, resubscribe };
+  window.SocialUI = { open, close, googleLogin, resubscribe, syncAccount: renderAccount, signOut: signOutGoogle };
 })();

@@ -4,9 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>Blast Royale — Tactical Bomb Arena</title>
-<link rel="stylesheet" href="tailwind.css?v=56" />
-<link rel="stylesheet" href="style.css?v=56" />
-<link rel="stylesheet" href="ui-extra.css?v=56" />
+<link rel="stylesheet" href="tailwind.css?v=58" />
+<link rel="stylesheet" href="style.css?v=58" />
+<link rel="stylesheet" href="ui-extra.css?v=58" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -410,6 +410,25 @@
     </button>
 
     <!-- Seções recolhíveis -->
+    <section class="lobby-section" data-lobby-section="account">
+      <button type="button" class="lobby-section-head" data-lobby-tab="account" aria-expanded="false">
+        <span class="lobby-section-emoji">👤</span>
+        <span class="lobby-section-text">
+          <span class="lobby-section-title" data-i18n="tabAccount">CONTA</span>
+          <span class="lobby-section-sub" data-i18n="tabAccountSub">Entrar com Google e salvar progresso</span>
+        </span>
+        <span class="lobby-chevron">▾</span>
+      </button>
+      <div class="lobby-section-body hidden" data-lobby-body="account">
+        <div class="account-panel">
+          <p id="accountStatus" class="account-status" data-i18n="accountGuest">👤 Jogando como visitante — seu progresso fica só neste aparelho.</p>
+          <button id="btnAccountGoogle" type="button" class="account-google" data-i18n="accountGoogleBtn">G Entrar com Google</button>
+          <button id="btnAccountSignOut" type="button" class="account-signout hidden" data-i18n="accountSignOut">Sair da conta Google</button>
+          <p class="account-note" data-i18n="accountNote">Entrar com Google não é obrigatório: dá para jogar como visitante. Com a conta, o progresso e os amigos ficam salvos.</p>
+        </div>
+      </div>
+    </section>
+
     <section class="lobby-section" data-lobby-section="play">
       <button type="button" class="lobby-section-head" data-lobby-tab="play" aria-expanded="false">
         <span class="lobby-section-emoji">🎮</span>
@@ -1339,10 +1358,10 @@
   </div>
 </div>
 
-<script src="script.js?v=56"></script>
-<script src="script2.js?v=56"></script>
-<script src="firebase-sync.js?v=56"></script>
-<script src="social.js?v=56"></script>
+<script src="script.js?v=58"></script>
+<script src="script2.js?v=58"></script>
+<script src="firebase-sync.js?v=58"></script>
+<script src="social.js?v=58"></script>
 <!-- Filtros SVG para simulação de daltonismo (acessibilidade) -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
